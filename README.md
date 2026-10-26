@@ -140,11 +140,11 @@ The main output locations are:
 - `test_executor/output/`
 - `intendedness/output/`
 
-The final regression decision in Stage 7 is based on the intendedness classifier only.
+
 
 ## Notes
 
 - The pipeline supports resume behavior by default and skips completed stages.
 - Stage 1, 2, 4, and 7 depend on LLM/API access.
 - Stage 6 depends on conda environment creation or reuse.
-- Stage 7 uses a fixed intendedness prompt configuration.
+
