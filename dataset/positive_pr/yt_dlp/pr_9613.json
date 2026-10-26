@@ -1,0 +1,95 @@
+{
+  "pr_number": 9613,
+  "title": "[patreon] fix some vimeo embed downloads",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/9613",
+  "description": "**IMPORTANT**: PRs without the template will be CLOSED\r\n\r\n### Description of your *pull request* and other information\r\n\r\n<!--\r\n\r\nExplanation of your *pull request* in arbitrary form goes here. Please **make sure the description explains the purpose and effect** of your *pull request* and is worded well enough to be understood. Provide as much **context and examples** as possible\r\n\r\n-->\r\n\r\n~~This change prioritizes downloading from m3u8 instead of vimeo embeds (or embeds in general), which in some cases may no longer exist and only the m3u8 video attachment does.~~\r\n\r\nThis change adds checks to verify if external embeds of Patreon posts are still valid before trying to download them (since they may have been deleted from vimeo/dropbox/etc. but still be attached to the Patreon post), and if it is invalid then it tries other options\r\n\r\nExample, using `python -m yt_dlp https://www.patreon.com/posts/hunter-x-hunter-34007913` (this video is public, so no need for cookies/account to test with)\r\n\r\n```sh\r\n# Before change, finds a vimeo embed (that no longer exists) and fails to download it\r\npython -m yt_dlp https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] Extracting URL: https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] 34007913: Downloading API JSON\r\n[vimeo] Extracting URL: https://player.vimeo.com/video/391366663?app_id=122963#__youtubedl_smuggle=%7B%22referer%22%3A+%2...%2Fpatreon.com%22%7D\r\n[vimeo] 391366663: Downloading webpage\r\nERROR: [vimeo] 391366663: Unable to download webpage: HTTP Error 404: Not Found (caused by <HTTPError 404: Not Found>)\r\n```\r\n\r\n```sh\r\n# After change: checks for vimeo embed, fails, then tries to download the m3u8 file attachment\r\npython -m yt_dlp https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] Extracting URL: https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] 34007913: Downloading API JSON\r\n[Patreon] 34007913: Downloading webpage\r\nWARNING: [Patreon] Unable to download webpage: HTTP Error 405: Method Not Allowed\r\n[Patreon] 34007913: Downloading webpage\r\nWARNING: [Patreon] Unable to download webpage: HTTP Error 404: Not Found\r\n[Patreon] 34007913: Downloading m3u8 information\r\n[info] 34007913: Downloading 1 format(s): 4712\r\n[hlsnative] Downloading m3u8 manifest\r\n[hlsnative] Total fragments: 284\r\n[download] Destination: Hunter x Hunter ｜ Kurapika DESTROYS Uvogin!!! [34007913].mp4\r\n[download]  10.2% of ~ 721.42MiB at    2.61MiB/s ETA 03:26 (frag 28/284)\r\n```\r\n\r\n**Possibly** fixes https://github.com/yt-dlp/yt-dlp/issues/8702 (don't have access to the post in the example to test but seems pretty similar to my test case)\r\n\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n<!--\r\n\r\n# PLEASE FOLLOW THE GUIDE BELOW\r\n\r\n- You will be asked some questions, please read them **carefully** and answer honestly\r\n- Put an `x` into all the boxes `[ ]` relevant to your *pull request* (like [x])\r\n- Use *Preview* tab to see how your *pull request* will actually look like\r\n\r\n-->\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n- [x] Checked the code with [flake8](https://pypi.python.org/pypi/flake8) and [ran relevant tests](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions)\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check all of the following options that apply:\r\n- [x] I am the original author of this code and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n- [ ] I am not the original author of this code but it is in public domain or released under [Unlicense](http://unlicense.org/) (provide reliable evidence)\r\n\r\n### What is the purpose of your *pull request*?\r\n- [x] Fix or improvement to an extractor (Make sure to add/update tests)\r\n- [ ] New extractor ([Piracy websites will not be accepted](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#is-the-website-primarily-used-for-piracy))\r\n- [ ] Core bug fix/improvement\r\n- [ ] New feature (It is strongly [recommended to open an issue first](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#adding-new-feature-or-making-overarching-changes))\r\n\r\n</details>\r\n",
+  "comments": [
+    {
+      "author": "pukkandan",
+      "body": "> which in some cases may no longer exist and only the m3u8 video attachment does.\r\n\r\nDo you know why this happens? Uploader deletes vimeo video? Can the reverse scenario happen?\r\n\r\nAlso, if both work, we should prioritize the video embed, correct?",
+      "created_at": "2024-04-04T04:27:05Z"
+    },
+    {
+      "author": "johnvictorfs",
+      "body": "> > which in some cases may no longer exist and only the m3u8 video attachment does.\r\n> \r\n> Do you know why this happens? Uploader deletes vimeo video? Can the reverse scenario happen?\r\n> \r\n\r\n@pukkandan Not 100% sure but yeah I believe the uploader deleting just the Vimeo video could be it (or Vimeo themselves). The reverse scenario seems really unlikely to me (although I am not a creator on Patreon so I can't test that) since the removal of a Patreon embed would be done on Patreon itself, I would imagine it would be removed from the post correctly in that case.\r\n\r\nEdit: by reverse scenario I am assuming you mean, the removal of the patreon attachment itself (but still having the url for it as if it was still there) but having a working (vimeo/other) embed, right?\r\n\r\n> Also, if both work, we should prioritize the video embed, correct?\r\n\r\nBut yes, in that scenario prioritizing the embed would make more sense, I could change it so it would still try the embed first but if it fails try other options, I will look into that a bit later, thanks!",
+      "created_at": "2024-04-04T13:28:43Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "We can make a HeadRequest to the Vimeo URL and fall back to m3u8 if that fails",
+      "created_at": "2024-04-04T13:46:27Z"
+    },
+    {
+      "author": "johnvictorfs",
+      "body": "> We can make a HeadRequest to the Vimeo URL and fall back to m3u8 if that fails\r\n\r\n@pukkandan Changed the code to use this approach, is it correct?\r\n\r\nDon't have any public posts I could share that fall into this example (having both a working embed and a file attachment), but seems to be working with some private posts I have access to.\r\n\r\n![image](https://github.com/yt-dlp/yt-dlp/assets/37747572/4b09a662-bed6-42be-9b32-1ad6f11c4400)\r\n\r\nI also haven't found any working vimeo embeds on Patreon to test with (just dropbox) but it worked with a hard-coded vimeo url temporarily in the code as if it was attached to the post:\r\n\r\n![image](https://github.com/yt-dlp/yt-dlp/assets/37747572/c09faa98-af88-4819-b396-a7420ca14455)\r\n\r\nMy original test (with a public post) also works fine\r\n\r\n```sh\r\npython -m yt_dlp https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] Extracting URL: https://www.patreon.com/posts/hunter-x-hunter-34007913\r\n[Patreon] 34007913: Downloading API JSON\r\n[Patreon] 34007913: Downloading webpage\r\nWARNING: [Patreon] Unable to download webpage: HTTP Error 405: Method Not Allowed\r\n[Patreon] 34007913: Downloading webpage\r\nWARNING: [Patreon] Unable to download webpage: HTTP Error 404: Not Found\r\n[Patreon] 34007913: Downloading m3u8 information\r\n[info] 34007913: Downloading 1 format(s): 4712\r\n[hlsnative] Downloading m3u8 manifest\r\n[hlsnative] Total fragments: 284\r\n[download] Destination: Hunter x Hunter ｜ Kurapika DESTROYS Uvogin!!! [34007913].mp4\r\n[download]  10.2% of ~ 721.42MiB at    2.61MiB/s ETA 03:26 (frag 28/284)\r\n```",
+      "created_at": "2024-04-04T14:25:45Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "> HTTP Error 405: Method Not Allowed\r\n\r\nthis means a HEAD request won't work. IMO just use GET for both",
+      "created_at": "2024-04-04T14:50:09Z"
+    },
+    {
+      "author": "johnvictorfs",
+      "body": "> > HTTP Error 405: Method Not Allowed\r\n> \r\n> this means a HEAD request won't work. IMO just use GET for both\r\n\r\n@bashonly Yeah you're right, I missed that, only tested vimeo.com links and not player.vimeo.com, changing both to GET requests, thanks.",
+      "created_at": "2024-04-04T15:20:38Z"
+    }
+  ],
+  "diff": "diff --git a/yt_dlp/extractor/patreon.py b/yt_dlp/extractor/patreon.py\nindex d2ddb72cd4ff..d4f822f52d59 100644\n--- a/yt_dlp/extractor/patreon.py\n+++ b/yt_dlp/extractor/patreon.py\n@@ -92,7 +92,7 @@ class PatreonIE(PatreonBaseIE):\n             'thumbnail': 're:^https?://.*$',\n             'upload_date': '20150211',\n             'description': 'md5:8af6425f50bd46fbf29f3db0fc3a8364',\n-            'uploader_id': 'TraciJHines',\n+            'uploader_id': '@TraciHinesMusic',\n             'categories': ['Entertainment'],\n             'duration': 282,\n             'view_count': int,\n@@ -106,8 +106,10 @@ class PatreonIE(PatreonBaseIE):\n             'availability': 'public',\n             'channel_follower_count': int,\n             'playable_in_embed': True,\n-            'uploader_url': 'http://www.youtube.com/user/TraciJHines',\n+            'uploader_url': 'https://www.youtube.com/@TraciHinesMusic',\n             'comment_count': int,\n+            'channel_is_verified': True,\n+            'chapters': 'count:4',\n         },\n         'params': {\n             'noplaylist': True,\n@@ -176,6 +178,27 @@ class PatreonIE(PatreonBaseIE):\n             'uploader_url': 'https://www.patreon.com/thenormies',\n         },\n         'skip': 'Patron-only content',\n+    }, {\n+        # dead vimeo and embed URLs, need to extract post_file\n+        'url': 'https://www.patreon.com/posts/hunter-x-hunter-34007913',\n+        'info_dict': {\n+            'id': '34007913',\n+            'ext': 'mp4',\n+            'title': 'Hunter x Hunter | Kurapika DESTROYS Uvogin!!!',\n+            'like_count': int,\n+            'uploader': 'YaBoyRoshi',\n+            'timestamp': 1581636833,\n+            'channel_url': 'https://www.patreon.com/yaboyroshi',\n+            'thumbnail': r're:^https?://.*$',\n+            'tags': ['Hunter x Hunter'],\n+            'uploader_id': '14264111',\n+            'comment_count': int,\n+            'channel_follower_count': int,\n+            'description': 'Kurapika is a walking cheat code!',\n+            'upload_date': '20200213',\n+            'channel_id': '2147162',\n+            'uploader_url': 'https://www.patreon.com/yaboyroshi',\n+        },\n     }]\n \n     def _real_extract(self, url):\n@@ -250,20 +273,13 @@ def _real_extract(self, url):\n             v_url = url_or_none(compat_urllib_parse_unquote(\n                 self._search_regex(r'(https(?:%3A%2F%2F|://)player\\.vimeo\\.com.+app_id(?:=|%3D)+\\d+)', embed_html, 'vimeo url', fatal=False)))\n             if v_url:\n-                return {\n-                    **info,\n-                    '_type': 'url_transparent',\n-                    'url': VimeoIE._smuggle_referrer(v_url, 'https://patreon.com'),\n-                    'ie_key': 'Vimeo',\n-                }\n+                v_url = VimeoIE._smuggle_referrer(v_url, 'https://patreon.com')\n+                if self._request_webpage(v_url, video_id, 'Checking Vimeo embed URL', fatal=False, errnote=False):\n+                    return self.url_result(v_url, VimeoIE, url_transparent=True, **info)\n \n         embed_url = try_get(attributes, lambda x: x['embed']['url'])\n-        if embed_url:\n-            return {\n-                **info,\n-                '_type': 'url',\n-                'url': embed_url,\n-            }\n+        if embed_url and self._request_webpage(embed_url, video_id, 'Checking embed URL', fatal=False, errnote=False):\n+            return self.url_result(embed_url, **info)\n \n         post_file = traverse_obj(attributes, 'post_file')\n         if post_file:\n",
+  "changed_files": [
+    "yt_dlp/extractor/patreon.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "fc53ec13ff1ee926a3e533a68cfca8acc887b661",
+  "post_commit": "36b240f9a72af57eb2c9d927ebb7fd1c917ebf18",
+  "merged_at": "2024-04-07T16:26:44Z",
+  "review_comments": [
+    {
+      "author": "bashonly",
+      "body": "```suggestion\r\n                v_url = VimeoIE._smuggle_referrer(v_url, 'https://patreon.com')\r\n                if self._request_webpage(v_url, video_id, 'Checking Vimeo embed URL', fatal=False, errnote=False):\r\n                    return {\r\n                        **info,\r\n                        '_type': 'url_transparent',\r\n                        'url': vimeo_embed_url,\r\n                        'ie_key': 'Vimeo',\r\n                    }\r\n```",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-04T23:40:13Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "```suggestion\r\n            if self._request_webpage(embed_url, video_id, 'Checking embed URL', fatal=False, errnote=False):\r\n```",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-04T23:42:00Z"
+    },
+    {
+      "author": "johnvictorfs",
+      "body": "Updated",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-05T13:12:03Z"
+    },
+    {
+      "author": "johnvictorfs",
+      "body": "Updated",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-05T13:12:11Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "maybe this should be\r\n```suggestion\r\n                    return self.url_result(v_url, 'Vimeo', **info, url_transparent=True)\r\n```",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-07T08:22:17Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "same\r\n```suggestion\r\n                return self.url_result(embed_url, **info)\r\n```",
+      "path": "yt_dlp/extractor/patreon.py",
+      "line": null,
+      "created_at": "2024-04-07T08:22:54Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 30,
+  "deletions": 14,
+  "changed_files_count": 1
+}

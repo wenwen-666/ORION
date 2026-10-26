@@ -1,0 +1,47 @@
+{
+  "pr_number": 223,
+  "title": "fix description for parameters in OpenAPI 3",
+  "url": "https://github.com/marshmallow-code/apispec/pull/223",
+  "description": "In OpenAPI3, desired output for query parameters is like this:\r\n```yaml\r\nparameters:\r\n- description: Password\r\n  in: query\r\n  name: password\r\n  required: true\r\n  schema: \r\n    type: string\r\n```\r\n\r\nHowever,  only properties *in*, *name* and *required* are defined in the top level, while all other properties is moved under property *schema*, which conflicts with OpenAPI 3 specification.\r\n\r\nCurrent output:\r\n```yaml\r\nparameters:\r\n- in: query\r\n  name: password\r\n  required: true\r\n  schema: \r\n    type: string\r\n    description: Password\r\n```\r\n\r\nSo before moving all properties to schema, it's reasonable to check for *description* property and define description in top level of parameter object.",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "1db29fe3a3840343a6031652cc8f30d93534bb13",
+  "merged_at": "2018-06-09T17:31:52+00:00",
+  "created_at": "2018-06-01T08:15:49+00:00",
+  "closed_at": "2018-06-09T17:31:52+00:00",
+  "user": "fMeow",
+  "additions": 49,
+  "deletions": 23,
+  "changed_files_count": 3,
+  "labels": [],
+  "comments": [
+    {
+      "author": "sloria",
+      "body": "Thanks again @Guoli-Lyu . Can you add a test for this, too? Once that's added, this can be merged.",
+      "created_at": "2018-06-01T12:30:59+00:00"
+    },
+    {
+      "author": "fMeow",
+      "body": "I add test for descriptions in parameters and also requestBody, which in OpenAPI 2 is like this:\r\n\r\n```yaml\r\nparameters:\r\n- in: path\r\n  name: name\r\n```\r\n@sloria ",
+      "created_at": "2018-06-06T14:27:56+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "sloria",
+      "body": "Minor revisions:\r\n\r\n```\r\nFor OpenAPI 3, only \"query\", \"header\", \"path\" or \"cookie\" are allowed for the location of parameters. \"requestBody\" is used when fields are in the body.\r\n\r\nThis function always returns a list, with a parameter for each included field in the :class:`Schema <marshmallow.Schema>`.\r\n```",
+      "path": "apispec/ext/marshmallow/swagger.py",
+      "line": null,
+      "created_at": "2018-06-07T12:23:10+00:00"
+    }
+  ],
+  "changed_files": [
+    "apispec/ext/marshmallow/swagger.py",
+    "tests/schemas.py",
+    "tests/test_ext_marshmallow.py"
+  ],
+  "diff": "diff --git a/apispec/ext/marshmallow/swagger.py b/apispec/ext/marshmallow/swagger.py\nindex d5346280..fa3a5654 100644\n--- a/apispec/ext/marshmallow/swagger.py\n+++ b/apispec/ext/marshmallow/swagger.py\n@@ -427,6 +427,13 @@ def fields2parameters(fields, schema=None, spec=None, use_refs=True,\n     the :class:`Schema <marshmallow.Schema>`.\n \n     https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#parameterObject\n+\n+    For OpenAPI 3, only \"query\", \"header\", \"path\" or \"cookie\" is allowed for the location\n+    of parameters. In OpenAPI 3, Request Body Object is used when parameters is in body.\n+    So this function always return an array of a parameter for each included field in\n+    the :class:`Schema <marshmallow.Schema>`.\n+\n+    https://swagger.io/specification/#parameterObject\n     \"\"\"\n     swagger_default_in = __location_map__.get(default_in, default_in)\n     if spec is None:\n@@ -434,7 +441,7 @@ def fields2parameters(fields, schema=None, spec=None, use_refs=True,\n     else:\n         openapi_major_version = spec.openapi_version.version[0]\n \n-    if swagger_default_in == 'body':\n+    if openapi_major_version == 2 and swagger_default_in == 'body':\n         if schema is not None:\n             # Prevent circular import\n             from apispec.ext.marshmallow import resolve_schema_dict\n@@ -472,15 +479,16 @@ def fields2parameters(fields, schema=None, spec=None, use_refs=True,\n                                 default_in=default_in,\n                                 openapi_major_version=openapi_major_version\n                                 )\n-        if param['in'] == 'body' and body_param is not None:\n-            body_param['schema']['properties'].update(param['schema']['properties'])\n-            required_fields = param['schema'].get('required', [])\n-            if required_fields:\n-                body_param['schema'].setdefault('required', []).extend(required_fields)\n-        else:\n-            if param['in'] == 'body':\n-                body_param = param\n-            parameters.append(param)\n+        if openapi_major_version == 2:\n+            if param['in'] == 'body' and body_param is not None:\n+                body_param['schema']['properties'].update(param['schema']['properties'])\n+                required_fields = param['schema'].get('required', [])\n+                if required_fields:\n+                    body_param['schema'].setdefault('required', []).extend(required_fields)\n+            else:\n+                if param['in'] == 'body':\n+                    body_param = param\n+                parameters.append(param)\n     return parameters\n \n \n@@ -544,6 +552,8 @@ def property2parameter(prop, name='body', required=False, multiple=False, locati\n             if multiple:\n                 ret['explode'] = True\n                 ret['style'] = 'form'\n+            if prop.get('description', None):\n+                ret['description'] = prop.pop('description')\n             ret['schema'] = prop\n     return ret\n \ndiff --git a/tests/schemas.py b/tests/schemas.py\nindex 7da13f62..c6ca3ff1 100644\n--- a/tests/schemas.py\n+++ b/tests/schemas.py\n@@ -2,8 +2,9 @@\n \n \n class PetSchema(Schema):\n-    id = fields.Int(dump_only=True)\n-    name = fields.Str()\n+    description = dict(id='Pet id', name='Pet name')\n+    id = fields.Int(dump_only=True, description=description['id'])\n+    name = fields.Str(description=description['name'], required=True, deprecated=False, allowEmptyValue=False)\n \n \n class SampleSchema(Schema):\ndiff --git a/tests/test_ext_marshmallow.py b/tests/test_ext_marshmallow.py\nindex fa35fab2..b38a7ff6 100644\n--- a/tests/test_ext_marshmallow.py\n+++ b/tests/test_ext_marshmallow.py\n@@ -6,7 +6,7 @@\n from marshmallow import Schema\n \n from apispec import APISpec\n-from apispec.ext.marshmallow import swagger\n+from apispec.ext.marshmallow import swagger, resolve_schema_dict\n from .schemas import PetSchema, AnalysisSchema, SampleSchema, RunSchema, \\\n     SelfReferencingSchema, OrderedSchema, PatternedObjectSchema, \\\n     DefaultCallableSchema, AnalysisWithListSchema\n@@ -369,27 +369,42 @@ def pet_view():\n                 parameters:\n                     - in: query\n                       schema: tests.schemas.PetSchema\n+                responses:\n+                    201:\n+                        description: successful operation\n             post:\n-                parameters:\n-                    - in: body\n-                      description: \"a pet schema\"\n-                      required: true\n-                      name: pet\n-                      schema: tests.schemas.PetSchema\n+                requestBody:\n+                    description: \"a pet schema\"\n+                    required: true\n+                    content:\n+                        application/json:\n+                            schema: tests.schemas.PetSchema\n+                responses:\n+                    201:\n+                        description: successful operation\n             \"\"\"\n             return '...'\n \n         spec_3.add_path(path='/pet', view=pet_view)\n         p = spec_3._paths['/pet']\n+\n         assert 'get' in p\n         get = p['get']\n         assert 'parameters' in get\n         assert get['parameters'] == swagger.schema2parameters(PetSchema, default_in='query', spec=spec_3)\n+        for parameter in get['parameters']:\n+            description = parameter.get('description', False)\n+            assert description\n+            name = parameter['name']\n+            assert description == PetSchema.description[name]\n+\n+        assert 'post' in p\n         post = p['post']\n-        assert 'parameters' in post\n-        post_parameters = swagger.schema2parameters(PetSchema, default_in='body', required=True,\n-                                                     name='pet', description='a pet schema', spec=spec_3)\n-        assert post['parameters'] == post_parameters\n+        assert 'requestBody' in post\n+        post_schema = resolve_schema_dict(spec_3, PetSchema)\n+        assert post['requestBody']['content']['application/json']['schema'] == post_schema\n+        assert post['requestBody']['description'] == 'a pet schema'\n+        assert post['requestBody']['required']\n \n     def test_schema_in_docstring_uses_ref_if_available(self, spec):\n         spec.definition('Pet', schema=PetSchema)\n",
+  "pre_commit": "1e1e93d4bf710cff346962ac4707382e10032974",
+  "post_commit": "1db29fe3a3840343a6031652cc8f30d93534bb13",
+  "merge_type": "squash"
+}

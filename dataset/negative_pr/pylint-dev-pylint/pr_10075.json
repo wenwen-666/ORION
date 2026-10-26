@@ -1,0 +1,60 @@
+{
+  "pr_number": 10075,
+  "title": "Fix `used-before-assignment` false negative for nonlocals",
+  "url": "https://github.com/pylint-dev/pylint/pull/10075",
+  "description": "<!--\r\nThank you for submitting a PR to pylint!\r\n\r\nTo ease the process of reviewing your PR, do make sure to complete the following boxes.\r\n\r\n- [ ] Document your change, if it is a non-trivial one.\r\n  - A maintainer might label the issue ``skip-news`` if the change does not need to be in the changelog.\r\n  - Otherwise, create a news fragment with ``towncrier create <IssueNumber>.<type>`` which will be\r\n    included in the changelog. ``<type>`` can be one of the types defined in `./towncrier.toml`.\r\n    If necessary you can write details or offer examples on how the new change is supposed to work.\r\n  - Generating the doc is done with ``tox -e docs``\r\n- [ ] Relate your change to an issue in the tracker if such an issue exists (Refs #1234, Closes #1234)\r\n- [ ] Write comprehensive commit messages and/or a good description of what the PR does.\r\n- [ ] Keep the change small, separate the consensual changes from the opinionated one.\r\n  Don't hesitate to open multiple PRs if the change requires it. If your review is so\r\n  big it requires to actually plan and allocate time to review, it's more likely\r\n  that it's going to go stale.\r\n- [ ] If you used multiple emails or multiple names when contributing, add your mails\r\n      and preferred name in ``script/.contributors_aliases.json``\r\n-->\r\n\r\n## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n|    | :sparkles: New feature |\r\n|    | :hammer: Refactoring   |\r\n|    | :scroll: Docs          |\r\n\r\n## Description\r\n\r\nA continuation of #10034. This PR addresses the case where a nonlocal declaration exists outside the immediate enclosing frame for both the usage and definition.\r\n\r\nChanges primarily extend the check for nonlocal declarations so that it stops once it reaches the first enclosing frame, ensuring that it does not go beyond the initial enclosing frame.\r\n\r\n<!-- If this PR references an issue without fixing it: -->\r\n\r\n<!-- If this PR fixes an issue, use the following to automatically close when we merge: -->\r\n\r\nCloses #10069\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "a18a27f8ca83545c548fb8e6eba2ab9f99401fe3",
+  "merged_at": "2024-11-09T16:13:12+00:00",
+  "created_at": "2024-11-09T07:58:32+00:00",
+  "closed_at": "2024-11-09T16:13:12+00:00",
+  "user": "zenlyj",
+  "additions": 51,
+  "deletions": 7,
+  "changed_files_count": 3,
+  "labels": [
+    "Unreleased",
+    "Skip news :mute:"
+  ],
+  "comments": [
+    {
+      "author": "zenlyj",
+      "body": "we should probably skip changelog for this one? as it is more of an internal update",
+      "created_at": "2024-11-09T08:13:37+00:00"
+    },
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/pylint-dev/pylint/pull/10075?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) Report\nAll modified and coverable lines are covered by tests :white_check_mark:\n> Project coverage is 95.80%. Comparing base [(`0687c85`)](https://app.codecov.io/gh/pylint-dev/pylint/commit/0687c851e14cf187bb213128c4f23feecd0105ac?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) to head [(`db56fc9`)](https://app.codecov.io/gh/pylint-dev/pylint/commit/db56fc9823a3cf1bd008a68588e31b709c4856c9?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev).\n> Report is 62 commits behind head on main.\n\n<details><summary>Additional details and impacted files</summary>\n\n\n[![Impacted file tree graph](https://app.codecov.io/gh/pylint-dev/pylint/pull/10075/graphs/tree.svg?width=650&height=150&src=pr&token=ZETEzayrfk&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev)](https://app.codecov.io/gh/pylint-dev/pylint/pull/10075?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev)\n\n```diff\n@@           Coverage Diff           @@\n##             main   #10075   +/-   ##\n=======================================\n  Coverage   95.80%   95.80%           \n=======================================\n  Files         174      174           \n  Lines       18959    18962    +3     \n=======================================\n+ Hits        18163    18166    +3     \n  Misses        796      796           \n```\n\n| [Files with missing lines](https://app.codecov.io/gh/pylint-dev/pylint/pull/10075?dropdown=coverage&src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) | Coverage Δ | |\n|---|---|---|\n| [pylint/checkers/variables.py](https://app.codecov.io/gh/pylint-dev/pylint/pull/10075?src=pr&el=tree&filepath=pylint%2Fcheckers%2Fvariables.py&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev#diff-cHlsaW50L2NoZWNrZXJzL3ZhcmlhYmxlcy5weQ==) | `97.25% <100.00%> (+<0.01%)` | :arrow_up: |\n\n</details>",
+      "created_at": "2024-11-09T08:15:18+00:00"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit f347162d3e7470baa9efb69a415434cca009026b*",
+      "created_at": "2024-11-09T08:41:27+00:00"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit db56fc9823a3cf1bd008a68588e31b709c4856c9*",
+      "created_at": "2024-11-09T09:24:40+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "zenlyj",
+      "body": "this test case documents a new (and deliberate) message introduced from #10034, we probably want to raise an error when the nonlocal statement is evaluated after the use and assignment",
+      "path": "tests/functional/u/used/used_before_assignment_nonlocal.py",
+      "line": null,
+      "created_at": "2024-11-09T08:02:00+00:00"
+    }
+  ],
+  "changed_files": [
+    "pylint/checkers/variables.py",
+    "tests/functional/u/used/used_before_assignment_nonlocal.py",
+    "tests/functional/u/used/used_before_assignment_nonlocal.txt"
+  ],
+  "diff": "diff --git a/pylint/checkers/variables.py b/pylint/checkers/variables.py\nindex e55968cf38..7a63798d91 100644\n--- a/pylint/checkers/variables.py\n+++ b/pylint/checkers/variables.py\n@@ -1968,7 +1968,7 @@ def _check_consumer(\n \n     def _report_unfound_name_definition(\n         self,\n-        node: nodes.NodeNG,\n+        node: nodes.Name,\n         current_consumer: NamesConsumer,\n     ) -> bool:\n         \"\"\"Reports used-before-assignment error when all name definition nodes\n@@ -1985,7 +1985,9 @@ def _report_unfound_name_definition(\n             return False\n         if self._is_variable_annotation_in_function(node):\n             return False\n-        if self._has_nonlocal_binding(node):\n+        if self._has_nonlocal_in_enclosing_frame(\n+            node, current_consumer.consumed_uncertain.get(node.name, [])\n+        ):\n             return False\n         if (\n             node.name in self._reported_type_checking_usage_scopes\n@@ -2375,11 +2377,21 @@ def _maybe_used_and_assigned_at_once(defstmt: _base_nodes.Statement) -> bool:\n     def _is_builtin(self, name: str) -> bool:\n         return name in self.linter.config.additional_builtins or utils.is_builtin(name)\n \n-    def _has_nonlocal_binding(self, node: nodes.Name) -> bool:\n-        \"\"\"Checks if name node has a nonlocal binding in any enclosing frame.\"\"\"\n+    def _has_nonlocal_in_enclosing_frame(\n+        self, node: nodes.Name, uncertain_definitions: list[nodes.NodeNG]\n+    ) -> bool:\n+        \"\"\"Check if there is a nonlocal declaration in the nearest frame that encloses\n+        both usage and definitions.\n+        \"\"\"\n+        defining_frames = {definition.frame() for definition in uncertain_definitions}\n         frame = node.frame()\n-        while frame:\n-            if _is_nonlocal_name(node, frame):\n+        is_enclosing_frame = False\n+        while frame and not is_enclosing_frame:\n+            is_enclosing_frame = all(\n+                (frame is defining_frame) or frame.parent_of(defining_frame)\n+                for defining_frame in defining_frames\n+            )\n+            if is_enclosing_frame and _is_nonlocal_name(node, frame):\n                 return True\n             frame = frame.parent.frame() if frame.parent else None\n         return False\ndiff --git a/tests/functional/u/used/used_before_assignment_nonlocal.py b/tests/functional/u/used/used_before_assignment_nonlocal.py\nindex 4dc8bbf943..a3d8ca6517 100644\n--- a/tests/functional/u/used/used_before_assignment_nonlocal.py\n+++ b/tests/functional/u/used/used_before_assignment_nonlocal.py\n@@ -121,7 +121,9 @@ def inner():\n \r\n \r\n def nonlocal_in_outer_frame_ok(callback, condition_a, condition_b):\r\n-    \"\"\"Nonlocal declared in outer frame, usage and definition in different frames.\"\"\"\r\n+    \"\"\"Nonlocal declared in outer frame, usage and definition in different frames,\r\n+    both enclosed in outer frame.\r\n+    \"\"\"\r\n     def outer():\r\n         nonlocal callback\r\n         if condition_a:\r\n@@ -133,3 +135,31 @@ def inner():\n                 def callback():\r\n                     pass\r\n     outer()\r\n+\r\n+\r\n+def nonlocal_in_distant_outer_frame_fail(callback, condition_a, condition_b):\r\n+    \"\"\"Nonlocal declared in outer frame, both usage and definition immediately enclosed\r\n+    in intermediate frame.\r\n+    \"\"\"\r\n+    def outer():\r\n+        nonlocal callback\r\n+        def intermediate():\r\n+            if condition_a:\r\n+                def inner():\r\n+                    callback()  # [possibly-used-before-assignment]\r\n+                inner()\r\n+            else:\r\n+                if condition_b:\r\n+                    def callback():\r\n+                        pass\r\n+        intermediate()\r\n+    outer()\r\n+\r\n+\r\n+def nonlocal_after_bad_usage_fail():\r\n+    \"\"\"Nonlocal declared after used-before-assignment.\"\"\"\r\n+    num = 1\r\n+    def inner():\r\n+        num = num + 1  # [used-before-assignment]\r\n+        nonlocal num\r\n+    inner()\r\ndiff --git a/tests/functional/u/used/used_before_assignment_nonlocal.txt b/tests/functional/u/used/used_before_assignment_nonlocal.txt\nindex 887985fda2..d48443f375 100644\n--- a/tests/functional/u/used/used_before_assignment_nonlocal.txt\n+++ b/tests/functional/u/used/used_before_assignment_nonlocal.txt\n@@ -7,3 +7,5 @@ used-before-assignment:39:18:39:28:test_fail5:Using variable 'undefined1' before\n used-before-assignment:90:10:90:18:type_annotation_never_gets_value_despite_nonlocal:Using variable 'some_num' before assignment:HIGH\n used-before-assignment:96:14:96:18:inner_function_lacks_access_to_outer_args.inner:Using variable 'args' before assignment:HIGH\n used-before-assignment:117:18:117:21:nonlocal_in_outer_frame_fail.outer.inner:Using variable 'num' before assignment:HIGH\n+possibly-used-before-assignment:149:20:149:28:nonlocal_in_distant_outer_frame_fail.outer.intermediate.inner:Possibly using variable 'callback' before assignment:CONTROL_FLOW\n+used-before-assignment:163:14:163:17:nonlocal_after_bad_usage_fail.inner:Using variable 'num' before assignment:HIGH\n",
+  "pre_commit": "0687c851e14cf187bb213128c4f23feecd0105ac",
+  "post_commit": "a18a27f8ca83545c548fb8e6eba2ab9f99401fe3",
+  "merge_type": "squash"
+}

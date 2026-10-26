@@ -1,0 +1,58 @@
+{
+  "pr_number": 1179,
+  "title": "Including code points in warning for missing glyphs in fonts",
+  "url": "https://github.com/py-pdf/fpdf2/pull/1179",
+  "description": "Implementing suggestion from https://github.com/py-pdf/fpdf2/issues/1171#issuecomment-2126845201.\r\nAlso slightly improving a docstring as mentioned there: https://github.com/py-pdf/fpdf2/issues/1156#issuecomment-2095444563\r\n\r\n**Checklist**:\r\n\r\n- [x] The GitHub pipeline is OK (green), meaning that both `pylint` (static code analyzer) and `black` (code formatter) are happy with the changes of this PR.\r\n\r\n- [x] A unit test is covering the code added / modified by this PR\r\n\r\n- [x] This PR is ready to be merged\r\n\r\n- [x] In case of a new feature, docstrings have been added, with also some documentation in the `docs/` folder\r\n\r\n- [NA] A mention of the change is present in `CHANGELOG.md`\r\n\r\nBy submitting this pull request, I confirm that my contribution is made under the terms of the [GNU LGPL 3.0 license](https://github.com/py-pdf/fpdf2/blob/master/LICENSE).\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "ca74146b0850e56a1f3be5067db0230b344f61bd",
+  "merged_at": "2024-05-24T08:40:16+00:00",
+  "created_at": "2024-05-23T20:14:39+00:00",
+  "closed_at": "2024-05-24T08:40:16+00:00",
+  "user": "Lucas-C",
+  "additions": 38,
+  "deletions": 5,
+  "changed_files_count": 4,
+  "labels": [],
+  "comments": [],
+  "review_comments": [
+    {
+      "author": "gmischler",
+      "body": "Imagine someone trying to render a lengthy chinese text with a latin font. That is going to be a multi-page log entry...\r\n\r\nMaybe we should limit the output to the first 10 missing glyphs, or so?",
+      "path": "fpdf/output.py",
+      "line": null,
+      "created_at": "2024-05-23T20:46:23+00:00"
+    },
+    {
+      "author": "gmischler",
+      "body": "Maybe put some kind of quotes around the literal character, to make it obvious when it is a non-printing or whitespace character?",
+      "path": "fpdf/output.py",
+      "line": null,
+      "created_at": "2024-05-23T20:47:41+00:00"
+    },
+    {
+      "author": "Lucas-C",
+      "body": "Excellent idea!\r\nI just implemented that.",
+      "path": "fpdf/output.py",
+      "line": null,
+      "created_at": "2024-05-24T08:23:56+00:00"
+    },
+    {
+      "author": "Lucas-C",
+      "body": "Excellent idea!\r\nI just implemented that.",
+      "path": "fpdf/output.py",
+      "line": null,
+      "created_at": "2024-05-24T08:24:03+00:00"
+    }
+  ],
+  "changed_files": [
+    "fpdf/fpdf.py",
+    "fpdf/output.py",
+    "test/fonts/test_add_font.py",
+    "test/fonts/test_font_fallback.py"
+  ],
+  "diff": "diff --git a/fpdf/fpdf.py b/fpdf/fpdf.py\nindex 2957a0aa3..be7a3fa54 100644\n--- a/fpdf/fpdf.py\n+++ b/fpdf/fpdf.py\n@@ -3992,6 +3992,9 @@ def image(\n                 while preserving its original aspect ratio. Defaults to False.\n                 Only meaningful if both `w` & `h` are provided.\n \n+        If `y` is provided, this method will not trigger any page break;\n+        otherwise, auto page break detection will be performed.\n+\n         Returns: an instance of a subclass of `ImageInfo`.\n         \"\"\"\n         if type:\ndiff --git a/fpdf/output.py b/fpdf/output.py\nindex 2a421a2c6..92ebc0d2d 100644\n--- a/fpdf/output.py\n+++ b/fpdf/output.py\n@@ -550,10 +550,14 @@ def _add_fonts(self):\n                 glyph_names = font.subset.get_all_glyph_names()\n \n                 if len(font.missing_glyphs) > 0:\n+                    msg = \", \".join(\n+                        f\"'{chr(x)}' ({chr(x).encode('unicode-escape').decode()})\"\n+                        for x in font.missing_glyphs[:10]\n+                    )\n+                    if len(font.missing_glyphs) > 10:\n+                        msg += f\", ... (and {len(font.missing_glyphs) - 10} others)\"\n                     LOGGER.warning(\n-                        \"Font %s is missing the following glyphs: %s\",\n-                        fontname,\n-                        \", \".join(chr(x) for x in font.missing_glyphs),\n+                        \"Font %s is missing the following glyphs: %s\", fontname, msg\n                     )\n \n                 # 2. make a subset\ndiff --git a/test/fonts/test_add_font.py b/test/fonts/test_add_font.py\nindex 1341aceb4..83ef9b914 100644\n--- a/test/fonts/test_add_font.py\n+++ b/test/fonts/test_add_font.py\n@@ -151,4 +151,27 @@ def test_font_missing_glyphs(caplog):\n     pdf.set_font(\"Roboto\")\n     pdf.cell(text=\"Test 𝕥𝕖𝕤𝕥 🆃🅴🆂🆃 😲\")\n     pdf.output(devnull)\n-    assert \"Roboto is missing the following glyphs: 𝕥, 𝕖, 𝕤, 🆃, 🅴, 🆂, 😲\" in caplog.text\n+    assert (\n+        \"Roboto is missing the following glyphs: \"\n+        \"'𝕥' (\\\\U0001d565), '𝕖' (\\\\U0001d556), '𝕤' (\\\\U0001d564), \"\n+        \"'🆃' (\\\\U0001f183), '🅴' (\\\\U0001f174), '🆂' (\\\\U0001f182), '😲' (\\\\U0001f632)\"\n+        in caplog.text\n+    )\n+\n+\n+def test_font_with_more_than_10_missing_glyphs(caplog):\n+    pdf = FPDF()\n+    pdf.add_page()\n+    pdf.add_font(family=\"Roboto\", fname=HERE / \"Roboto-Regular.ttf\")\n+    pdf.set_font(\"Roboto\")\n+    pdf.cell(\n+        text=\"Ogham space mark: '\\U00001680' - Ideographic space: '\\U00003000' - 𝒯ℰ𝒮𝒯 ⓉⒺⓈⓉ 𝕥𝕖𝕤𝕥 🆃🅴🆂🆃 🇹🇪🇸🇹\"\n+    )\n+    pdf.output(devnull)\n+    assert (\n+        \"Roboto is missing the following glyphs: \"\n+        \"' ' (\\\\u1680), '　' (\\\\u3000), \"\n+        \"'𝒯' (\\\\U0001d4af), 'ℰ' (\\\\u2130), '𝒮' (\\\\U0001d4ae), \"\n+        \"'Ⓣ' (\\\\u24c9), 'Ⓔ' (\\\\u24ba), 'Ⓢ' (\\\\u24c8), \"\n+        \"'𝕥' (\\\\U0001d565), '𝕖' (\\\\U0001d556), ... (and 7 others)\" in caplog.text\n+    )\ndiff --git a/test/fonts/test_font_fallback.py b/test/fonts/test_font_fallback.py\nindex 9fe539ffc..80679a357 100644\n--- a/test/fonts/test_font_fallback.py\n+++ b/test/fonts/test_font_fallback.py\n@@ -198,4 +198,7 @@ def test_glyph_not_on_any_font(caplog):\n     pdf.set_fallback_fonts([\"DejaVuSans\"])\n     pdf.cell(text=\"Test 𝕥𝕖𝕤𝕥 🆃🅴🆂🆃 😲\")\n     pdf.output(devnull)\n-    assert \"Roboto is missing the following glyphs: 🆃, 🅴, 🆂\" in caplog.text\n+    assert (\n+        \"Roboto is missing the following glyphs: \"\n+        \"'🆃' (\\\\U0001f183), '🅴' (\\\\U0001f174), '🆂' (\\\\U0001f182)\" in caplog.text\n+    )\n",
+  "pre_commit": "6017399b4d99c5d40f5ca8de9d9db4e7fc9a314e",
+  "post_commit": "ca74146b0850e56a1f3be5067db0230b344f61bd",
+  "merge_type": "squash"
+}

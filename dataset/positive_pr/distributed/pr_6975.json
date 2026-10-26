@@ -1,0 +1,184 @@
+{
+  "pr_number": 6975,
+  "title": "Limit incoming data transfers by amount of data",
+  "url": "https://github.com/dask/distributed/pull/6975",
+  "description": "Closes #6208 \r\n\r\n- [x] Tests added / passed\r\n- [x] Passes `pre-commit run --all-files`\r\n",
+  "comments": [
+    {
+      "author": "github-actions[bot]",
+      "body": "## Unit Test Results\n_See [test report](https://dask.github.io/distributed/test_report.html) for an extended history of previous test failures. This is useful for diagnosing flaky tests._\n\n       15 files  ±  0         15 suites  ±0   6h 30m 32s [:stopwatch:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"duration of all tests\") + 2m 52s\n  3 088 tests +  2    3 004 [:heavy_check_mark:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"passed tests\") +  4    84 [:zzz:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"skipped / disabled tests\")  - 1  0 [:x:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"failed tests\")  - 1 \n22 844 runs  +10  21 860 [:heavy_check_mark:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"passed tests\") +12  984 [:zzz:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"skipped / disabled tests\")  - 1  0 [:x:](https://github.com/EnricoMi/publish-unit-test-result-action/blob/v1.20/README.md#the-symbols \"failed tests\")  - 1 \n\nResults for commit 0a5517de. ± Comparison against base commit bfc5cfea.\n\n[test-results]:data:application/gzip;base64,H4sIAI4nEmMC/03MSQ7CMAyF4atUWbNwZsNlkNOkUkQHlCYrxN1JS6fl/9l6H9bFPszs0XB9a9hcYj7Ll0Q5TmNtIZUUleo1L3cJiHs+59K2q4E67RXf1fCUjmJfBQ4IKU1pk1TGZVYIVGrLfVZwNHDYf/aOx9dldu3rajsNQ8w1GJDW3PpABj0pLa121gER2OBVp7kDAxzQsO8PdwYhDRIBAAA=\n\n:recycle: This comment has been updated with latest results.",
+      "created_at": "2022-08-30T17:43:35Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Note: The current implementation may cross the limit in some instances, i.e., any time we are starting to gather from a new worker. I'm working on some cleaner logic that avoids crossing the limit unless we are not gathering _any_ data. This change may also be moved to a separate PR if we want to get this general change merged.",
+      "created_at": "2022-09-01T16:37:41Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "> Note: The current implementation may cross the limit in some instances, i.e., any time we are starting to gather from a new worker. I'm working on some cleaner logic that avoids crossing the limit unless we are not gathering any data. This change may also be moved to a separate PR if we want to get this general change merged.\r\n\r\nI adjusted the logic and now we should never exceed the limit unless for the first task to gather to ensure that we make progress.",
+      "created_at": "2022-09-01T18:00:57Z"
+    }
+  ],
+  "diff": "diff --git a/distributed/distributed-schema.yaml b/distributed/distributed-schema.yaml\nindex a110aaa8078..1e6daf54253 100644\n--- a/distributed/distributed-schema.yaml\n+++ b/distributed/distributed-schema.yaml\n@@ -508,13 +508,21 @@ properties:\n                       donate data and only nodes below 45% will receive them. This helps\n                       avoid data from bouncing around the cluster repeatedly.\n \n+              transfer:\n+                oneOf:\n+                  - {type: number, minimum: 0, maximum: 1}\n+                  - {enum: [false]}\n+                description: >-\n+                  When the total size of incoming data transfers gets above this amount,\n+                  we start throttling incoming data transfers\n+\n               target:\n                 oneOf:\n                   - {type: number, minimum: 0, maximum: 1}\n                   - {enum: [false]}\n                 description: >-\n                   When the process memory (as observed by the operating system) gets\n-                  above this amount we start spilling the dask keys holding the largest\n+                  above this amount, we start spilling the dask keys holding the oldest\n                   chunks of data to disk\n \n               spill:\n@@ -523,7 +531,9 @@ properties:\n                   - {enum: [false]}\n                 description: >-\n                   When the process memory (as observed by the operating system) gets\n-                  above this amount we spill all data to disk.\n+                  above this amount, we spill data to disk, starting from the dask keys\n+                  holding the oldest chunks of data, until the process memory falls below\n+                  the target threshold.\n \n               pause:\n                 oneOf:\n@@ -531,7 +541,8 @@ properties:\n                   - {enum: [false]}\n                 description: >-\n                   When the process memory (as observed by the operating system) gets\n-                  above this amount we no longer start new tasks on this worker.\n+                  above this amount, we no longer start new tasks or fetch new\n+                  data on the worker.\n \n               terminate:\n                 oneOf:\ndiff --git a/distributed/distributed.yaml b/distributed/distributed.yaml\nindex ca8292146f4..d3a93a7a651 100644\n--- a/distributed/distributed.yaml\n+++ b/distributed/distributed.yaml\n@@ -143,6 +143,9 @@ distributed:\n \n       # Fractions of worker process memory at which we take action to avoid memory\n       # blowup. Set any of the values to False to turn off the behavior entirely.\n+      # All fractions are relative to each worker's memory_limit.\n+      transfer: 0.10  # fractional size of incoming data transfers where we start \n+                       # throttling incoming data transfers\n       target: 0.60     # fraction of managed memory where we start spilling to disk\n       spill: 0.70      # fraction of process memory where we start spilling to disk\n       pause: 0.80      # fraction of process memory at which we pause worker threads\ndiff --git a/distributed/tests/test_worker_state_machine.py b/distributed/tests/test_worker_state_machine.py\nindex f2c8372c7f8..2f1861252c4 100644\n--- a/distributed/tests/test_worker_state_machine.py\n+++ b/distributed/tests/test_worker_state_machine.py\n@@ -3,6 +3,7 @@\n import asyncio\n import gc\n import pickle\n+from collections import defaultdict\n from collections.abc import Iterator\n \n import pytest\n@@ -1351,3 +1352,189 @@ def test_transfer_incoming_metrics(ws):\n     assert ws.transfer_incoming_bytes == 0\n     assert ws.transfer_incoming_count == 0\n     assert ws.transfer_incoming_count_total == 4\n+\n+\n+def test_throttling_does_not_affect_first_transfer(ws):\n+    ws.transfer_incoming_count_limit = 100\n+    ws.transfer_incoming_bytes_limit = 100\n+    ws.transfer_incoming_bytes_throttle_threshold = 1\n+    ws2 = \"127.0.0.1:2\"\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"c\",\n+            who_has={\"a\": [ws2]},\n+            nbytes={\"a\": 200},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    assert ws.tasks[\"a\"].state == \"flight\"\n+\n+\n+def test_throttle_incoming_transfers_on_count_limit(ws):\n+    ws.transfer_incoming_count_limit = 1\n+    ws.transfer_incoming_bytes_limit = 100_000\n+    ws.transfer_incoming_bytes_throttle_threshold = 1\n+    ws2 = \"127.0.0.1:2\"\n+    ws3 = \"127.0.0.1:3\"\n+    who_has = {\"a\": [ws2], \"b\": [ws3]}\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"c\",\n+            who_has=who_has,\n+            nbytes={\"a\": 100, \"b\": 100},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    tasks_by_state = defaultdict(list)\n+    for ts in ws.tasks.values():\n+        tasks_by_state[ts.state].append(ts)\n+    assert len(tasks_by_state[\"flight\"]) == 1\n+    assert len(tasks_by_state[\"fetch\"]) == 1\n+    assert ws.transfer_incoming_bytes == 100\n+\n+    in_flight_task = tasks_by_state[\"flight\"][0]\n+    ws.handle_stimulus(\n+        GatherDepSuccessEvent(\n+            worker=who_has[in_flight_task.key][0],\n+            data={in_flight_task.key: 123},\n+            total_nbytes=100,\n+            stimulus_id=\"s2\",\n+        )\n+    )\n+    assert tasks_by_state[\"flight\"][0].state == \"memory\"\n+    assert tasks_by_state[\"fetch\"][0].state == \"flight\"\n+    assert ws.transfer_incoming_bytes == 100\n+\n+\n+def test_throttling_incoming_transfer_on_transfer_bytes_same_worker(ws):\n+    ws.transfer_incoming_count_limit = 100\n+    ws.transfer_incoming_bytes_limit = 250\n+    ws.transfer_incoming_bytes_throttle_threshold = 1\n+    ws2 = \"127.0.0.1:2\"\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"d\",\n+            who_has={\"a\": [ws2], \"b\": [ws2], \"c\": [ws2]},\n+            nbytes={\"a\": 100, \"b\": 100, \"c\": 100},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    tasks_by_state = defaultdict(list)\n+    for ts in ws.tasks.values():\n+        tasks_by_state[ts.state].append(ts)\n+    assert ws.transfer_incoming_bytes == 200\n+    assert len(tasks_by_state[\"flight\"]) == 2\n+    assert len(tasks_by_state[\"fetch\"]) == 1\n+\n+    ws.handle_stimulus(\n+        GatherDepSuccessEvent(\n+            worker=ws2,\n+            data={ts.key: 123 for ts in tasks_by_state[\"flight\"]},\n+            total_nbytes=200,\n+            stimulus_id=\"s2\",\n+        )\n+    )\n+    assert all(ts.state == \"memory\" for ts in tasks_by_state[\"flight\"])\n+    assert all(ts.state == \"flight\" for ts in tasks_by_state[\"fetch\"])\n+\n+\n+def test_throttling_incoming_transfer_on_transfer_bytes_different_workers(ws):\n+    ws.transfer_incoming_count_limit = 100\n+    ws.transfer_incoming_bytes_limit = 150\n+    ws.transfer_incoming_bytes_throttle_threshold = 1\n+    ws2 = \"127.0.0.1:2\"\n+    ws3 = \"127.0.0.1:3\"\n+    who_has = {\"a\": [ws2], \"b\": [ws3]}\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"c\",\n+            who_has=who_has,\n+            nbytes={\"a\": 100, \"b\": 100},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    tasks_by_state = defaultdict(list)\n+    for ts in ws.tasks.values():\n+        tasks_by_state[ts.state].append(ts)\n+    assert ws.transfer_incoming_bytes == 100\n+    assert len(tasks_by_state[\"flight\"]) == 1\n+    assert len(tasks_by_state[\"fetch\"]) == 1\n+\n+    in_flight_task = tasks_by_state[\"flight\"][0]\n+    ws.handle_stimulus(\n+        GatherDepSuccessEvent(\n+            worker=who_has[in_flight_task.key][0],\n+            data={in_flight_task.key: 123},\n+            total_nbytes=100,\n+            stimulus_id=\"s2\",\n+        )\n+    )\n+    assert tasks_by_state[\"flight\"][0].state == \"memory\"\n+    assert tasks_by_state[\"fetch\"][0].state == \"flight\"\n+\n+\n+def test_do_not_throttle_connections_while_below_threshold(ws):\n+    ws.transfer_incoming_count_limit = 1\n+    ws.transfer_incoming_bytes_limit = 200\n+    ws.transfer_incoming_bytes_throttle_threshold = 50\n+    ws2 = \"127.0.0.1:2\"\n+    ws3 = \"127.0.0.1:3\"\n+    ws4 = \"127.0.0.1:4\"\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"b\",\n+            who_has={\"a\": [ws2]},\n+            nbytes={\"a\": 1},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    assert ws.tasks[\"a\"].state == \"flight\"\n+\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"d\",\n+            who_has={\"c\": [ws3]},\n+            nbytes={\"c\": 1},\n+            stimulus_id=\"s2\",\n+        )\n+    )\n+    assert ws.tasks[\"c\"].state == \"flight\"\n+\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"f\",\n+            who_has={\"e\": [ws4]},\n+            nbytes={\"e\": 100},\n+            stimulus_id=\"s3\",\n+        )\n+    )\n+    assert ws.tasks[\"e\"].state == \"flight\"\n+    assert ws.transfer_incoming_bytes == 102\n+\n+\n+def test_throttle_on_transfer_bytes_regardless_of_threshold(ws):\n+    ws.transfer_incoming_count_limit = 1\n+    ws.transfer_incoming_bytes_limit = 100\n+    ws.transfer_incoming_bytes_throttle_threshold = 50\n+    ws2 = \"127.0.0.1:2\"\n+    ws3 = \"127.0.0.1:3\"\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"b\",\n+            who_has={\"a\": [ws2]},\n+            nbytes={\"a\": 1},\n+            stimulus_id=\"s1\",\n+        )\n+    )\n+    assert ws.tasks[\"a\"].state == \"flight\"\n+\n+    ws.handle_stimulus(\n+        ComputeTaskEvent.dummy(\n+            \"d\",\n+            who_has={\"c\": [ws3]},\n+            nbytes={\"c\": 100},\n+            stimulus_id=\"s2\",\n+        )\n+    )\n+    assert ws.tasks[\"c\"].state == \"fetch\"\n+    assert ws.transfer_incoming_bytes == 1\ndiff --git a/distributed/worker.py b/distributed/worker.py\nindex 3d4b98da019..9764de061bf 100644\n--- a/distributed/worker.py\n+++ b/distributed/worker.py\n@@ -745,6 +745,18 @@ def __init__(\n             memory_spill_fraction=memory_spill_fraction,\n             memory_pause_fraction=memory_pause_fraction,\n         )\n+\n+        transfer_incoming_bytes_limit = None\n+        transfer_incoming_bytes_fraction = dask.config.get(\n+            \"distributed.worker.memory.transfer\"\n+        )\n+        if (\n+            self.memory_manager.memory_limit is not None\n+            and transfer_incoming_bytes_fraction is not False\n+        ):\n+            transfer_incoming_bytes_limit = int(\n+                self.memory_manager.memory_limit * transfer_incoming_bytes_fraction\n+            )\n         state = WorkerState(\n             nthreads=nthreads,\n             data=self.memory_manager.data,\n@@ -754,6 +766,7 @@ def __init__(\n             transfer_incoming_count_limit=transfer_incoming_count_limit,\n             validate=validate,\n             transition_counter_max=transition_counter_max,\n+            transfer_incoming_bytes_limit=transfer_incoming_bytes_limit,\n         )\n         BaseWorker.__init__(self, state)\n \ndiff --git a/distributed/worker_state_machine.py b/distributed/worker_state_machine.py\nindex fec249c5abb..8080c03b626 100644\n--- a/distributed/worker_state_machine.py\n+++ b/distributed/worker_state_machine.py\n@@ -1232,6 +1232,9 @@ class WorkerState:\n     #: In production, it should always be set to False.\n     transition_counter_max: int | Literal[False]\n \n+    #: Limit of bytes for incoming data transfers; this is used for throttling.\n+    transfer_incoming_bytes_limit: int | None\n+\n     #: Statically-seeded random state, used to guarantee determinism whenever a\n     #: pseudo-random choice is required\n     rng: random.Random\n@@ -1250,6 +1253,7 @@ def __init__(\n         transfer_incoming_count_limit: int = 9999,\n         validate: bool = True,\n         transition_counter_max: int | Literal[False] = False,\n+        transfer_incoming_bytes_limit: int | None = None,\n     ):\n         self.nthreads = nthreads\n \n@@ -1293,6 +1297,7 @@ def __init__(\n         self.stimulus_log = deque(maxlen=10_000)\n         self.transition_counter = 0\n         self.transition_counter_max = transition_counter_max\n+        self.transfer_incoming_bytes_limit = transfer_incoming_bytes_limit\n         self.actors = {}\n         self.rng = random.Random(0)\n \n@@ -1468,17 +1473,36 @@ def _purge_state(self, ts: TaskState) -> None:\n         self.long_running.discard(ts)\n         self.in_flight_tasks.discard(ts)\n \n+    def _should_throttle_incoming_transfers(self) -> bool:\n+        \"\"\"Decides whether the WorkerState should throttle data transfers from other workers.\n+\n+        Returns\n+        -------\n+        * True if the number of incoming data transfers reached its limit\n+        and the size of incoming data transfers reached the minimum threshold for throttling\n+        * True if the size of incoming data transfers reached its limit\n+        * False otherwise\n+        \"\"\"\n+        reached_count_limit = (\n+            self.transfer_incoming_count >= self.transfer_incoming_count_limit\n+        )\n+        reached_throttle_threshold = (\n+            self.transfer_incoming_bytes\n+            >= self.transfer_incoming_bytes_throttle_threshold\n+        )\n+        reached_bytes_limit = (\n+            self.transfer_incoming_bytes_limit is not None\n+            and self.transfer_incoming_bytes >= self.transfer_incoming_bytes_limit\n+        )\n+        return reached_count_limit and reached_throttle_threshold or reached_bytes_limit\n+\n     def _ensure_communicating(self, *, stimulus_id: str) -> RecsInstrs:\n         \"\"\"Transition tasks from fetch to flight, until there are no more tasks in fetch\n         state or a threshold has been reached.\n         \"\"\"\n         if not self.running or not self.data_needed:\n             return {}, []\n-        if (\n-            self.transfer_incoming_count >= self.transfer_incoming_count_limit\n-            and self.transfer_incoming_bytes\n-            >= self.transfer_incoming_bytes_throttle_threshold\n-        ):\n+        if self._should_throttle_incoming_transfers():\n             return {}, []\n \n         recommendations: Recs = {}\n@@ -1489,7 +1513,12 @@ def _ensure_communicating(self, *, stimulus_id: str) -> RecsInstrs:\n             to_gather_tasks, total_nbytes = self._select_keys_for_gather(\n                 available_tasks\n             )\n-            assert to_gather_tasks\n+            # We always load at least one task\n+            assert to_gather_tasks or self.transfer_incoming_bytes\n+            # ...but that task might be selected in the previous iteration of the loop\n+            if not to_gather_tasks:\n+                break\n+\n             to_gather_keys = {ts.key for ts in to_gather_tasks}\n \n             logger.debug(\n@@ -1531,11 +1560,7 @@ def _ensure_communicating(self, *, stimulus_id: str) -> RecsInstrs:\n             self.in_flight_workers[worker] = to_gather_keys\n             self.transfer_incoming_count_total += 1\n             self.transfer_incoming_bytes += total_nbytes\n-            if (\n-                self.transfer_incoming_count >= self.transfer_incoming_count_limit\n-                and self.transfer_incoming_bytes\n-                >= self.transfer_incoming_bytes_throttle_threshold\n-            ):\n+            if self._should_throttle_incoming_transfers():\n                 break\n \n         return recommendations, instructions\n@@ -1610,18 +1635,28 @@ def _select_keys_for_gather(\n         \"\"\"Helper of _ensure_communicating.\n \n         Fetch all tasks that are replicated on the target worker within a single\n-        message, up to transfer_message_target_bytes.\n+        message, up to transfer_message_target_bytes or until we reach the limit\n+        for the size of incoming data transfers.\n         \"\"\"\n         to_gather: list[TaskState] = []\n         total_nbytes = 0\n \n+        if self.transfer_incoming_bytes_limit is not None:\n+            bytes_left_to_fetch = min(\n+                self.transfer_incoming_bytes_limit - self.transfer_incoming_bytes,\n+                self.transfer_message_target_bytes,\n+            )\n+        else:\n+            bytes_left_to_fetch = self.transfer_message_target_bytes\n+\n         while available:\n             ts = available.peek()\n-            # The top-priority task is fetched regardless of its size\n             if (\n-                to_gather\n-                and total_nbytes + ts.get_nbytes() > self.transfer_message_target_bytes\n-            ):\n+                # When there is no other traffic, the top-priority task is fetched\n+                # regardless of its size to ensure progress\n+                self.transfer_incoming_bytes\n+                or to_gather\n+            ) and total_nbytes + ts.get_nbytes() > bytes_left_to_fetch:\n                 break\n             for worker in ts.who_has:\n                 # This also effectively pops from available\n",
+  "changed_files": [
+    "distributed/distributed-schema.yaml",
+    "distributed/distributed.yaml",
+    "distributed/tests/test_worker_state_machine.py",
+    "distributed/worker.py",
+    "distributed/worker_state_machine.py"
+  ],
+  "changed_functions": [
+    "test_throttling_does_not_affect_first_transfer",
+    "test_throttle_incoming_transfers_on_count_limit",
+    "test_throttling_incoming_transfer_on_transfer_bytes_same_worker",
+    "test_throttling_incoming_transfer_on_transfer_bytes_different_workers",
+    "test_do_not_throttle_connections_while_below_threshold",
+    "test_throttle_on_transfer_bytes_regardless_of_threshold",
+    "_should_throttle_incoming_transfers",
+    "_ensure_communicating"
+  ],
+  "pre_commit": "acf607832c7191cc496a9b4a81760170de85062c",
+  "post_commit": "6da758b90ec8949590f04220fbc87aa5f09c9122",
+  "merged_at": "2022-09-02T16:24:01Z",
+  "review_comments": [
+    {
+      "author": "fjetter",
+      "body": "I recommend to write a short doc string describing in words what the conditions below are expressing.\r\nParticularly with the long names and weird formatting, readability is not great (not your fault)",
+      "path": "distributed/worker_state_machine.py",
+      "line": 1476,
+      "created_at": "2022-08-31T09:21:46Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "1. Why did we never see this?\r\n2. Shouldn't this be a `continue`?",
+      "path": "distributed/worker_state_machine.py",
+      "line": 1520,
+      "created_at": "2022-09-02T09:30:27Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "This is only deterministic because there is some inherent sorting to the python collections (e.g. dicts are insertion sorted). From first principle, the worker doesn't prefer either of these tasks over the other. I think we should write the test agnostic to this. Or asked differently, would you have known which is scheduled and which is queued before executing the test once?\nhow about\n\n```python\n    tasks_by_state = defaultdict(list)\n    for ts in ws.tasks.values():\n        tasks_by_state[ts.state].append(ts)\n    assert len(tasks_by_state[\"flight\"]) == 2\n    assert len(tasks_by_state[\"fetch\"]) == 1\n\n    # NOTE: We do not compare instructions since their sorting is random\n    ws.handle_stimulus(\n        GatherDepSuccessEvent(\n            worker=ws2, data={ts.key: 123 for ts in tasks_by_state['flight']}, total_nbytes=200, stimulus_id=\"s2\"\n        )\n    )\n    assert all(ts.state == \"memory\" for ts in tasks_by_state['flight'])\n    assert all(ts.state == \"flight\" for ts in tasks_by_state['fetch'])\n```",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T09:48:58Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "How about\r\n\r\n```python\r\n        if self.transfer_incoming_bytes_limit:\r\n            bytes_left_to_fetch = min(\r\n                self.transfer_incoming_bytes_limit - self.transfer_incoming_bytes,\r\n                self.transfer_message_target_bytes,\r\n            )\r\n        else:\r\n            bytes_left_to_fetch = self.transfer_message_target_bytes\r\n\r\n        while available:\r\n            ts = available.peek()\r\n            if (\r\n                # If there is no other traffic, the top priority task may be\r\n                # fetched regardless of its size\r\n                to_gather or self.transfer_incoming_bytes\r\n            ) and total_nbytes + ts.get_nbytes() > bytes_left_to_fetch:\r\n                break\r\n            for worker in ts.who_has:\r\n                # This also effectively pops from available\r\n                self.data_needed[worker].remove(ts)\r\n            to_gather.append(ts)\r\n            total_nbytes += ts.get_nbytes()\r\n\r\n        return to_gather, total_nbytes\r\n```\r\n\r\nAt least subjectively this seems simpler.",
+      "path": "distributed/worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:01:13Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "similar concern about determinism as above",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:02:11Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "I think you should either assert the state or the instruction. Both is redundant.",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:02:48Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "according to the `distributed-schema.yaml` `distributed.worker.memory.transfer` is allowed to be `False`. This would raise",
+      "path": "distributed/worker.py",
+      "line": null,
+      "created_at": "2022-09-02T10:03:39Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "> Why did we never see this?\n\nSo far, we only limited based on the # of connections. If you reached this point, you were guaranteed to have an additional connection available and we would always select as many tasks as possible to fill the message up to the limit. Now, we also limit based on the size of incoming data transfers. Thus, we might have a connection available, but the first task we'd try to gather for said connection would push us over the limit and `_select_keys_for_gather` returns an empty result.\n\n> Shouldn't this be a continue?\n\nNo, at this point have reached the limit of what we should gather and break out of this loop.",
+      "path": "distributed/worker_state_machine.py",
+      "line": 1520,
+      "created_at": "2022-09-02T10:15:23Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Good catch, thanks!",
+      "path": "distributed/worker.py",
+      "line": null,
+      "created_at": "2022-09-02T10:25:03Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Agreed, this looks simpler.",
+      "path": "distributed/worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:53:11Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Adjusted",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:53:30Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Removed the instruction checks",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:53:42Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "Fair point, this makes an effort to hide unnecessary details and limit the assertions to what's important.",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T10:54:43Z"
+    },
+    {
+      "author": "hendrikmakait",
+      "body": "> No, at this point have reached the limit of what we should gather and break out of this loop.\r\n\r\nWe _could_ `continue` and loop over all remaining workers in the hopes of finding another top-priority task that still fitis within the limit, but assuming roughly equal-sized tasks, the chances are slim that we will find one. We'd leave a bit of possible data size on the table, but my guess is that this doesn't really matter given the fact that we pulled the default out of thin air. There's much more to gain from optimizing the default than from tweaking the algorithm. So I'd rather stick with the early stopping variant and avoid looping over all remaining workers.",
+      "path": "distributed/worker_state_machine.py",
+      "line": 1520,
+      "created_at": "2022-09-02T11:24:37Z"
+    },
+    {
+      "author": "fjetter",
+      "body": "Similar concern about determinism\r\n```suggestion\r\n    tasks_by_state = defaultdict(list)\r\n    for ts in ws.tasks.values():\r\n        tasks_by_state[ts.state].append(ts)\r\n    assert len(tasks_by_state[\"flight\"]) == 1\r\n    assert len(tasks_by_state[\"fetch\"]) == 1\r\n    assert ws.transfer_incoming_bytes == 100\r\n\r\n    ws.handle_stimulus(\r\n        GatherDepSuccessEvent(\r\n            worker=ws2,\r\n            data={tasks_by_state[\"flight\"][0]: 123},\r\n            total_nbytes=100,\r\n            stimulus_id=\"s2\",\r\n        )\r\n    )\r\n    assert ws.tasks[tasks_by_state[\"fetch\"][0]].state == \"flight\"\r\n```",
+      "path": "distributed/tests/test_worker_state_machine.py",
+      "line": null,
+      "created_at": "2022-09-02T13:17:04Z"
+    },
+    {
+      "author": "crusaderky",
+      "body": "```suggestion\r\n                  above this amount, we start spilling the dask keys holding the oldest\r\n                  chunks of data to disk\r\n```",
+      "path": "distributed/distributed-schema.yaml",
+      "line": null,
+      "created_at": "2022-09-02T13:44:37Z"
+    },
+    {
+      "author": "crusaderky",
+      "body": "```suggestion\r\n                  above this amount, we spill data to disk, starting from the dask keys\r\n                  holding the oldest chunks of data, until the process memory falls below\r\n                  the target threshold.\r\n```",
+      "path": "distributed/distributed-schema.yaml",
+      "line": null,
+      "created_at": "2022-09-02T13:45:26Z"
+    },
+    {
+      "author": "crusaderky",
+      "body": "```suggestion\r\n                  above this amount, we no longer start new tasks or fetch new\r\n                  data on the worker.\r\n```",
+      "path": "distributed/distributed-schema.yaml",
+      "line": null,
+      "created_at": "2022-09-02T13:46:15Z"
+    },
+    {
+      "author": "crusaderky",
+      "body": "```suggestion\r\n      # blowup. Set any of the values to False to turn off the behavior entirely.\r\n      # All fractions are relative to each worker's memory_limit.\r\n```",
+      "path": "distributed/distributed.yaml",
+      "line": 145,
+      "created_at": "2022-09-02T13:47:16Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 268,
+  "deletions": 19,
+  "changed_files_count": 5
+}

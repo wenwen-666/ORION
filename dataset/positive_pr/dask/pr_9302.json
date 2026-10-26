@@ -1,0 +1,201 @@
+{
+  "pr_number": 9302,
+  "title": "Shuffle-based groupby aggregation for high-cardinality groups",
+  "url": "https://github.com/dask/dask/pull/9302",
+  "description": "**Note**: Related to performance challenges described in #9292\r\n\r\nDask uses apply-concat-apply (ACA) for most DataFrame reductions and groupby aggregations.  This algorithm is typically effective when the final output fits comfortably within a single DataFrame/Series partition. However, performance often degrades quickly as the size of the output grows (and `split_out` is set to something greater than ~4-8). We can refer to the case where `split_out` **must** be `>1` as a \"high-cardinality\" groupby aggregation.\r\n\r\nThe high-cardinality case is currently handled by splitting the intial blockwise groupby aggregation by hash. A distinct ACA tree reduction is then performed for each hash-based \"split\".  For example, the groupby-aggregation graph for a 6-partition DataFrame with `split_out=2` will look something like this:\r\n\r\n\r\n![aca-split-out](https://user-images.githubusercontent.com/20461013/180828009-1dae50e2-78c1-4719-870a-649e3ba11c6a.jpg)\r\n\r\nThis PR improves the performance of high-cardinality groupby aggregations by leveraging the fact that a shuffle operation will typically require fewer overal tasks than a duplicated tree reduction once `split_out` becomes large enough. That is, for cases where a rough task-count estimate begins to favor a shuffle, the task graph will now look something like this:\r\n\r\n![shuffle-aca](https://user-images.githubusercontent.com/20461013/180898362-a3870dd0-26f4-475e-b350-dfa5b3fd95b3.jpg)\r\n\r\n```python\r\nimport time\r\nimport dask.dataframe as dd\r\nfrom dask.datasets import timeseries\r\n\r\nfrom dask.distributed import LocalCluster, Client, wait\r\n\r\ncluster = LocalCluster(local_directory=\"/raid/my-dask-space/\")\r\nclient = Client(cluster)\r\n\r\nddf = timeseries(\r\n    id_lam=int(1e18),\r\n    start='2000-01-01',\r\n    end='2017-01-01',\r\n    freq='1s',\r\n    seed=15,\r\n)\r\nagg = ddf.groupby(\r\n    \"id\",\r\n    dropna=False,\r\n).agg(\r\n    {\"x\": \"sum\", \"y\": \"mean\"},\r\n    split_every=16,  # Note that the default split_every is a bit small when split_out>1\r\n    split_out=8, \r\n)\r\nresult = agg.persist()\r\n\r\nt0 = time.time()\r\nwait(result)\r\ntotal_time = time.time() - t0\r\nprint(total_time, len(result))\r\n```\r\n\r\n**This PR**: `42.99, 53101633` (`24354` tasks)\r\n**Main**: `71.16, 53101633` (`53016` tasks)\r\n\r\n\r\n(Note that this algorithm makes it possible to sort the global order of groups, while the current approach does not. However, sorting isn't targetted in this PR.)\r\n\r\n**Another Alternative**\r\n\r\nAlthough it is clear that the shuffle-based groupby is superior to \"split-then-tree reduce\" for large values of `split_out`, it **should** require even fewer tasks to perform a single-split tree reduction down to ~`split_out` partitions, and **then** perform the shuffle:\r\n\r\n![aca-then-split](https://user-images.githubusercontent.com/20461013/180834392-36dd087f-481c-4a4f-8e59-3fcc4d834a3d.jpg)\r\n\r\nI have been exploring this algorithm in a seperate branch, but have not had any luck outperforming the shuflle-based groupby yet.",
+  "comments": [
+    {
+      "author": "rjzamora",
+      "body": "Another *fun* note: The shuffle-based groupby algorithm can use the `\"p2p\"` option. For example:\r\n\r\n```python\r\nddf.groupby(\r\n    \"id\", dropna=False\r\n).agg(\r\n    {\"x\": \"sum\", \"y\": \"mean\"},  split_every=16, split_out=8,  shuffle=\"p2p\"\r\n)\r\n```",
+      "created_at": "2022-07-25T18:33:16Z"
+    },
+    {
+      "author": "gjoseph92",
+      "body": "This is awesome @rjzamora, great thinking!\r\n\r\nThis seems vaguely related to https://github.com/dask/dask/issues/8361.\r\n\r\nIt also makes me wonder if we could simplify/do away with the `split_out` (and maybe `split_every`?) parameters with this approach, since it seems like shuffling is almost always going to be better when `split_out > 1`, so perhaps we don't even need to support multi-output tree-reduction cases anymore. Maybe we could just have a flag like `high_cardinality: bool = False` or `single_partition_output: bool = True`, to switch between shuffle-based and tree-agg based. That would be so much easier to document and explain to users.",
+      "created_at": "2022-07-25T22:54:12Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": ">This seems vaguely related to https://github.com/dask/dask/issues/8361.\r\n\r\nGood call - Thanks for linking that!\r\n\r\n>It also makes me wonder if we could simplify/do away with the split_out (and maybe split_every?) parameters with this approach, since it seems like shuffling is almost always going to be better when split_out > 1, so perhaps we don't even need to support multi-output tree-reduction cases anymore. Maybe we could just have a flag like high_cardinality: bool = False or single_partition_output: bool = True, to switch between shuffle-based and tree-agg based. That would be so much easier to document and explain to users.\r\n\r\nRight - I was thinking that something like an estimated (or optionally inferred from the first partition) ‘cardinality_ratio’ could be used to set reasonable defaults for everything. A ratio of unique records to all records gives you a rough idea of how much your data should “compress” after the global aggregation.",
+      "created_at": "2022-07-25T23:12:29Z"
+    },
+    {
+      "author": "mrocklin",
+      "body": "Cool.  Do you have a sense for how this performs in a few relevant scenarios?  I'd be curious about high cardinality / low cardinality and larger than memory / not larger than memory.  ",
+      "created_at": "2022-07-26T00:45:26Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": ">Cool. Do you have a sense for how this performs in a few relevant scenarios? I'd be curious about high cardinality / low cardinality and larger than memory / not larger than memory.\r\n\r\nGood question. This is not a silver bullet by any means, and is primarily a performance booster for the “high-cardinality & *smaller* than memory” case. It may also be effective for “high-cardinality & *larger* than memory” in some cases, but I would expect heavy spilling to be an issue for task-based shuffling. I suppose the “p2p” option could make things “work” in this case. However, I was hoping that something like the “ACA-then-shuffle” alternative mentioned above would be a better option for **both** smaller- and larger-than memory.\r\n\r\nFor any case where cardinality is low enough that you don’t **need** to use `split_out>1`, the existing ACA algorithm is often better (even if you do use something like `split_out=2-4`).\r\n\r\nOverall, it seems that the shuffle-based groupby probably has a place, but this PR will need to remain WIP until we can figure out exactly what that place is.",
+      "created_at": "2022-07-26T12:46:52Z"
+    },
+    {
+      "author": "mrocklin",
+      "body": "I don't mean to slow down progress here.  I think that we should be full\nsteam ahead on this.  Mostly I would like for changes like this to come\nwith some amount of experimentation to see where they do and don't work to\ninform the discussion.\n\nThis doesn't have to be perfect to be useful.  Please don't take my\ncomments as negative.\n\nOn Tue, Jul 26, 2022 at 7:47 AM Richard (Rick) Zamora <\n***@***.***> wrote:\n\n> Cool. Do you have a sense for how this performs in a few relevant\n> scenarios? I'd be curious about high cardinality / low cardinality and\n> larger than memory / not larger than memory.\n>\n> Good question. This is not a silver bullet by any means, and is primarily\n> a performance booster for the “high-cardinality & *smaller* than memory”\n> case. It may also be effective for “high-cardinality & *larger* than\n> memory” in some cases, but I would expect heavy spilling to be an issue for\n> task-based shuffling. I suppose the “p2p” option could make things “work”\n> in this case. However, I was hoping that something like the\n> “ACA-then-shuffle” alternative mentioned above would be a better option for\n> *both* smaller- and larger-than memory.\n>\n> For any case where cardinality is low enough that you don’t *need* to use\n> split_out>1, the existing ACA algorithm is often better (even if you do\n> use something like split_out=2-4).\n>\n> Overall, it seems that the shuffle-based groupby probably has a place, but\n> this PR will need to remain WIP until we can figure out exactly what that\n> place is.\n>\n> —\n> Reply to this email directly, view it on GitHub\n> <https://github.com/dask/dask/pull/9302#issuecomment-1195436657>, or\n> unsubscribe\n> <https://github.com/notifications/unsubscribe-auth/AACKZTBCJRMU4MCBWXMDU73VV7M4PANCNFSM54TA7O2A>\n> .\n> You are receiving this because you commented.Message ID:\n> ***@***.***>\n>\n",
+      "created_at": "2022-07-26T13:03:05Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": ">This doesn't have to be perfect to be useful.  Please don't take my\r\ncomments as negative.\r\n\r\nNo worries at all - I'm pretty sure we are on the same page here :)",
+      "created_at": "2022-07-26T14:19:24Z"
+    },
+    {
+      "author": "mrocklin",
+      "body": "This maybe stalled?  Anything we can do to unstall it?",
+      "created_at": "2022-08-09T14:58:35Z"
+    },
+    {
+      "author": "jrbourbeau",
+      "body": "@ian-r-rose's mentioned he's going to take a detailed look at this PR (also just FYI @rjzamora is OOO this week)",
+      "created_at": "2022-08-09T15:06:03Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": ">This maybe stalled? Anything we can do to unstall it?\r\n\r\nApologies for not leaving a note in this PR - I was distracted by other groupby improvements, and then took some time off.\r\n\r\nI do think it is worthwhile (and easy) to add the shuffle approach to groupby aggregations. However, I would like to roll back any changes in this PR that **use** the shuffle algorithm automatically. My reasoning is that the shuffle algorithm is typically slower for larger-than-memory data, and so the user should probably need to opt in explicitly for now.\r\n\r\n**Side Note**: I intend to submit something separate for larger-than-memory groupby aggregations that essentially closes the gap between the algorithms used by dask-dataframe and dask-cudf. It seems that the dask-cudf algorithm is typically more efficient for large-scale/large-memory data (but slower in most other cases).  I am not completely sure of the reason for this yet, but I do know that one \"low-hanging fruit\" is that Dask will currently use `sort=True` (the pandas default) during intermediate aggregations, even if the global setting is `sort=False`.",
+      "created_at": "2022-08-15T16:12:51Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "I did some experiments on this PR yesterday to try to draw out a bit more when using a shuffle-based approach is a good idea (warning: highly-faceted charts incoming to capture multiple dimensions). I ran a number of groupby-aggs on a ~60GiB timeseries-based dataset where I dialed the number of unique groups up and down to investigate the effects of cardinality on the outputs.\r\n\r\nRough code, based on @rjzamora's above :\r\n\r\n```python\r\n@pytest.mark.parametrize(\"shuffle\", [False, \"tasks\", \"p2p\"])\r\n@pytest.mark.parametrize(\"n_groups\", [1000, 10_000, 100_000, 1_000_000, 10_000_000])\r\n@pytest.mark.parametrize(\"split_out\", [1, 4, 8])\r\ndef test_groupby(groupby_client, split_out, n_groups, shuffle):\r\n    ddf = timeseries_of_size(\r\n        cluster_memory(groupby_client) // 4,\r\n        id_maximum=n_groups,\r\n    )\r\n    print(len(ddf))\r\n    agg = ddf.groupby(\"id\").agg(\r\n        {\"x\": \"sum\", \"y\": \"mean\"},\r\n        split_every=16,  # Note that the default split_every is a bit small when split_out>1\r\n        split_out=split_out,\r\n        shuffle=shuffle,\r\n    )\r\n    wait(agg, groupby_client, 180)\r\n```\r\nConstants:\r\n\r\n* Overall dataset size (~60 GiB, ~650 million rows)\r\n* Overall dataset structure\r\n* Aggregation (sum/mean on some non-grouped-by columns)\r\n \r\nVariables:\r\n* Shuffle method (False, \"tasks\", \"p2p\")\r\n* `split_out`: (1, 4, 8)\r\n* Number of unique groups (1e3, 1e4, 1e5, 1e6, 1e7, 1e8)\r\n \r\nI ran the above on a 15-worker, 60 worker-thread, 240 GiB cluster on AWS, and tracked duration, peak memory usage, and average memory usage.\r\n\r\n#### Duration\r\n![visualization(22)](https://user-images.githubusercontent.com/5728311/184915021-ade37df9-106f-45c5-b649-b7e166bcdaad.png)\r\n\r\n\r\n#### Peak memory\r\n\r\n![visualization(23)](https://user-images.githubusercontent.com/5728311/184915071-f9571ef5-ed3a-475c-a87d-8c1bf6b0f2e2.png)\r\n\r\n#### Average memory\r\n![visualization(24)](https://user-images.githubusercontent.com/5728311/184915104-256603ec-05d3-43b6-8114-2d8e0c36c5d9.png)\r\n\r\nSo, some interpretation: \r\n\r\nFirst of all, from a broad perspective, ACA-based groupbys/aggs (`shuffle=False`) are faster for low-cardinality (when `groups << len(ddf)`) cases with `split_out=1`.  When `split_out > 1`, however, or when `groups` starts to approach the same order of magnitude as the dataframe length, then the story changes, and shuffle-based approaches start to win. The difference is not drastic for cases where they all fit nicely in memory. It's on the 20% level, which is nice!\r\n\r\n**However**: ACA-based groupby-aggs start to fall over pretty dramatically for high-cardinality cases because the last few partitions are really large and can knock over workers. This worker-killing is not super visible in the average/peak memory charts, as those are cluster-wide, rather than an acute problem on one or a few workers. But this worker-killing predictable, and it's easy to see there is a problem in the duration charts for the 1e8 case. Normally, the advice here would be to tune `split_out`, but it's also easy to see in the duration and memory charts that higher `split_out` for ACA-based groupby/aggs run into their own problems with due to the much more complex graphs with more intermediate results in memory. So that's not a hugely satisfying approach for this case.\r\n\r\nThere is also some useful structure in the memory charts as well. As @rjzamora mentioned above: task-based shuffling generally has worse memory usage than ACA-based grouby/agg. But in the high-cardinality case, that advantage disappears. So at least in that case, I think we can call it an unambiguous win. Also, it's very nice to see that p2p shuffling does indeed have roughly constant memory usage, beating the other two hands-down in the high-cardinality cases. \r\n\r\n## TL;DR\r\n\r\nThis largely confirms @rjzamora's points above and in conversations I've had with him:\r\n\r\n1. ACA-based groupby/aggs do fine for low-cardinality cases (say, where the number of groups is less than a few percent of the dataframe size). \r\n2. Once the cardinality gets larger, it does indeed make sense to start using the shuffle-based algorithm. To me, the range where `split_out > 1` and where it's still better to use ACA looks pretty darn narrow. A rule of thumb where shuffle is on-by-default when `split_out>1` doesn't sound like the worst idea in the world to me.\r\n3. Memory-usage is indeed higher for task-based shuffling than ACA in the lower-cardinality cases. But that advantage is wiped out in higher-cardinality cases, so it actually doesn't worry me much. And task-based shuffling is less likely to knock over a worker in the last few aggs of the ACA-based approach.\r\n4. p2p shuffling has much better memory performance. I ran into a couple of problems when using it here that I'll open as separate issues, but the results are encouraging.\r\n\r\n\r\n",
+      "created_at": "2022-08-16T15:19:00Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": "Thank you for working through these benchmarks and writing this up @ian-r-rose !\r\n\r\nIt seems safe to conclude that we *should* add a `shuffle=` option to `GroupBy.aggregate`, and that we *may* be able to use the shuffle-based algorithm by default for larger values of `split_out` in the future. I would prefer if we kept `shuffle=False` as the default for this PR, but I am also open to the default behavior changing in follow-on work. ",
+      "created_at": "2022-08-16T16:18:17Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": "Note that I added support for `sort=True` when `split_out>1` (and `shuffle` is not `False`).  I mostly did this here to check that the current design doesn't prevent global sorting in any way.  Therefore, I can roll back sort-related changes if it makes this PR easier to review.",
+      "created_at": "2022-08-16T18:44:50Z"
+    },
+    {
+      "author": "mrocklin",
+      "body": "Cool results.  I encourage us to move forward with this quickly.  ",
+      "created_at": "2022-08-16T20:19:34Z"
+    },
+    {
+      "author": "mrocklin",
+      "body": "Also, major kudos to @rjzamora for the work and to @ian-r-rose for the additional perspective",
+      "created_at": "2022-08-16T20:20:19Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Everything looks green except for gpuCI, which is unrelated: #9391",
+      "created_at": "2022-08-17T20:01:18Z"
+    },
+    {
+      "author": "jrbourbeau",
+      "body": "Woo -- great work @rjzamora @ian-r-rose ",
+      "created_at": "2022-08-17T20:31:30Z"
+    }
+  ],
+  "diff": "diff --git a/dask/dataframe/groupby.py b/dask/dataframe/groupby.py\nindex dfdc68ef224..2a7b2dc9836 100644\n--- a/dask/dataframe/groupby.py\n+++ b/dask/dataframe/groupby.py\n@@ -14,6 +14,7 @@\n     DataFrame,\n     Series,\n     _extract_meta,\n+    _Frame,\n     aca,\n     map_partitions,\n     new_dd_object,\n@@ -1056,6 +1057,41 @@ def _fillna_group(group, by, value, method, limit, fillna_axis):\n     )\n \n \n+def _aggregate_docstring(based_on=None):\n+    # Insert common groupby-aggregation docstring.\n+    # Use `based_on` parameter to add note about the\n+    # Pandas method the Dask version is based on.\n+    based_on_str = \"\\n\" if based_on is None else f\"\\nBased on {based_on}\\n\"\n+\n+    def wrapper(func):\n+        func.__doc__ = f\"\"\"Aggregate using one or more specified operations\n+        {based_on_str}\n+        Parameters\n+        ----------\n+        arg : callable, str, list or dict\n+            Aggregation spec. Accepted combinations are:\n+\n+            - callable function\n+            - string function name\n+            - list of functions and/or function names, e.g. ``[np.sum, 'mean']``\n+            - dict of column names -> function, function name or list of such.\n+        split_every : int, optional\n+            Number of intermediate partitions that may be aggregated at once.\n+            Default is 8.\n+        split_out : int, optional\n+            Number of output partitions. Default is 1.\n+        shuffle : bool or str, optional\n+            Whether a shuffle-based algorithm should be used. A specific\n+            algorithm name may also be specified (e.g. `\"tasks\"` or `\"p2p\"`).\n+            The shuffle-based algorithm is likely to be more efficient than\n+            ``shuffle=False`` when ``split_out>1`` and the number of unique\n+            groups is large (high cardinality). Default is ``False``.\n+        \"\"\"\n+        return func\n+\n+    return wrapper\n+\n+\n class _GroupBy:\n     \"\"\"Superclass for DataFrameGroupBy and SeriesGroupBy\n \n@@ -1616,7 +1652,8 @@ def get_group(self, key):\n             token=token,\n         )\n \n-    def aggregate(self, arg, split_every, split_out=1):\n+    @_aggregate_docstring()\n+    def aggregate(self, arg, split_every=None, split_out=1, shuffle=None):\n         if isinstance(self.obj, DataFrame):\n             if isinstance(self.by, tuple) or np.isscalar(self.by):\n                 group_columns = {self.by}\n@@ -1684,13 +1721,61 @@ def aggregate(self, arg, split_every, split_out=1):\n                 f\"if pandas < 1.1.0. Pandas version is {pd.__version__}\"\n             )\n \n+        if shuffle:\n+            # Shuffle-based aggregation\n+            #\n+            # This algorithm is more scalable than a tree reduction\n+            # for larger values of split_out. However, the shuffle\n+            # step requires that the result of `chunk` produces a\n+            # proper DataFrame type\n+            return _shuffle_aggregate(\n+                chunk_args,\n+                chunk=_groupby_apply_funcs,\n+                chunk_kwargs=dict(\n+                    funcs=chunk_funcs,\n+                    sort=self.sort,\n+                    **self.observed,\n+                    **self.dropna,\n+                ),\n+                aggregate=_agg_finalize,\n+                aggregate_kwargs=dict(\n+                    aggregate_funcs=aggregate_funcs,\n+                    finalize_funcs=finalizers,\n+                    level=levels,\n+                    **self.observed,\n+                    **self.dropna,\n+                ),\n+                token=\"aggregate\",\n+                split_every=split_every,\n+                split_out=split_out,\n+                shuffle=shuffle if isinstance(shuffle, str) else \"tasks\",\n+                sort=self.sort,\n+            )\n+\n+        # Check sort behavior\n+        if self.sort and split_out > 1:\n+            raise NotImplementedError(\n+                \"Cannot guarantee sorted keys for `split_out>1` and `shuffle=False`\"\n+                \" Try using `shuffle=True` if you are grouping on a single column.\"\n+                \" Otherwise, try using split_out=1, or grouping with sort=False.\"\n+            )\n+\n         return aca(\n             chunk_args,\n             chunk=_groupby_apply_funcs,\n-            chunk_kwargs=dict(funcs=chunk_funcs, **self.observed, **self.dropna),\n+            chunk_kwargs=dict(\n+                funcs=chunk_funcs,\n+                sort=self.sort,\n+                **self.observed,\n+                **self.dropna,\n+            ),\n             combine=_groupby_apply_funcs,\n             combine_kwargs=dict(\n-                funcs=aggregate_funcs, level=levels, **self.observed, **self.dropna\n+                funcs=aggregate_funcs,\n+                level=levels,\n+                sort=self.sort,\n+                **self.observed,\n+                **self.dropna,\n             ),\n             aggregate=_agg_finalize,\n             aggregate_kwargs=dict(\n@@ -2128,16 +2213,20 @@ def __getattr__(self, key):\n         except KeyError as e:\n             raise AttributeError(e) from e\n \n-    @derived_from(pd.core.groupby.DataFrameGroupBy)\n-    def aggregate(self, arg, split_every=None, split_out=1):\n+    @_aggregate_docstring(based_on=\"pd.core.groupby.DataFrameGroupBy.aggregate\")\n+    def aggregate(self, arg, split_every=None, split_out=1, shuffle=None):\n         if arg == \"size\":\n             return self.size()\n \n-        return super().aggregate(arg, split_every=split_every, split_out=split_out)\n+        return super().aggregate(\n+            arg, split_every=split_every, split_out=split_out, shuffle=shuffle\n+        )\n \n-    @derived_from(pd.core.groupby.DataFrameGroupBy)\n-    def agg(self, arg, split_every=None, split_out=1):\n-        return self.aggregate(arg, split_every=split_every, split_out=split_out)\n+    @_aggregate_docstring(based_on=\"pd.core.groupby.DataFrameGroupBy.agg\")\n+    def agg(self, arg, split_every=None, split_out=1, shuffle=None):\n+        return self.aggregate(\n+            arg, split_every=split_every, split_out=split_out, shuffle=shuffle\n+        )\n \n \n class SeriesGroupBy(_GroupBy):\n@@ -2203,9 +2292,11 @@ def nunique(self, split_every=None, split_out=1):\n             sort=self.sort,\n         )\n \n-    @derived_from(pd.core.groupby.SeriesGroupBy)\n-    def aggregate(self, arg, split_every=None, split_out=1):\n-        result = super().aggregate(arg, split_every=split_every, split_out=split_out)\n+    @_aggregate_docstring(based_on=\"pd.core.groupby.SeriesGroupBy.aggregate\")\n+    def aggregate(self, arg, split_every=None, split_out=1, shuffle=None):\n+        result = super().aggregate(\n+            arg, split_every=split_every, split_out=split_out, shuffle=shuffle\n+        )\n         if self._slice:\n             result = result[self._slice]\n \n@@ -2214,9 +2305,11 @@ def aggregate(self, arg, split_every=None, split_out=1):\n \n         return result\n \n-    @derived_from(pd.core.groupby.SeriesGroupBy)\n-    def agg(self, arg, split_every=None, split_out=1):\n-        return self.aggregate(arg, split_every=split_every, split_out=split_out)\n+    @_aggregate_docstring(based_on=\"pd.core.groupby.SeriesGroupBy.agg\")\n+    def agg(self, arg, split_every=None, split_out=1, shuffle=None):\n+        return self.aggregate(\n+            arg, split_every=split_every, split_out=split_out, shuffle=shuffle\n+        )\n \n     @derived_from(pd.core.groupby.SeriesGroupBy)\n     def value_counts(self, split_every=None, split_out=1):\n@@ -2308,3 +2401,124 @@ def _head_chunk(series_gb, **kwargs):\n def _head_aggregate(series_gb, **kwargs):\n     levels = kwargs.pop(\"index_levels\")\n     return series_gb.head(**kwargs).droplevel(list(range(levels)))\n+\n+\n+def _shuffle_aggregate(\n+    args,\n+    chunk=None,\n+    aggregate=None,\n+    token=None,\n+    chunk_kwargs=None,\n+    aggregate_kwargs=None,\n+    split_every=None,\n+    split_out=1,\n+    sort=None,\n+    ignore_index=False,\n+    shuffle=\"tasks\",\n+):\n+    \"\"\"Shuffle-based groupby aggregation\n+\n+    This algorithm may be more efficient than ACA for large ``split_out``\n+    values (required for high-cardinality groupby indices), but it also\n+    requires the output of ``chunk`` to be a proper DataFrame object.\n+\n+    Parameters\n+    ----------\n+    args :\n+        Positional arguments for the `chunk` function. All `dask.dataframe`\n+        objects should be partitioned and indexed equivalently.\n+    chunk : function [block-per-arg] -> block\n+        Function to operate on each block of data\n+    aggregate : function concatenated-block -> block\n+        Function to operate on the concatenated result of chunk\n+    token : str, optional\n+        The name to use for the output keys.\n+    chunk_kwargs : dict, optional\n+        Keywords for the chunk function only.\n+    aggregate_kwargs : dict, optional\n+        Keywords for the aggregate function only.\n+    split_every : int, optional\n+        Number of intermediate partitions that may be aggregated at once.\n+        Default is 8.\n+    split_out : int, optional\n+        Number of output partitions.\n+    ignore_index : bool, default False\n+        Whether the index can be ignored during the shuffle.\n+    sort : bool, default None\n+        If allowed, sort the keys of the output aggregation.\n+    shuffle : str, default \"tasks\"\n+        Shuffle option to be used by ``DataFrame.shuffle``.\n+    \"\"\"\n+\n+    if chunk_kwargs is None:\n+        chunk_kwargs = dict()\n+    if aggregate_kwargs is None:\n+        aggregate_kwargs = dict()\n+\n+    if not isinstance(args, (tuple, list)):\n+        args = [args]\n+\n+    dfs = [arg for arg in args if isinstance(arg, _Frame)]\n+\n+    npartitions = {arg.npartitions for arg in dfs}\n+    if len(npartitions) > 1:\n+        raise ValueError(\"All arguments must have same number of partitions\")\n+    npartitions = npartitions.pop()\n+\n+    if split_every is None:\n+        split_every = 8\n+    elif split_every is False:\n+        split_every = npartitions\n+    elif split_every < 2 or not isinstance(split_every, Integral):\n+        raise ValueError(\"split_every must be an integer >= 2\")\n+\n+    # Shuffle-based groupby aggregation\n+    chunk_name = f\"{token or funcname(chunk)}-chunk\"\n+    chunked = map_partitions(\n+        chunk,\n+        *args,\n+        meta=chunk(\n+            *[arg._meta if isinstance(arg, _Frame) else arg for arg in args],\n+            **chunk_kwargs,\n+        ),\n+        token=chunk_name,\n+        **chunk_kwargs,\n+    )\n+\n+    shuffle_npartitions = max(\n+        chunked.npartitions // split_every,\n+        split_out,\n+    )\n+\n+    # Handle sort kwarg\n+    if sort is not None:\n+        aggregate_kwargs = aggregate_kwargs or {}\n+        aggregate_kwargs[\"sort\"] = sort\n+\n+    # Perform global sort or shuffle\n+    if sort and split_out > 1:\n+        cols = set(chunked.columns)\n+        chunked = chunked.reset_index()\n+        index_cols = set(chunked.columns) - cols\n+        if len(index_cols) > 1:\n+            raise NotImplementedError(\n+                \"Cannot guarantee sorted keys for `split_out>1` when \"\n+                \"grouping on multiple columns. \"\n+                \"Try using split_out=1, or grouping with sort=False.\"\n+            )\n+        result = chunked.set_index(\n+            list(index_cols),\n+            npartitions=shuffle_npartitions,\n+            shuffle=shuffle,\n+        ).map_partitions(aggregate, **aggregate_kwargs)\n+    else:\n+        result = chunked.shuffle(\n+            chunked.index,\n+            ignore_index=ignore_index,\n+            npartitions=shuffle_npartitions,\n+            shuffle=shuffle,\n+        ).map_partitions(aggregate, **aggregate_kwargs)\n+\n+    if split_out < shuffle_npartitions:\n+        return result.repartition(npartitions=split_out)\n+    return result\ndiff --git a/dask/dataframe/tests/test_groupby.py b/dask/dataframe/tests/test_groupby.py\nindex aae63704191..cdf79946976 100644\n--- a/dask/dataframe/tests/test_groupby.py\n+++ b/dask/dataframe/tests/test_groupby.py\n@@ -1096,6 +1096,63 @@ def test_aggregate_dask():\n                 assert len(other.dask) == len(result2.dask)\n \n \n+@pytest.mark.parametrize(\"split_out\", [2, 32])\n+def test_shuffle_aggregate(shuffle_method, split_out):\n+\n+    pdf = pd.DataFrame(\n+        {\n+            \"a\": [1, 2, 3, 1, 1, 2, 4, 3, 7] * 100,\n+            \"b\": [4, 2, 7, 3, 3, 1, 1, 1, 2] * 100,\n+            \"c\": [0, 1, 2, 3, 4, 5, 6, 7, 8] * 100,\n+            \"d\": [3, 2, 1, 3, 2, 1, 2, 6, 4] * 100,\n+        },\n+        columns=[\"c\", \"b\", \"a\", \"d\"],\n+    )\n+    ddf = dd.from_pandas(pdf, npartitions=100)\n+\n+    spec = {\"b\": \"mean\", \"c\": [\"min\", \"max\"]}\n+    result = ddf.groupby([\"a\", \"b\"]).agg(\n+        spec, split_out=split_out, shuffle=shuffle_method\n+    )\n+    expect = pdf.groupby([\"a\", \"b\"]).agg(spec)\n+\n+    # Make sure \"mean\" dtype is consistent.\n+    # Pandas<1.3 will return int instead of float\n+    expect[(\"b\", \"mean\")] = expect[(\"b\", \"mean\")].astype(result[(\"b\", \"mean\")].dtype)\n+    assert_eq(expect, result)\n+\n+\n+@pytest.mark.parametrize(\"sort\", [True, False])\n+def test_shuffle_aggregate_sort(shuffle_method, sort):\n+\n+    pdf = pd.DataFrame(\n+        {\n+            \"a\": [1, 2, 3, 1, 1, 2, 4, 3, 7] * 100,\n+            \"b\": [4, 2, 7, 3, 3, 1, 1, 1, 2] * 100,\n+            \"c\": [0, 1, 2, 3, 4, 5, 6, 7, 8] * 100,\n+            \"d\": [3, 2, 1, 3, 2, 1, 2, 6, 4] * 100,\n+        },\n+        columns=[\"c\", \"b\", \"a\", \"d\"],\n+    )\n+    ddf = dd.from_pandas(pdf, npartitions=100)\n+\n+    spec = {\"b\": \"mean\", \"c\": [\"min\", \"max\"]}\n+    result = ddf.groupby(\"a\", sort=sort).agg(spec, split_out=2, shuffle=shuffle_method)\n+    expect = pdf.groupby(\"a\", sort=sort).agg(spec)\n+\n+    # Make sure \"mean\" dtype is consistent.\n+    # Pandas<1.3 will return int instead of float\n+    expect[(\"b\", \"mean\")] = expect[(\"b\", \"mean\")].astype(result[(\"b\", \"mean\")].dtype)\n+    assert_eq(expect, result)\n+\n+    if sort:\n+        # Cannot use sort=True with multiple groupby keys\n+        with pytest.raises(NotImplementedError):\n+            ddf.groupby([\"a\", \"b\"], sort=sort).agg(\n+                spec, split_out=2, shuffle=shuffle_method\n+            )\n+\n+\n @pytest.mark.parametrize(\"axis\", [0, 1])\n @pytest.mark.parametrize(\"group_keys\", [True, False, None])\n @pytest.mark.parametrize(\"method\", [\"ffill\", \"bfill\"])\n@@ -2659,6 +2716,9 @@ def test_groupby_sort_true_split_out():\n         # Cannot use sort=True with split_out>1 (for now)\n         M.sum(ddf.groupby(\"x\", sort=True), split_out=2)\n \n+    # Can use sort=True with split_out>1 with agg() if shuffle=True\n+    ddf.groupby(\"x\", sort=True).agg(\"sum\", split_out=2, shuffle=True)\n+\n \n @pytest.mark.skipif(\n     not PANDAS_GT_110, reason=\"observed only supported for newer pandas\"\n",
+  "changed_files": [
+    "dask/dataframe/groupby.py",
+    "dask/dataframe/tests/test_groupby.py"
+  ],
+  "changed_functions": [
+    "_aggregate_docstring",
+    "wrapper",
+    "aggregate",
+    "agg",
+    "_shuffle_aggregate",
+    "test_shuffle_aggregate",
+    "test_shuffle_aggregate_sort"
+  ],
+  "pre_commit": "c1bc90aa5149d8f515aadd8bcf11712e9ce7cdee",
+  "post_commit": "097decd5f4914d7cd85b3babd6ecdd20a633bf8d",
+  "merged_at": "2022-08-17T20:01:27Z",
+  "review_comments": [
+    {
+      "author": "ian-r-rose",
+      "body": "I think we should advertise the `shuffle` keyword arg here (and below), perhaps using the new `inconsistencies=` kwarg to `derived_from`.\r\n\r\nCould also type this as `bool | Literal[\"tasks\", \"disk\", \"p2p\"]`",
+      "path": "dask/dataframe/groupby.py",
+      "line": 2226,
+      "created_at": "2022-08-16T21:44:52Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Not your fault, but this seems to be missing a `@derived_from`",
+      "path": "dask/dataframe/groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T21:53:41Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "These don't seem to be used other than to update `chunk_kwargs` and `aggregate_kwargs`. Any other reason to keep them around? Otherwise, I might just simplify the signature to not take kwargs.",
+      "path": "dask/dataframe/groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T21:56:23Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Do you know what pandas version? May be worthwhile to add a note so some future version of ourselves can remove this.",
+      "path": "dask/dataframe/tests/test_groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T22:11:24Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": "The DataFrame and Series-specific methods have `@derived_from`, but I dont think there is a `pd.core.groupby.GroupBy.aggregate`. What do you think I should have here?",
+      "path": "dask/dataframe/groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T23:23:53Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": "I'm not sure which Pandas version has the change, but I'll try to figure it out",
+      "path": "dask/dataframe/tests/test_groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T23:24:57Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Ah, my mistake, I thought this was one of the former.",
+      "path": "dask/dataframe/groupby.py",
+      "line": null,
+      "created_at": "2022-08-16T23:27:54Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": ">I think we should advertise the shuffle keyword arg here (and below), perhaps using the new inconsistencies= kwarg to derived_from.\r\n\r\nGood call - I'm just seeing https://github.com/dask/dask/pull/9192 for the first time now. This suggestion motivated me to take a look at [the current doc page](https://docs.dask.org/en/stable/generated/dask.dataframe.groupby.DataFrameGroupBy.aggregate.html) for `dd.groupby.DataFrameGroupBy.aggregate`, and I am actually wondering how useful `derived_from` is in this particular case. As far as I can tell, most of the docstring is marked with `\"(Not supported in Dask)\"`. Maybe it makes sense to write out a Dask-specific docstring here, and just make a note that the method is based on Pandas' `DataFrameGroupBy.aggregate`?",
+      "path": "dask/dataframe/groupby.py",
+      "line": 2226,
+      "created_at": "2022-08-17T13:49:24Z"
+    },
+    {
+      "author": "rjzamora",
+      "body": "Pandas-1.3 is when they stopped returning int64 here - I'll add the specific version to the comment.",
+      "path": "dask/dataframe/tests/test_groupby.py",
+      "line": null,
+      "created_at": "2022-08-17T14:11:29Z"
+    },
+    {
+      "author": "jsignell",
+      "body": "Yeah this seems like a case where the method is different enough that it's worth writing its own docstring from scratch.",
+      "path": "dask/dataframe/groupby.py",
+      "line": 2226,
+      "created_at": "2022-08-17T14:34:21Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Cool, thanks for chasing it down @rjzamora ",
+      "path": "dask/dataframe/tests/test_groupby.py",
+      "line": null,
+      "created_at": "2022-08-17T15:02:27Z"
+    },
+    {
+      "author": "ian-r-rose",
+      "body": "Yeah, if the `inconsistencies=` keyword is not the right tool, I agree that a Dask-specific docstring would be the way to go.",
+      "path": "dask/dataframe/groupby.py",
+      "line": 2226,
+      "created_at": "2022-08-17T15:03:45Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 289,
+  "deletions": 15,
+  "changed_files_count": 2
+}

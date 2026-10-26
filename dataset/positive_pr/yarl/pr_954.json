@@ -1,0 +1,246 @@
+{
+  "pr_number": 954,
+  "title": "Validate ASCII host values",
+  "url": "https://github.com/aio-libs/yarl/pull/954",
+  "description": "Host values must match the unreserved, sub-delims or pct-encoded grammar\r\nrules. The IDNA encoder already checks for this, but for ASCII values we\r\nskip IDNA encoding.\r\n\r\nIf the invalid character is `@`, or `:` followed by `@` further in the\r\nhost value, tack on advice about using `authority` instead of `host`.\r\n\r\nFixes #880\r\n\r\n<img width=\"667\" alt=\"Screenshot 2024-09-07 at 5 19 09 PM\" src=\"https://github.com/user-attachments/assets/94beb0eb-b3c4-4397-861b-64aa24dbf524\">\r\n\r\n\r\n## Checklist\r\n\r\n- [x] I think the code is well written\r\n- [x] Unit tests for the changes exist\r\n- [ ] Documentation reflects the changes\r\n- [x] Add a new news fragment into the `CHANGES` folder\r\n  * name it `<issue_id>.<type>` (e.g. `588.bugfix`)\r\n  * if you don't have an `issue_id` change it to the pr id after creating the PR\r\n  * ensure type is one of the following:\r\n    * `.feature`: Signifying a new feature.\r\n    * `.bugfix`: Signifying a bug fix.\r\n    * `.doc`: Signifying a documentation improvement.\r\n    * `.removal`: Signifying a deprecation or removal of public API.\r\n    * `.misc`: A ticket has been closed, but it is not of interest to users.\r\n  * Make sure to use full sentences with correct case and punctuation, for example: `Fix issue with non-ascii contents in doctest text files.`\r\n",
+  "comments": [
+    {
+      "author": "webknjaz",
+      "body": "@mjpieters do you want me to reject the release build, wait and include this PR?",
+      "created_at": "2023-11-20T15:17:09Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "Not sure why the changelog bot is failing to notice the towncrier fragment... Not sure why but it's safe to ignore for now.",
+      "created_at": "2023-11-20T15:18:26Z"
+    },
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/aio-libs/yarl/pull/954?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) Report\nAll modified and coverable lines are covered by tests :white_check_mark:\n> Project coverage is 95.54%. Comparing base [(`7128872`)](https://app.codecov.io/gh/aio-libs/yarl/commit/7128872ef83dc798c2f7f7fafc830bfb927fc164?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) to head [(`a13eadd`)](https://app.codecov.io/gh/aio-libs/yarl/commit/a13eaddd828efb4345ec3d6809ae1afadcb32f29?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs).\n> Report is 260 commits behind head on master.\n\n<details><summary>Additional details and impacted files</summary>\n\n\n```diff\n@@            Coverage Diff             @@\n##           master     #954      +/-   ##\n==========================================\n+ Coverage   95.48%   95.54%   +0.06%     \n==========================================\n  Files          30       30              \n  Lines        4825     4892      +67     \n  Branches      429      446      +17     \n==========================================\n+ Hits         4607     4674      +67     \n  Misses        192      192              \n  Partials       26       26              \n```\n\n| [Flag](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flags&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | Coverage Δ | |\n|---|---|---|\n| [CI-GHA](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `95.50% <100.00%> (+0.06%)` | :arrow_up: |\n| [MyPy](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `42.31% <94.44%> (+0.75%)` | :arrow_up: |\n| [OS-Linux](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.41% <100.00%> (+<0.01%)` | :arrow_up: |\n| [OS-Windows](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.50% <100.00%> (+<0.01%)` | :arrow_up: |\n| [OS-macOS](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.12% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.10.11](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.02% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.10.15](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.25% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.11.10](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.25% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.11.9](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.02% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.12.6](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.25% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.13.0-rc.2](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.25% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.8.10](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `98.97% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.8.18](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.20% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.9.13](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `98.97% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-3.9.20](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.20% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-pypy7.3.11](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.26% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-pypy7.3.16](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.26% <100.00%> (+<0.01%)` | :arrow_up: |\n| [Py-pypy7.3.17](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.28% <100.00%> (+<0.01%)` | :arrow_up: |\n| [VM-macos-latest](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.12% <100.00%> (+<0.01%)` | :arrow_up: |\n| [VM-ubuntu-latest](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.41% <100.00%> (+<0.01%)` | :arrow_up: |\n| [VM-windows-latest](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.50% <100.00%> (+<0.01%)` | :arrow_up: |\n| [pytest](https://app.codecov.io/gh/aio-libs/yarl/pull/954/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs) | `99.41% <100.00%> (+<0.01%)` | :arrow_up: |\n\nFlags with carried forward coverage won't be shown. [Click here](https://docs.codecov.io/docs/carryforward-flags?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs#carryforward-flags-in-the-pull-request-comment) to find out more.\n\n</details>\n\n[:umbrella: View full report in Codecov by Sentry](https://app.codecov.io/gh/aio-libs/yarl/pull/954?dropdown=coverage&src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs).   \n:loudspeaker: Have feedback on the report? [Share it here](https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=aio-libs).\n",
+      "created_at": "2023-11-20T15:20:31Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> ```console\r\n> [towncrier-fragments]:13: : Spell check: hostnames: Started rejecting ASCII hostnames with invalid characters. For host strings that.\r\n> ```\r\n\r\n@mjpieters this can be fixed by adding \"hostnames\" to `docs/spelling_wordlist.txt`. Though, I hope to integrate `codespell` later that would replace `sphinxcontrib-spelling` and seems to have less false positives.",
+      "created_at": "2023-11-20T15:21:33Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "While implementing my PR I noticed that if you used a non-ASCII hostname with `@` or any other invalid character (so not unreserved, percent encoded or sub-delims), then `idna.encode()` would raise an exception. But when I tried to reproduce this behaviour, just now, I noticed **we swallow that exception**, because it is a `UnicodeError` subclass 🤦 .\r\n\r\nI'm not sure why the encoder uses `except UnicodeError` with a fallback to `host.encode('idna').decode('ascii')`, because that completely defeats the valid codepoint check.\r\n\r\nI can hoist the validation to apply to non-ASCII hostnames too but that means I need to explicitly test for all disallowed ASCII codepoint (instead of the negative character classes I use now).\r\n\r\nI'll go search through the commit history to see if I cannot find out more here.",
+      "created_at": "2023-11-20T15:21:38Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "> @mjpieters this can be fixed by adding \"hostnames\" to `docs/spelling_wordlist.txt`. Though, I hope to integrate `codespell` later that would replace `sphinxcontrib-spelling` and seems to have less false positives.\r\n\r\n:-D I already have that change staged locally :-P",
+      "created_at": "2023-11-20T15:22:23Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "@mjpieters so do you think it's worth putting into a separate release? The automation is there so it wouldn't take as long to make new releases from now on...",
+      "created_at": "2023-11-20T15:23:39Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "> Not sure why the changelog bot is failing to notice the towncrier fragment... Not sure why but it's safe to ignore for now.\r\n\r\nIt is looking for the files in the wrong location, `news/` instead of `CHANGES/`.",
+      "created_at": "2023-11-20T15:26:16Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "> @mjpieters do you want me to reject the release build, wait and include this PR?\r\n\r\nI think it's fine to put this in a next release. I don't see this as urgent.",
+      "created_at": "2023-11-20T15:28:53Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> > @mjpieters do you want me to reject the release build, wait and include this PR?\r\n> \r\n> I think it's fine to put this in a next release. I don't see this as urgent.\r\n\r\nOkay, will proceed with releasing, then. The build is half-way ready: https://github.com/aio-libs/yarl/actions/runs/6931722870.",
+      "created_at": "2023-11-20T15:33:04Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "I'll raise a separate issue for IDNA host encoding. I can see why the `UnicodeError` exception handler is there but I think it needs some reworking.\r\n\r\nThis PR can focus on ASCII hostnames only, as a first step.",
+      "created_at": "2023-11-20T15:37:49Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "> Okay, will proceed with releasing, then. The build is half-way ready: https://github.com/aio-libs/yarl/actions/runs/6931722870.\r\n\r\nWhat a glorious deployment pipeline we have! 😁 ",
+      "created_at": "2023-11-20T15:39:06Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> > Not sure why the changelog bot is failing to notice the towncrier fragment... Not sure why but it's safe to ignore for now.\r\n> \r\n> It is looking for the files in the wrong location, `news/` instead of `CHANGES/`.\r\n\r\nOh, that makes sense — this is because I moved the config to a dedicated file and haven't updates the bot to account for that. Thanks for pointing it out!",
+      "created_at": "2023-11-20T15:39:57Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> > Okay, will proceed with releasing, then. The build is half-way ready: https://github.com/aio-libs/yarl/actions/runs/6931722870.\r\n> \r\n> What a glorious deployment pipeline we have! 😁\r\n\r\nHopefully, I'll make it scalable and reuse for other projects. I have similar things in many other repos but they all have tiny differences which makes them hard to reuse as is.\r\nI made the CI run tests from the exact sdists we publish and install the wheels instead of rebuilding from Git source in each job. Though, I broke codecov reporting along the way so ignore it for now, I'll fix it later, hopefully.",
+      "created_at": "2023-11-20T15:44:02Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> Okay, will proceed with releasing, then. The build is half-way ready: https://github.com/aio-libs/yarl/actions/runs/6931722870.\r\n\r\nIt took a few reattempts to get the last bit right... But now we have v1.9.3:\r\n- https://pypi.org/project/yarl/1.9.3/\r\n- https://github.com/aio-libs/yarl/discussions/957\r\n- https://github.com/aio-libs/yarl/releases/tag/v1.9.3",
+      "created_at": "2023-11-20T22:23:36Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> Though, I broke codecov reporting along the way so ignore it for now, I'll fix it later, hopefully.\r\n\r\nFixed it. The coverage metrics are back up!",
+      "created_at": "2023-11-21T02:14:03Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> I'm not sure why the encoder uses `except UnicodeError` with a fallback to `host.encode('idna').decode('ascii')`, because that completely defeats the valid codepoint check.\r\n\r\nI checked the coverage reported before I broke it temporarily, and turns out that the line you're talking about is _the only one uncovered_ in the entire project: https://app.codecov.io/gh/aio-libs/yarl/commit/65333fab5f5b2bcce9fbb6aa810e9618fa10c6f0/blob/yarl/_url.py#L1176.\r\n\r\nSo I guess this might also need some extra extensive testing...",
+      "created_at": "2023-11-21T02:17:41Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "> the line you're talking about is _the only one uncovered_ in the entire project: [app.codecov.io/gh/aio-libs/yarl/commit/65333fab5f5b2bcce9fbb6aa810e9618fa10c6f0/blob/yarl/_url.py#L1176](https://app.codecov.io/gh/aio-libs/yarl/commit/65333fab5f5b2bcce9fbb6aa810e9618fa10c6f0/blob/yarl/_url.py#L1176).\r\n\r\nThis is no longer true since I implemented collecting Cython and MyPy coverage...",
+      "created_at": "2024-09-05T13:38:22Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "Ironically we were even doing it wrong in `aiohttp` https://github.com/aio-libs/aiohttp/issues/9307",
+      "created_at": "2024-09-27T19:53:39Z"
+    }
+  ],
+  "diff": "diff --git a/CHANGES/880.bugfix.rst b/CHANGES/880.bugfix.rst\nnew file mode 100644\nindex 000000000..39a64ea03\n--- /dev/null\n+++ b/CHANGES/880.bugfix.rst\n@@ -0,0 +1,3 @@\n+Started rejecting ASCII hostnames with invalid characters. For host strings that\n+look like authority strings, the exception message includes advice on what to do\n+instead -- by :user:`mjpieters`.\ndiff --git a/CHANGES/954.bugfix.rst b/CHANGES/954.bugfix.rst\nnew file mode 120000\nindex 000000000..e6d288437\n--- /dev/null\n+++ b/CHANGES/954.bugfix.rst\n@@ -0,0 +1 @@\n+880.bugfix.rst\n\\ No newline at end of file\ndiff --git a/docs/api.rst b/docs/api.rst\nindex 170df7f33..b7b80cf61 100644\n--- a/docs/api.rst\n+++ b/docs/api.rst\n@@ -1037,19 +1037,20 @@ Default port substitution\n Cache control\n -------------\n \n-IDNA conversion and IP Address parsing used for host encoding are quite expensive\n-operations, that's why the ``yarl`` library caches these calls by storing\n-last ``256`` results in the global LRU cache.\n+IDNA conversion, host validation, and IP Address parsing used for host\n+encoding are quite expensive operations, that's why the ``yarl``\n+library caches these calls by storing last ``256`` results in the\n+global LRU cache.\n \n .. function:: cache_clear()\n \n-   Clear IDNA and IP Address caches.\n+   Clear IDNA, host validation, and IP Address caches.\n \n \n .. function:: cache_info()\n \n-   Return a dictionary with ``\"idna_encode\"``, ``\"idna_decode\"``, and\n-   ``\"ip_address\"`` keys, each value\n+   Return a dictionary with ``\"idna_encode\"``, ``\"idna_decode\"``, ``\"ip_address\"``,\n+   and ``\"host_validate\"`` keys, each value\n    points to corresponding ``CacheInfo`` structure (see :func:`functools.lru_cache` for\n    details):\n \n@@ -1059,12 +1060,15 @@ last ``256`` results in the global LRU cache.\n       >>> yarl.cache_info()\n       {'idna_encode': CacheInfo(hits=5, misses=5, maxsize=256, currsize=5),\n        'idna_decode': CacheInfo(hits=24, misses=15, maxsize=256, currsize=15),\n-       'ip_address': CacheInfo(hits=46933, misses=84, maxsize=256, currsize=101)}\n+       'ip_address': CacheInfo(hits=46933, misses=84, maxsize=256, currsize=101),\n+       'host_validate': CacheInfo(hits=0, misses=0, maxsize=256, currsize=0)}\n \n \n-.. function:: cache_configure(*, idna_encode_size=256, idna_decode_size=256, ip_address_size=256)\n \n-   Set the IP Address and IDNA encode and decode cache sizes (``256`` for each by default).\n+.. function:: cache_configure(*, idna_encode_size=256, idna_decode_size=256, ip_address_size=256, host_validate_size=256)\n+\n+   Set the IP Address, host validation, and IDNA encode and\n+   decode cache sizes (``256`` for each by default).\n \n    Pass ``None`` to make the corresponding cache unbounded (may speed up host encoding\n    operation a little but the memory footprint can be very high,\ndiff --git a/docs/spelling_wordlist.txt b/docs/spelling_wordlist.txt\nindex 6b90d22e4..8e66ca9ee 100644\n--- a/docs/spelling_wordlist.txt\n+++ b/docs/spelling_wordlist.txt\n@@ -27,6 +27,7 @@ facto\n glibc\n google\n hardcoded\n+hostnames\n macOS\n mailto\n manylinux\ndiff --git a/tests/test_cache.py b/tests/test_cache.py\nindex 46d5b01f1..9b0e75a35 100644\n--- a/tests/test_cache.py\n+++ b/tests/test_cache.py\n@@ -13,7 +13,7 @@ def test_cache_clear() -> None:\n \n def test_cache_info() -> None:\n     info = yarl.cache_info()\n-    assert info.keys() == {\"idna_encode\", \"idna_decode\", \"ip_address\"}\n+    assert info.keys() == {\"idna_encode\", \"idna_decode\", \"ip_address\", \"host_validate\"}\n \n \n def test_cache_configure_default() -> None:\n@@ -22,11 +22,17 @@ def test_cache_configure_default() -> None:\n \n def test_cache_configure_None() -> None:\n     yarl.cache_configure(\n-        idna_encode_size=None, idna_decode_size=None, ip_address_size=None\n+        idna_encode_size=None,\n+        idna_decode_size=None,\n+        ip_address_size=None,\n+        host_validate_size=None,\n     )\n \n \n def test_cache_configure_explicit() -> None:\n     yarl.cache_configure(\n-        idna_encode_size=128, idna_decode_size=128, ip_address_size=128\n+        idna_encode_size=128,\n+        idna_decode_size=128,\n+        ip_address_size=128,\n+        host_validate_size=128,\n     )\ndiff --git a/tests/test_url.py b/tests/test_url.py\nindex 5115c8749..49245b8d2 100644\n--- a/tests/test_url.py\n+++ b/tests/test_url.py\n@@ -2058,3 +2058,14 @@ def test_parsing_populates_cache():\n     assert url._cache[\"raw_query_string\"] == \"a=b\"\n     assert url._cache[\"raw_fragment\"] == \"frag\"\n     assert url._cache[\"scheme\"] == \"http\"\n+\n+\n+@pytest.mark.parametrize(\n+    (\"host\", \"is_authority\"),\n+    [\n+        *((\"other_gen_delim_\" + c, False) for c in \"[]\"),\n+    ],\n+)\n+def test_build_with_invalid_ipv6_host(host: str, is_authority: bool):\n+    with pytest.raises(ValueError, match=\"Invalid IPv6 URL\"):\n+        URL(f\"http://{host}/\")\ndiff --git a/tests/test_url_build.py b/tests/test_url_build.py\nindex b6675c294..0b7b9cd73 100644\n--- a/tests/test_url_build.py\n+++ b/tests/test_url_build.py\n@@ -120,6 +120,25 @@ def test_build_with_authority_and_host():\n         URL.build(authority=\"host.com\", host=\"example.com\")\n \n \n+@pytest.mark.parametrize(\n+    (\"host\", \"is_authority\"),\n+    [\n+        (\"user:pass@host.com\", True),\n+        (\"user@host.com\", True),\n+        (\"host:com\", False),\n+        (\"not_percent_encoded%Zf\", False),\n+        (\"still_not_percent_encoded%fZ\", False),\n+        *((\"other_gen_delim_\" + c, False) for c in \"/?#[]\"),\n+    ],\n+)\n+def test_build_with_invalid_host(host: str, is_authority: bool):\n+    match = r\"Host '[^']+' cannot contain '[^']+' \\(at position \\d+\\)\"\n+    if is_authority:\n+        match += \", if .* use 'authority' instead of 'host'\"\n+    with pytest.raises(ValueError, match=f\"{match}$\"):\n+        URL.build(host=host)\n+\n+\n def test_build_with_authority():\n     url = URL.build(scheme=\"http\", authority=\"степан:bar@host.com:8000\", path=\"path\")\n     assert (\ndiff --git a/tests/test_url_update_netloc.py b/tests/test_url_update_netloc.py\nindex 295d6201f..cdb07a2dc 100644\n--- a/tests/test_url_update_netloc.py\n+++ b/tests/test_url_update_netloc.py\n@@ -171,6 +171,26 @@ def test_with_host_non_ascii():\n     assert url2.authority == \"оун-упа.укр:123\"\n \n \n+@pytest.mark.parametrize(\n+    (\"host\", \"is_authority\"),\n+    [\n+        (\"user:pass@host.com\", True),\n+        (\"user@host.com\", True),\n+        (\"host:com\", False),\n+        (\"not_percent_encoded%Zf\", False),\n+        (\"still_not_percent_encoded%fZ\", False),\n+        *((\"other_gen_delim_\" + c, False) for c in \"/?#[]\"),\n+    ],\n+)\n+def test_with_invalid_host(host: str, is_authority: bool):\n+    url = URL(\"http://example.com:123\")\n+    match = r\"Host '[^']+' cannot contain '[^']+' \\(at position \\d+\\)\"\n+    if is_authority:\n+        match += \", if .* use 'authority' instead of 'host'\"\n+    with pytest.raises(ValueError, match=f\"{match}$\"):\n+        url.with_host(host=host)\n+\n+\n def test_with_host_percent_encoded():\n     url = URL(\"http://%25cf%2580%cf%80:%25cf%2580%cf%80@example.com:123\")\n     url2 = url.with_host(\"%cf%80.org\")\ndiff --git a/yarl/_url.py b/yarl/_url.py\nindex 37e4739fa..25988f81d 100644\n--- a/yarl/_url.py\n+++ b/yarl/_url.py\n@@ -1,4 +1,5 @@\n import math\n+import re\n import sys\n import warnings\n from collections.abc import Mapping, Sequence\n@@ -45,6 +46,22 @@\n \n sentinel = object()\n \n+# reg-name: unreserved / pct-encoded / sub-delims\n+# this pattern matches anything that is *not* in those classes. and is only used\n+# on lower-cased ASCII values.\n+_not_reg_name = re.compile(\n+    r\"\"\"\n+        # any character not in the unreserved or sub-delims sets, plus %\n+        # (validated with the additional check for pct-encoded sequences below)\n+        [^a-z0-9\\-._~!$&'()*+,;=%]\n+    |\n+        # % only allowed if it is part of a pct-encoded\n+        # sequence of 2 hex digits.\n+        %(?![0-9a-f]{2})\n+    \"\"\",\n+    re.VERBOSE,\n+)\n+\n SimpleQuery = Union[str, int, float]\n QueryVariable = Union[SimpleQuery, \"Sequence[SimpleQuery]\"]\n Query = Union[\n@@ -64,6 +81,7 @@ class CacheInfo(TypedDict):\n     idna_encode: _CacheInfo\n     idna_decode: _CacheInfo\n     ip_address: _CacheInfo\n+    host_validate: _CacheInfo\n \n \n class _SplitResultDict(TypedDict, total=False):\n@@ -269,7 +287,7 @@ def __new__(\n                         raise ValueError(msg)\n                     else:\n                         host = \"\"\n-                host = cls._encode_host(host)\n+                host = cls._encode_host(host, validate_host=False)\n                 raw_user = None if username is None else cls._REQUOTER(username)\n                 raw_password = None if password is None else cls._REQUOTER(password)\n                 netloc = cls._make_netloc(\n@@ -959,7 +977,9 @@ def _normalize_path(cls, path: str) -> str:\n         return prefix + \"/\".join(_normalize_path_segments(segments))\n \n     @classmethod\n-    def _encode_host(cls, host: str, human: bool = False) -> str:\n+    def _encode_host(\n+        cls, host: str, human: bool = False, validate_host: bool = True\n+    ) -> str:\n         if \"%\" in host:\n             raw_ip, sep, zone = host.partition(\"%\")\n         else:\n@@ -999,11 +1019,18 @@ def _encode_host(cls, host: str, human: bool = False) -> str:\n                 return host\n \n         host = host.lower()\n+        if human:\n+            return host\n+\n         # IDNA encoding is slow,\n         # skip it for ASCII-only strings\n         # Don't move the check into _idna_encode() helper\n         # to reduce the cache size\n-        if human or host.isascii():\n+        if host.isascii():\n+            # Check for invalid characters explicitly; _idna_encode() does this\n+            # for non-ascii host names.\n+            if validate_host:\n+                _host_validate(host)\n             return host\n         return _idna_encode(host)\n \n@@ -1559,12 +1586,31 @@ def _ip_compressed_version(raw_ip: str) -> Tuple[str, int]:\n     return ip.compressed, ip.version\n \n \n+@lru_cache(_MAXCACHE)\n+def _host_validate(host: str) -> None:\n+    \"\"\"Validate an ascii host name.\"\"\"\n+    invalid = _not_reg_name.search(host)\n+    if invalid is None:\n+        return\n+    value, pos, extra = invalid.group(), invalid.start(), \"\"\n+    if value == \"@\" or (value == \":\" and \"@\" in host[pos:]):\n+        # this looks like an authority string\n+        extra = (\n+            \", if the value includes a username or password, \"\n+            \"use 'authority' instead of 'host'\"\n+        )\n+    raise ValueError(\n+        f\"Host {host!r} cannot contain {value!r} (at position \" f\"{pos}){extra}\"\n+    ) from None\n+\n+\n @rewrite_module\n def cache_clear() -> None:\n     \"\"\"Clear all LRU caches.\"\"\"\n     _idna_decode.cache_clear()\n     _idna_encode.cache_clear()\n     _ip_compressed_version.cache_clear()\n+    _host_validate.cache_clear()\n \n \n @rewrite_module\n@@ -1574,6 +1620,7 @@ def cache_info() -> CacheInfo:\n         \"idna_encode\": _idna_encode.cache_info(),\n         \"idna_decode\": _idna_decode.cache_info(),\n         \"ip_address\": _ip_compressed_version.cache_info(),\n+        \"host_validate\": _host_validate.cache_info(),\n     }\n \n \n@@ -1583,12 +1630,14 @@ def cache_configure(\n     idna_encode_size: Union[int, None] = _MAXCACHE,\n     idna_decode_size: Union[int, None] = _MAXCACHE,\n     ip_address_size: Union[int, None] = _MAXCACHE,\n+    host_validate_size: Union[int, None] = _MAXCACHE,\n ) -> None:\n     \"\"\"Configure LRU cache sizes.\"\"\"\n-    global _idna_decode, _idna_encode, _ip_compressed_version\n+    global _idna_decode, _idna_encode, _ip_compressed_version, _host_validate\n \n     _idna_encode = lru_cache(idna_encode_size)(_idna_encode.__wrapped__)\n     _idna_decode = lru_cache(idna_decode_size)(_idna_decode.__wrapped__)\n     _ip_compressed_version = lru_cache(ip_address_size)(\n         _ip_compressed_version.__wrapped__\n     )\n+    _host_validate = lru_cache(host_validate_size)(_host_validate.__wrapped__)\n",
+  "changed_files": [
+    "CHANGES/880.bugfix.rst",
+    "CHANGES/954.bugfix.rst",
+    "docs/api.rst",
+    "docs/spelling_wordlist.txt",
+    "tests/test_cache.py",
+    "tests/test_url.py",
+    "tests/test_url_build.py",
+    "tests/test_url_update_netloc.py",
+    "yarl/_url.py"
+  ],
+  "changed_functions": [
+    "test_build_with_invalid_ipv6_host",
+    "test_build_with_invalid_host",
+    "test_build_with_authority",
+    "test_with_invalid_host",
+    "test_with_host_percent_encoded",
+    "_encode_host",
+    "_host_validate"
+  ],
+  "pre_commit": "7128872ef83dc798c2f7f7fafc830bfb927fc164",
+  "post_commit": "32739364fb032dc1a55c62c0cb6c28ccfa95f765",
+  "merged_at": "2024-09-26T22:18:37Z",
+  "review_comments": [
+    {
+      "author": "webknjaz",
+      "body": "@mjpieters looks like there's a typo in the filename — s/8080/880/",
+      "path": "CHANGES/8080.bugfix.rst",
+      "line": 1,
+      "created_at": "2023-11-20T15:11:46Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "Also, we can optionally symlink it to `954.bugfix.rst` so both PR and issue links are included in the changelog.",
+      "path": "CHANGES/8080.bugfix.rst",
+      "line": 1,
+      "created_at": "2023-11-20T15:12:27Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "I've added bylines to all the present changelog fragments. Let's add one here too, for consistency:\r\n```suggestion\r\ninstead -- by :user:`mjpieters`.\r\n```\r\n\r\nThe preview will be here: https://yarl--954.org.readthedocs.build/en/954/changes.html",
+      "path": "CHANGES/8080.bugfix.rst",
+      "line": null,
+      "created_at": "2023-11-20T15:14:50Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "oops, will fix!",
+      "path": "CHANGES/8080.bugfix.rst",
+      "line": 1,
+      "created_at": "2023-11-20T15:15:57Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "Sure thing!",
+      "path": "CHANGES/8080.bugfix.rst",
+      "line": null,
+      "created_at": "2023-11-20T15:16:14Z"
+    },
+    {
+      "author": "webknjaz",
+      "body": "@mjpieters did you opt for a copy instead of a symlink? These are usually harder to maintain when the exact same edits are needed to both files... Git handles symlinks well (although, I know that it turns them into regular files on Windows when checking out).",
+      "path": "CHANGES/880.bugfix.rst",
+      "line": 1,
+      "created_at": "2023-11-20T15:38:42Z"
+    },
+    {
+      "author": "mjpieters",
+      "body": "No, I meant to use a symlink. I guess I mucked up and made a hardlink.",
+      "path": "CHANGES/880.bugfix.rst",
+      "line": 1,
+      "created_at": "2023-11-20T15:39:47Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "Should this get an LRU like `_idna_encode`?",
+      "path": "yarl/_url.py",
+      "line": null,
+      "created_at": "2024-09-01T06:03:39Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "Maybe... its 3x more expensive than anything else in this function",
+      "path": "yarl/_url.py",
+      "line": null,
+      "created_at": "2024-09-07T21:29:11Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "This test was incorrect. Its already encoded",
+      "path": "tests/test_url_build.py",
+      "line": null,
+      "created_at": "2024-09-07T22:05:00Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "```suggestion\r\n```",
+      "path": "yarl/_url.py",
+      "line": 1031,
+      "created_at": "2024-09-07T22:11:46Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "```suggestion\r\n            _host_validate(host)\r\n            return host\r\n```",
+      "path": "yarl/_url.py",
+      "line": null,
+      "created_at": "2024-09-07T22:11:54Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "We split / parsed the url so it never going to have the same concerns as #880 so I turned it off here.  There is different validation in urllib which raises different errors so I added a test for that. We may need to do a followup to smooth out this rough edge, but since the case in #880 is addressed, I figure this is good enough for a first pass.",
+      "path": "yarl/_url.py",
+      "line": 290,
+      "created_at": "2024-09-07T22:44:17Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "I'm a bit worried about having to change this test so I'm going to leave it for someone else to take a look before merging, otherwise I think its ready to go now.",
+      "path": "tests/test_url_build.py",
+      "line": null,
+      "created_at": "2024-09-07T22:52:09Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "```suggestion\r\n    assert str(u) == \"http://[::1]\"\r\n```",
+      "path": "tests/test_url_build.py",
+      "line": null,
+      "created_at": "2024-09-26T20:27:03Z"
+    },
+    {
+      "author": "bdraco",
+      "body": "Once I fix https://github.com/aio-libs/yarl/pull/1158 if this still passes after re-basing, I'm now confident enough to merge this",
+      "path": "tests/test_url_build.py",
+      "line": null,
+      "created_at": "2024-09-26T20:56:03Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 130,
+  "deletions": 16,
+  "changed_files_count": 9
+}

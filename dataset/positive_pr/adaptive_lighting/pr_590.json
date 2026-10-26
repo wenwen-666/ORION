@@ -1,0 +1,52 @@
+{
+  "pr_number": 590,
+  "title": "fix: lights unexpectedly turn back on after switch-off",
+  "url": "https://github.com/basnijholt/adaptive-lighting/pull/590",
+  "description": "Cancel ongoing split adaptation commands when lights are turned off to avoid the delayed second half of the command to turn lights back on.\r\n\r\nFixes https://github.com/basnijholt/adaptive-lighting/issues/410#issuecomment-1539788096. There's still a race condition between turn-off and adaptation commands, so it doesn't entirely fix #410. It reduces the likelihood, though (I am testing it locally).",
+  "comments": [
+    {
+      "author": "protyposis",
+      "body": "This PR is just a proposal. I have no experience with Python, so it would be great if someone could take this over and finish it up if it makes sense. Thanks :)",
+      "created_at": "2023-05-10T22:03:00Z"
+    },
+    {
+      "author": "basnijholt",
+      "body": "LGTM!\r\n\r\nWhat do you think @th3w1zard1?",
+      "created_at": "2023-05-13T21:36:47Z"
+    },
+    {
+      "author": "basnijholt",
+      "body": "@protyposis, have you properly tested this at your home and does it alleviate the problem? If so, let's merge.",
+      "created_at": "2023-05-21T03:33:58Z"
+    },
+    {
+      "author": "protyposis",
+      "body": "Just pushed a small improvement, should be fine now. I have it running since two weeks, and it has noticeably reduced the likelihood that lights unexpectedly stay on or turn back on.",
+      "created_at": "2023-05-21T11:37:31Z"
+    },
+    {
+      "author": "basnijholt",
+      "body": "@all-contributors please add @protyposis for code",
+      "created_at": "2023-05-21T17:38:07Z"
+    },
+    {
+      "author": "allcontributors[bot]",
+      "body": "@basnijholt \n\nI've put up [a pull request](https://github.com/basnijholt/adaptive-lighting/pull/597) to add @protyposis! :tada:",
+      "created_at": "2023-05-21T17:38:15Z"
+    }
+  ],
+  "diff": "diff --git a/custom_components/adaptive_lighting/switch.py b/custom_components/adaptive_lighting/switch.py\nindex f933f0686..9ed3e0dac 100644\n--- a/custom_components/adaptive_lighting/switch.py\n+++ b/custom_components/adaptive_lighting/switch.py\n@@ -1111,7 +1111,7 @@ async def _async_update_at_interval(self, now=None) -> None:\n             context=self.create_context(\"interval\"),\n         )\n \n-    async def _adapt_light(\n+    async def _adapt_light(  # noqa: C901\n         self,\n         light: str,\n         transition: int | None = None,\n@@ -1200,9 +1200,7 @@ async def turn_on(service_data):\n                 context=context,\n             )\n \n-        if not self._separate_turn_on_commands:\n-            await turn_on(service_data)\n-        else:\n+        async def turn_on_split():\n             # Could be a list of length 1 or 2\n             service_datas = _split_service_data(\n                 service_data, adapt_brightness, adapt_color\n@@ -1215,6 +1213,18 @@ async def turn_on(service_data):\n                 await asyncio.sleep(self._send_split_delay / 1000.0)\n                 await turn_on(service_datas[1])\n \n+        if not self._separate_turn_on_commands:\n+            await turn_on(service_data)\n+        else:\n+            split_tasks = self.turn_on_off_listener.split_adaptation_tasks\n+            if (previous_task := split_tasks.get(light)) is not None:\n+                previous_task.cancel()\n+            try:\n+                split_tasks[light] = asyncio.ensure_future(turn_on_split())\n+                await split_tasks[light]\n+            except asyncio.CancelledError:\n+                _LOGGER.debug(\"Split adaptation of %s cancelled\", light)\n+\n     async def _update_attrs_and_maybe_adapt_lights(\n         self,\n         lights: list[str] | None = None,\n@@ -1685,6 +1695,8 @@ def __init__(self, hass: HomeAssistant):\n         self.last_state_change: dict[str, list[State]] = {}\n         # Track last 'service_data' to 'light.turn_on' resulting from this integration\n         self.last_service_data: dict[str, dict[str, Any]] = {}\n+        # Track ongoing split adaptations to be able to cancel them\n+        self.split_adaptation_tasks: dict[str, asyncio.Task] = {}\n \n         # Track auto reset of manual_control\n         self.auto_reset_manual_control_timers: dict[str, _AsyncSingleShotTimer] = {}\n@@ -1801,6 +1813,9 @@ def reset(self, *lights, reset_manual_control=True) -> None:\n             self.last_state_change.pop(light, None)\n             self.last_service_data.pop(light, None)\n \n+            if (task := self.split_adaptation_tasks.get(light)) is not None:\n+                task.cancel()\n+\n     async def turn_on_off_event_listener(self, event: Event) -> None:\n         \"\"\"Track 'light.turn_off' and 'light.turn_on' service calls.\"\"\"\n         domain = event.data.get(ATTR_DOMAIN)\n",
+  "changed_files": [
+    "custom_components/adaptive_lighting/switch.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "29e54185e3218d0692cd7a3f3be7607f411cc71c",
+  "post_commit": "2033fcebe9d6edb0c792f0c7c505d21362629599",
+  "merged_at": "2023-05-21T17:36:16Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 19,
+  "deletions": 4,
+  "changed_files_count": 1
+}

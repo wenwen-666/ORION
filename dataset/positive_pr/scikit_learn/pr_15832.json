@@ -1,0 +1,32 @@
+{
+  "pr_number": 15832,
+  "title": "[MRG] Explicit conversion of ndarray to object dtype",
+  "url": "https://github.com/scikit-learn/scikit-learn/pull/15832",
+  "description": "#### Reference Issues/PRs\r\n\r\nFix #15788.\r\n\r\n#### What does this implement/fix? Explain your changes.\r\n\r\nRecently, `numpy` deprecates automatic conversion of ragged arrays to object (see https://github.com/numpy/numpy/pull/14794 for details). Therefore, this kind of arrays must be explicitly created with the parameter `dtype=object` ([NEP 34 - Disallow inferring `dtype=object` for sequences](https://numpy.org/neps/nep-0034.html)).\r\n\r\nThis issue has been easily solved for the module `sklearn/neighbors/_base.py` (lines 279 and 280) since the returned array is always ragged.\r\n\r\nHowever, also affects to methods like `is_multilabel` (line 138) and `target_type` (line 251) in module `sklearn/utils/multiclass` or `check_array` (line 515) in `sklearn/utils/validation.py` (among others) because the deprecation also affects to any call that internally calls `np.asarray` (for instance, the `assert_equal` family of functions calls `np.asarray`). Thus, these cases require more work, investigation and effort.\r\n\r\n#### Any other comments?\r\n\r\nThe PR implementing the NEP 34 causes a lot of problems also in `NumPy` (https://github.com/numpy/numpy/pull/15053) `Pandas` (https://github.com/pandas-dev/pandas/pull/30035) and `Astropy` (https://github.com/astropy/astropy/issues/9716). Therefore, they reverse the PR (https://github.com/numpy/numpy/pull/15066) and leave it out of the 1.18.x and 1.19.x series and work on it in the master.\r\n\r\n**Therefore, this issue should not cause more problems in the `travis` CRON (not for the moment).**\r\n\r\n**Any comments will be appreciated, since the issue is causing more problems than expected.**",
+  "comments": [
+    {
+      "author": "jnothman",
+      "body": "I think this patch correct. Are there any other scikit-learn issues with this change in numpy, i.e. is this patch sufficient for our tests to pass?",
+      "created_at": "2019-12-08T22:10:26Z"
+    },
+    {
+      "author": "alfaro96",
+      "body": "Yes, it is. In fact, `NumPy` core developers decided to revert back the PR causing the original issue and it was \"automatically\" solved (see, for instance, https://travis-ci.org/scikit-learn/scikit-learn/builds/622285240?utm_source=github_status&utm_medium=notification).\r\n\r\nIn the future, I think that it will be important to take care of calls to `np.asarray` method that could receive object dtypes. Let us see what `NumPy` developers decide.",
+      "created_at": "2019-12-08T23:08:25Z"
+    }
+  ],
+  "diff": "diff --git a/sklearn/neighbors/_base.py b/sklearn/neighbors/_base.py\nindex 1ff45332b1e70..3a1fdadfb94b7 100644\n--- a/sklearn/neighbors/_base.py\n+++ b/sklearn/neighbors/_base.py\n@@ -276,8 +276,8 @@ def _radius_neighbors_from_graph(graph, radius, return_distance):\n     indices = indices.astype(np.intp, copy=no_filter_needed)\n \n     if return_distance:\n-        neigh_dist = np.array(np.split(data, indptr[1:-1]))\n-    neigh_ind = np.array(np.split(indices, indptr[1:-1]))\n+        neigh_dist = np.array(np.split(data, indptr[1:-1]), dtype=object)\n+    neigh_ind = np.array(np.split(indices, indptr[1:-1]), dtype=object)\n \n     if return_distance:\n         return neigh_dist, neigh_ind\n",
+  "changed_files": [
+    "sklearn/neighbors/_base.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "9d61fe031724634d412ac8107b0542139e901aca",
+  "post_commit": "29932e690e00fa0c610a8fba2dfb0abc1d66cbac",
+  "merged_at": "2019-12-09T07:45:55Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 2,
+  "deletions": 2,
+  "changed_files_count": 1
+}

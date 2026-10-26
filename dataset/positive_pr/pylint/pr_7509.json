@@ -1,0 +1,168 @@
+{
+  "pr_number": 7509,
+  "title": "Fix false negative ``no-member`` when the code was a `manual` augmented assignments",
+  "url": "https://github.com/pylint-dev/pylint/pull/7509",
+  "description": "<!--\r\nThank you for submitting a PR to pylint!\r\n\r\nTo ease the process of reviewing your PR, do make sure to complete the following boxes.\r\n\r\n- [ ] Write a good description on what the PR does.\r\n- [ ] Create a news fragment with `towncrier create <IssueNumber>.<type>` which will be\r\n  included in the changelog. `<type>` can be one of: new_check, removed_check, extension,\r\n  false_positive, false_negative, bugfix, other, internal. If necessary you can write\r\n  details or offer examples on how the new change is supposed to work.\r\n- [ ] If you used multiple emails or multiple names when contributing, add your mails\r\n      and preferred name in ``script/.contributors_aliases.json``\r\n-->\r\n\r\n## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n\r\n\r\n## Description\r\n\r\nAdd code to detect `no-member` when an augmented assign is done \"manually\", that is, when a user does this\r\n\r\n`obj.value = 1 + obj.value`\r\ninstead of \r\n`obj.value += 1`\r\n\r\nIf `no-member` would be raised in the second case, it should also be raised in the first case, which is why this PR is here!\r\n\r\n<!-- If this PR fixes an issue, use the following to automatically close when we merge: -->\r\n\r\nCloses #4562 (altho I can remove this auto-close if we want to keep it open for the `pydantic` false positive case, though I Personally think it should be a separate issue)\r\n",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 3112831510](https://coveralls.io/builds/52712091)\n\n* **0** of **0**   changed or added relevant lines in **0** files are covered.\n* No unchanged relevant lines lost coverage.\n* Overall coverage remained the same at **95.315%**\n\n---\n\n\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/52712091/badge)](https://coveralls.io/builds/52712091) |\n| :-- | --: |\n| Change from base [Build 3108882423](https://coveralls.io/builds/52698100): |  0.0% |\n| Covered Lines: | 17109 |\n| Relevant Lines: | 17950 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-09-21T16:00:55Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "@Pierre-Sassoulas I was thinking: does it make sense to make this a code style check? `consider-using-augmented-assign`. We would get a nice primer result to check for false positives on this util function.",
+      "created_at": "2022-09-21T18:14:32Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Sounds good ! ",
+      "created_at": "2022-09-21T18:16:52Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "@clavedeluna I'll have a look at converting this into a message tomorrow. You can do so as well if you want to? I'd be happy to guide you in the right direction?",
+      "created_at": "2022-09-21T18:18:24Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> @clavedeluna I'll have a look at converting this into a message tomorrow. You can do so as well if you want to? I'd be happy to guide you in the right direction?\r\n\r\ngo right ahead with adding it, I'll look at Pierre's review. I think doing `consider-using-augmented-assign` should be a separate PR",
+      "created_at": "2022-09-21T18:53:11Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "whoops... broke the tests",
+      "created_at": "2022-09-21T19:14:07Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "Alright so maybe I'm missing something obvious but how is\r\n`pylint/checkers/utils.py:1996: error: Returning Any from function declared to return \"bool`\r\nan issue for `return attr.attrname == node.attrname`\r\n\r\nis that not always a bool? do I wrap it in bool??",
+      "created_at": "2022-09-21T19:23:47Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "> Alright so maybe I'm missing something obvious but how is `pylint/checkers/utils.py:1996: error: Returning Any from function declared to return \"bool` an issue for `return attr.attrname == node.attrname`\r\n> \r\n> is that not always a bool? do I wrap it in bool??\r\n\r\nThis is because `astroid` is not typed so you're essentially comparing `Any with Any`. If you add a disable for this specific error with `type: ignore` we will remove it after `astroid` does have typing.",
+      "created_at": "2022-09-21T19:25:26Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> we will remove it after `astroid` does have typing.\r\n\r\nah makes sense! I'm getting more and more familiar with the code base so thanks for the tip.",
+      "created_at": "2022-09-22T11:12:00Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I'm working a PR that incorporates these changes to get a primer result. Should be done in 30 minutes or something like that.",
+      "created_at": "2022-09-22T11:33:15Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "I'll let you merge this one @DanielNoord ",
+      "created_at": "2022-09-22T11:34:21Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "See https://github.com/PyCQA/pylint/pull/7514.\r\n\r\nI had to change quite a bit. Preferably we merge that PR first and then use the utility introduced there in this PR. The robustness we get from checking the new checker on the primer is a huge benefit compared to the functional tests we can think of ourselves.",
+      "created_at": "2022-09-22T12:27:00Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> See #7514.\r\n> \r\n> I had to change quite a bit. Preferably we merge that PR first and then use the utility introduced there in this PR. The robustness we get from checking the new checker on the primer is a huge benefit compared to the functional tests we can think of ourselves.\r\n\r\nI will rebase and re-do this PR once that one is merged",
+      "created_at": "2022-09-22T13:38:09Z"
+    }
+  ],
+  "diff": "diff --git a/doc/whatsnew/fragments/4562.bugfix b/doc/whatsnew/fragments/4562.bugfix\nnew file mode 100644\nindex 0000000000..4e153d4876\n--- /dev/null\n+++ b/doc/whatsnew/fragments/4562.bugfix\n@@ -0,0 +1,3 @@\n+Fix ``no-member`` false negative when augmented assign is done manually, without ``+=``.\n+\n+Closes #4562\ndiff --git a/pylint/checkers/typecheck.py b/pylint/checkers/typecheck.py\nindex aabda22295..081d9cd22c 100644\n--- a/pylint/checkers/typecheck.py\n+++ b/pylint/checkers/typecheck.py\n@@ -1160,6 +1160,9 @@ def visit_attribute(\n                     try:\n                         if isinstance(\n                             attr_node.statement(future=True), nodes.AugAssign\n+                        ) or (\n+                            isinstance(attr_parent, nodes.Assign)\n+                            and utils.is_augmented_assign(attr_parent)[0]\n                         ):\n                             continue\n                     except astroid.exceptions.StatementMissing:\ndiff --git a/tests/functional/n/no/no_member_augassign.py b/tests/functional/n/no/no_member_augassign.py\nnew file mode 100644\nindex 0000000000..f01567597c\n--- /dev/null\n+++ b/tests/functional/n/no/no_member_augassign.py\n@@ -0,0 +1,25 @@\n+\"\"\"Tests for no-member in relation to AugAssign operations.\"\"\"\n+# pylint: disable=missing-module-docstring, too-few-public-methods, missing-class-docstring, invalid-name, consider-using-augmented-assign\n+\n+# Test for: https://github.com/PyCQA/pylint/issues/4562\n+class A:\n+    value: int\n+\n+obj_a = A()\n+obj_a.value += 1  # [no-member]\n+\n+\n+class B:\n+    value: int\n+\n+obj_b = B()\n+obj_b.value = 1 + obj_b.value  # [no-member]\n+\n+\n+class C:\n+    value: int\n+\n+\n+obj_c = C()\n+obj_c.value += 1  # [no-member]\n+obj_c.value = 1 + obj_c.value  # [no-member]\ndiff --git a/tests/functional/n/no/no_member_augassign.txt b/tests/functional/n/no/no_member_augassign.txt\nnew file mode 100644\nindex 0000000000..68abf0b935\n--- /dev/null\n+++ b/tests/functional/n/no/no_member_augassign.txt\n@@ -0,0 +1,4 @@\n+no-member:9:0:9:11::Instance of 'A' has no 'value' member:INFERENCE\n+no-member:16:18:16:29::Instance of 'B' has no 'value' member:INFERENCE\n+no-member:24:0:24:11::Instance of 'C' has no 'value' member:INFERENCE\n+no-member:25:18:25:29::Instance of 'C' has no 'value' member:INFERENCE\n",
+  "changed_files": [
+    "doc/whatsnew/fragments/4562.bugfix",
+    "pylint/checkers/typecheck.py",
+    "tests/functional/n/no/no_member_augassign.py",
+    "tests/functional/n/no/no_member_augassign.txt"
+  ],
+  "changed_functions": [],
+  "pre_commit": "b418a7f2a4e6c5960bb8fd05d78412ca46c47471",
+  "post_commit": "ca6648a909a7c583cc6c210bcaa126b4f6fb1f3b",
+  "merged_at": "2022-09-23T19:11:37Z",
+  "review_comments": [
+    {
+      "author": "clavedeluna",
+      "body": "this entire util func is pretty ugly ... all ears for improvements",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T15:55:34Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "As children is only used in the second list  comprehension, imbricating both list comprehension would be more efficient. \n\nI'm on mobile so I can't check get_children api but I wouldn't be surprised if you can get all the children of a certain type directly.",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:03:05Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "We can avoid doing the following if in some cases like this:\n```suggestion\n    if not binops or binops[0] ! = \"+\":",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:06:31Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\n    return attr.attrname == node.attrname\n```\n",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:07:36Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:08:05Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\n    else:\n```\n",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:08:37Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "I'm much more in favor of \r\n```\r\nvar = None\r\nif ...\r\n   var = 1\r\nelif ...\r\n  var = 2\r\n\r\nif not var\r\n```\r\n\r\nbut hey I\"ll take your suggestion",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:57:36Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "good thinking!",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T18:57:44Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "I did not consider the case where var is none from the if, I'm not opinionated about this you asked about possible style fix so I tried :) ",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T19:00:12Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "I don't see a way to get children of a certain type https://pylint.pycqa.org/projects/astroid/en/latest/api/astroid.nodes.html#astroid.nodes.AugAssign.get_children\r\nbut will def combine the list comps",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T19:00:50Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Maybe node_of_classes but I'm not sure it's only the children that are returned. Sorry for suggesting things that I can't test myself right now, I'm on mobile. ",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-09-21T19:10:03Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 35,
+  "deletions": 0,
+  "changed_files_count": 4
+}

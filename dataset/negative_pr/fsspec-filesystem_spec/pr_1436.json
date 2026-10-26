@@ -1,0 +1,48 @@
+{
+  "pr_number": 1436,
+  "title": "bugfix: ReferenceFileSystem.cat() scrambles and omits reference mappings",
+  "url": "https://github.com/fsspec/filesystem_spec/pull/1436",
+  "description": "This PR fixes #1435 by distinguishing valid path references regardless of the protocol.",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-11-22T15:25:22+00:00",
+  "additions": 31,
+  "deletions": 12,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "martindurant",
+      "body": "That was fast! :)",
+      "created_at": "2023-11-22T14:51:12+00:00"
+    },
+    {
+      "author": "arongergely",
+      "body": "@martindurant I spent 2 days troubleshooting my kerchunk+xarray code. So this reaction time is not a true indication of effort :laughing: ",
+      "created_at": "2023-11-22T14:55:33+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "martindurant",
+      "body": "Perhaps it would be clearer if this were inside the `try` block, to show that there must be the same number of urls, starts, ends, valid_paths when we are done. Alternatively, all four come here in the `else` block, since it's only the `_cat_common` line which can error.",
+      "path": "fsspec/implementations/reference.py",
+      "line": null,
+      "created_at": "2023-11-22T15:07:16+00:00"
+    },
+    {
+      "author": "arongergely",
+      "body": "that makes sense, I will adjust it. All under `else:` seems the cleanest to me",
+      "path": "fsspec/implementations/reference.py",
+      "line": null,
+      "created_at": "2023-11-22T15:11:31+00:00"
+    }
+  ],
+  "changed_files": [
+    "fsspec/implementations/reference.py",
+    "fsspec/implementations/tests/test_reference.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/fsspec/implementations/reference.py b/fsspec/implementations/reference.py\nindex cfbd39fc1..ebd54bc26 100644\n--- a/fsspec/implementations/reference.py\n+++ b/fsspec/implementations/reference.py\n@@ -798,20 +798,22 @@ def cat(self, path, recursive=False, on_error=\"raise\", **kwargs):\n         out = {}\n         for proto, paths in proto_dict.items():\n             fs = self.fss[proto]\n-            urls, starts, ends = [], [], []\n+            urls, starts, ends, valid_paths = [], [], [], []\n             for p in paths:\n                 # find references or label not-found. Early exit if any not\n                 # found and on_error is \"raise\"\n                 try:\n                     u, s, e = self._cat_common(p)\n-                    urls.append(u)\n-                    starts.append(s)\n-                    ends.append(e)\n                 except FileNotFoundError as err:\n                     if on_error == \"raise\":\n                         raise\n                     if on_error != \"omit\":\n                         out[p] = err\n+                else:\n+                    urls.append(u)\n+                    starts.append(s)\n+                    ends.append(e)\n+                    valid_paths.append(p)\n \n             # process references into form for merging\n             urls2 = []\n@@ -819,7 +821,7 @@ def cat(self, path, recursive=False, on_error=\"raise\", **kwargs):\n             ends2 = []\n             paths2 = []\n             whole_files = set()\n-            for u, s, e, p in zip(urls, starts, ends, paths):\n+            for u, s, e, p in zip(urls, starts, ends, valid_paths):\n                 if isinstance(u, bytes):\n                     # data\n                     out[p] = u\n@@ -831,7 +833,7 @@ def cat(self, path, recursive=False, on_error=\"raise\", **kwargs):\n                     starts2.append(s)\n                     ends2.append(e)\n                     paths2.append(p)\n-            for u, s, e, p in zip(urls, starts, ends, paths):\n+            for u, s, e, p in zip(urls, starts, ends, valid_paths):\n                 # second run to account for files that are to be loaded whole\n                 if s is not None and u not in whole_files:\n                     urls2.append(u)\n@@ -851,7 +853,7 @@ def cat(self, path, recursive=False, on_error=\"raise\", **kwargs):\n             bytes_out = fs.cat_ranges(new_paths, new_starts, new_ends)\n \n             # unbundle from merged bytes - simple approach\n-            for u, s, e, p in zip(urls, starts, ends, paths):\n+            for u, s, e, p in zip(urls, starts, ends, valid_paths):\n                 if p in out:\n                     continue  # was bytes, already handled\n                 for np, ns, ne, b in zip(new_paths, new_starts, new_ends, bytes_out):\ndiff --git a/fsspec/implementations/tests/test_reference.py b/fsspec/implementations/tests/test_reference.py\nindex efdca6598..1b92558fa 100644\n--- a/fsspec/implementations/tests/test_reference.py\n+++ b/fsspec/implementations/tests/test_reference.py\n@@ -449,6 +449,7 @@ def test_merging(m):\n def test_cat_file_ranges(m):\n     other = b\"other test data\"\n     m.pipe(\"/b\", other)\n+\n     fs = fsspec.filesystem(\n         \"reference\",\n         fo={\n@@ -467,15 +468,26 @@ def test_cat_file_ranges(m):\n     assert fs.cat_file(\"d\", 1, -3) == other[4:10][1:-3]\n \n \n-def test_cat_missing(m):\n+@pytest.mark.parametrize(\n+    \"fo\",\n+    [\n+        {\n+            \"c\": [\"memory://b\"],\n+            \"d\": [\"memory://unknown\", 4, 6],\n+        },\n+        {\n+            \"c\": [\"memory://b\"],\n+            \"d\": [\"//unknown\", 4, 6],\n+        },\n+    ],\n+    ids=[\"memory protocol\", \"mixed protocols: memory and unspecified\"],\n+)\n+def test_cat_missing(m, fo):\n     other = b\"other test data\"\n     m.pipe(\"/b\", other)\n     fs = fsspec.filesystem(\n         \"reference\",\n-        fo={\n-            \"c\": [\"memory://b\"],\n-            \"d\": [\"memory://unknown\", 4, 6],\n-        },\n+        fo=fo,\n     )\n     with pytest.raises(FileNotFoundError):\n         fs.cat(\"notafile\")\n@@ -508,6 +520,11 @@ def test_cat_missing(m):\n     out = mapper.getitems([\"c\", \"d\"], on_error=\"return\")\n     assert isinstance(out[\"d\"], ReferenceNotReachable)\n \n+    out = fs.cat([\"notone\", \"c\", \"d\"], on_error=\"return\")\n+    assert isinstance(out[\"notone\"], FileNotFoundError)\n+    assert out[\"c\"] == other\n+    assert isinstance(out[\"d\"], ReferenceNotReachable)\n+\n     out = mapper.getitems([\"c\", \"d\"], on_error=\"omit\")\n     assert list(out) == [\"c\"]\n \n",
+  "pre_commit": "14a778879b6a68b65031ef86e232b9d88c005bab",
+  "post_commit": "f7b454e544de7f2e5bc8ab737219e34e6282bdb5"
+}

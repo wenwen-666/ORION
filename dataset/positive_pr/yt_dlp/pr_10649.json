@@ -1,0 +1,141 @@
+{
+  "pr_number": 10649,
+  "title": "[core] Support emitting ConEmu progress codes",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/10649",
+  "description": "**IMPORTANT**: PRs without the template will be CLOSED\r\n### Description of your *pull request* and other information\r\nImplements outputting [ConEmu progress bar sequences](<https://learn.microsoft.com/en-us/windows/terminal/tutorials/progress-bar-sequences>) (tied to `--console-title`)\r\n\r\nFixes #10543\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n<!--\r\n\r\n# PLEASE FOLLOW THE GUIDE BELOW\r\n\r\n- You will be asked some questions, please read them **carefully** and answer honestly\r\n- Put an `x` into all the boxes `[ ]` relevant to your *pull request* (like [x])\r\n- Use *Preview* tab to see how your *pull request* will actually look like\r\n\r\n-->\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check all of the following options that apply:\r\n- [x] I am the original author of this code and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n\r\n### What is the purpose of your *pull request*?\r\n- [x] New feature\r\n\r\n</details>\r\n",
+  "comments": [],
+  "diff": "diff --git a/yt_dlp/YoutubeDL.py b/yt_dlp/YoutubeDL.py\nindex 3293a907651a..7026822b6a8f 100644\n--- a/yt_dlp/YoutubeDL.py\n+++ b/yt_dlp/YoutubeDL.py\n@@ -157,7 +157,7 @@\n     write_json_file,\n     write_string,\n )\n-from .utils._utils import _UnsafeExtensionError, _YDLLogger\n+from .utils._utils import _UnsafeExtensionError, _YDLLogger, _ProgressState\n from .utils.networking import (\n     HTTPHeaderDict,\n     clean_headers,\n@@ -642,20 +642,19 @@ def __init__(self, params=None, auto_init=True):\n         self.cache = Cache(self)\n         self.__header_cookies = []\n \n+        try:\n+            windows_enable_vt_mode()\n+        except Exception as e:\n+            self.write_debug(f'Failed to enable VT mode: {e}')\n+\n         stdout = sys.stderr if self.params.get('logtostderr') else sys.stdout\n         self._out_files = Namespace(\n             out=stdout,\n             error=sys.stderr,\n             screen=sys.stderr if self.params.get('quiet') else stdout,\n-            console=None if os.name == 'nt' else next(\n-                filter(supports_terminal_sequences, (sys.stderr, sys.stdout)), None),\n+            console=next(filter(supports_terminal_sequences, (sys.stderr, sys.stdout)), None),\n         )\n \n-        try:\n-            windows_enable_vt_mode()\n-        except Exception as e:\n-            self.write_debug(f'Failed to enable VT mode: {e}')\n-\n         if self.params.get('no_color'):\n             if self.params.get('color') is not None:\n                 self.params.setdefault('_warnings', []).append(\n@@ -956,21 +955,22 @@ def to_stderr(self, message, only_once=False):\n             self._write_string(f'{self._bidi_workaround(message)}\\n', self._out_files.error, only_once=only_once)\n \n     def _send_console_code(self, code):\n-        if os.name == 'nt' or not self._out_files.console:\n-            return\n+        if not supports_terminal_sequences(self._out_files.console):\n+            return False\n         self._write_string(code, self._out_files.console)\n+        return True\n \n-    def to_console_title(self, message):\n-        if not self.params.get('consoletitle', False):\n+    def to_console_title(self, message=None, progress_state=None, percent=None):\n+        if not self.params.get('consoletitle'):\n             return\n-        message = remove_terminal_sequences(message)\n-        if os.name == 'nt':\n-            if ctypes.windll.kernel32.GetConsoleWindow():\n-                # c_wchar_p() might not be necessary if `message` is\n-                # already of type unicode()\n-                ctypes.windll.kernel32.SetConsoleTitleW(ctypes.c_wchar_p(message))\n-        else:\n-            self._send_console_code(f'\\033]0;{message}\\007')\n+\n+        if message:\n+            success = self._send_console_code(f'\\033]0;{remove_terminal_sequences(message)}\\007')\n+            if not success and os.name == 'nt' and ctypes.windll.kernel32.GetConsoleWindow():\n+                ctypes.windll.kernel32.SetConsoleTitleW(message)\n+\n+        if isinstance(progress_state, _ProgressState):\n+            self._send_console_code(progress_state.get_ansi_escape(percent))\n \n     def save_console_title(self):\n         if not self.params.get('consoletitle') or self.params.get('simulate'):\n@@ -984,6 +984,7 @@ def restore_console_title(self):\n \n     def __enter__(self):\n         self.save_console_title()\n+        self.to_console_title(progress_state=_ProgressState.INDETERMINATE)\n         return self\n \n     def save_cookies(self):\n@@ -992,6 +993,7 @@ def save_cookies(self):\n \n     def __exit__(self, *args):\n         self.restore_console_title()\n+        self.to_console_title(progress_state=_ProgressState.HIDDEN)\n         self.close()\n \n     def close(self):\ndiff --git a/yt_dlp/downloader/common.py b/yt_dlp/downloader/common.py\nindex e8dcb37cc314..bb9303f8a10b 100644\n--- a/yt_dlp/downloader/common.py\n+++ b/yt_dlp/downloader/common.py\n@@ -31,6 +31,7 @@\n     timetuple_from_msec,\n     try_call,\n )\n+from ..utils._utils import _ProgressState\n \n \n class FileDownloader:\n@@ -333,7 +334,7 @@ def _report_progress_status(self, s, default_template):\n             progress_dict), s.get('progress_idx') or 0)\n         self.to_console_title(self.ydl.evaluate_outtmpl(\n             progress_template.get('download-title') or 'yt-dlp %(progress._default_template)s',\n-            progress_dict))\n+            progress_dict), _ProgressState.from_dict(s), s.get('_percent'))\n \n     def _format_progress(self, *args, **kwargs):\n         return self.ydl._format_text(\n@@ -357,6 +358,7 @@ def with_fields(*tups, default=''):\n                 '_speed_str': self.format_speed(speed).strip(),\n                 '_total_bytes_str': _format_bytes('total_bytes'),\n                 '_elapsed_str': self.format_seconds(s.get('elapsed')),\n+                '_percent': 100.0,\n                 '_percent_str': self.format_percent(100),\n             })\n             self._report_progress_status(s, join_nonempty(\n@@ -375,13 +377,15 @@ def with_fields(*tups, default=''):\n                     return\n                 self._progress_delta_time += update_delta\n \n+        progress = try_call(\n+            lambda: 100 * s['downloaded_bytes'] / s['total_bytes'],\n+            lambda: 100 * s['downloaded_bytes'] / s['total_bytes_estimate'],\n+            lambda: s['downloaded_bytes'] == 0 and 0)\n         s.update({\n             '_eta_str': self.format_eta(s.get('eta')).strip(),\n             '_speed_str': self.format_speed(s.get('speed')),\n-            '_percent_str': self.format_percent(try_call(\n-                lambda: 100 * s['downloaded_bytes'] / s['total_bytes'],\n-                lambda: 100 * s['downloaded_bytes'] / s['total_bytes_estimate'],\n-                lambda: s['downloaded_bytes'] == 0 and 0)),\n+            '_percent': progress,\n+            '_percent_str': self.format_percent(progress),\n             '_total_bytes_str': _format_bytes('total_bytes'),\n             '_total_bytes_estimate_str': _format_bytes('total_bytes_estimate'),\n             '_downloaded_bytes_str': _format_bytes('downloaded_bytes'),\ndiff --git a/yt_dlp/postprocessor/common.py b/yt_dlp/postprocessor/common.py\nindex be2bb33f643a..f0a71c1ffee3 100644\n--- a/yt_dlp/postprocessor/common.py\n+++ b/yt_dlp/postprocessor/common.py\n@@ -10,6 +10,7 @@\n     _configuration_args,\n     deprecation_warning,\n )\n+from ..utils._utils import _ProgressState\n \n \n class PostProcessorMetaClass(type):\n@@ -189,7 +190,7 @@ def report_progress(self, s):\n \n         self._downloader.to_console_title(self._downloader.evaluate_outtmpl(\n             progress_template.get('postprocess-title') or 'yt-dlp %(progress._default_template)s',\n-            progress_dict))\n+            progress_dict), _ProgressState.from_dict(s), s.get('_percent'))\n \n     def _retry_download(self, err, count, retries):\n         # While this is not an extractor, it behaves similar to one and\ndiff --git a/yt_dlp/utils/_utils.py b/yt_dlp/utils/_utils.py\nindex c6a90a0ddb2b..3e7a375ee644 100644\n--- a/yt_dlp/utils/_utils.py\n+++ b/yt_dlp/utils/_utils.py\n@@ -8,6 +8,7 @@\n import datetime as dt\n import email.header\n import email.utils\n+import enum\n import errno\n import functools\n import hashlib\n@@ -5677,3 +5678,32 @@ def stdout(self, message):\n     def stderr(self, message):\n         if self._ydl:\n             self._ydl.to_stderr(message)\n+\n+\n+class _ProgressState(enum.Enum):\n+    \"\"\"\n+    Represents a state for a progress bar.\n+\n+    See: https://conemu.github.io/en/AnsiEscapeCodes.html#ConEmu_specific_OSC\n+    \"\"\"\n+\n+    HIDDEN = 0\n+    INDETERMINATE = 3\n+    VISIBLE = 1\n+    WARNING = 4\n+    ERROR = 2\n+\n+    @classmethod\n+    def from_dict(cls, s, /):\n+        if s['status'] == 'finished':\n+            return cls.INDETERMINATE\n+\n+        # Not currently used\n+        if s['status'] == 'error':\n+            return cls.ERROR\n+\n+        return cls.INDETERMINATE if s.get('_percent') is None else cls.VISIBLE\n+\n+    def get_ansi_escape(self, /, percent=None):\n+        percent = 0 if percent is None else int(percent)\n+        return f'\\033]9;4;{self.value};{percent}\\007'\n",
+  "changed_files": [
+    "yt_dlp/YoutubeDL.py",
+    "yt_dlp/downloader/common.py",
+    "yt_dlp/postprocessor/common.py",
+    "yt_dlp/utils/_utils.py"
+  ],
+  "changed_functions": [
+    "to_console_title",
+    "from_dict",
+    "get_ansi_escape"
+  ],
+  "pre_commit": "9deed13d7cce6d3647379e50589c92de89227509",
+  "post_commit": "f7a1f2d8132967a62b0f6d5665c6d2dde2d42c09",
+  "merged_at": "2025-02-20T19:33:31Z",
+  "review_comments": [
+    {
+      "author": "Grub4K",
+      "body": "opted for this to simplify handling, and dedupe calculations. Will have to be implemented for postprocessor progress to be properly used",
+      "path": "yt_dlp/downloader/common.py",
+      "line": 387,
+      "created_at": "2024-08-03T21:24:26Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "I don't like that this code is duplicated. Wouldn't it be better to pass `percent` and `state` to `to_console_title` instead?",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T14:17:51Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "Why this check? Where did you get these states? I don't remember there being an error state...",
+      "path": "yt_dlp/downloader/common.py",
+      "line": null,
+      "created_at": "2024-12-25T14:19:13Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "```suggestion\r\n        state = 1 if s['status'] == 'started' else 2\r\n```",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T14:20:07Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "https://github.com/yt-dlp/yt-dlp/blob/9f42e68a74f3f00b0253fe70763abd57cac4237b/README.md?plain=1#L2067-L2070\r\nhttps://github.com/yt-dlp/yt-dlp/blob/9f42e68a74f3f00b0253fe70763abd57cac4237b/yt_dlp/YoutubeDL.py#L378-L382\r\n\r\nI was following \"Check this first and ignore unknown values\". If it's inaccurate it should be adjusted first. `started`, as suggested below, is also none of the values advertised, which means it should be ignored.",
+      "path": "yt_dlp/downloader/common.py",
+      "line": null,
+      "created_at": "2024-12-25T16:28:11Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "On the other hand, I dislike adding more functionality to the `to_console_title` function... I do see the point though, as this is specifically tied to `--console-title`. If you think its better covered in there we can do that instead.",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T16:32:54Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "Seems I forgot to update docs when hooks were added to PP.\r\n\r\nAs for \"ignore unknown values\", it's for future-proofing and only applies to third party code",
+      "path": "yt_dlp/downloader/common.py",
+      "line": null,
+      "created_at": "2024-12-25T19:18:08Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "I'd prefer that. Or atleast a new function. Having the logic in two places seems like a bad idea.",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T19:19:41Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "I see. I dont know these very well, so thats why I followed the docs lmao",
+      "path": "yt_dlp/downloader/common.py",
+      "line": null,
+      "created_at": "2024-12-25T19:50:50Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "If `started` differs from `downloading`, should I just watch for both and pass in the info dict? Or pass the `state` directly as a parameter?",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T19:51:50Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "`state` makes more sense than `status` imo. Or perhaps `is_error=s['status'] == 'error'`\r\n\r\nDo you foresee us ever needing a state other than `1`/`2`?",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T20:13:57Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "yeah, we should probably apply `3` for postprocessors that do not supply progress?",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T20:18:34Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "So, I just had a quick look through code and only found `finished`, `downloading`, `started`. Maybe `error` was planned to be added but never finished? The docs are same since ytdl.\r\n\r\nWe might as well keep your support for error state though.",
+      "path": "yt_dlp/downloader/common.py",
+      "line": null,
+      "created_at": "2024-12-25T20:20:25Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "True. Then `state` makes most sense",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-25T20:25:15Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "Does something like this work for you?",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-27T15:33:18Z"
+    },
+    {
+      "author": "pukkandan",
+      "body": "I don't like that `_ProgressState` knows about `_percent`/`status`. But good enough",
+      "path": "yt_dlp/postprocessor/common.py",
+      "line": null,
+      "created_at": "2024-12-27T16:57:55Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 63,
+  "deletions": 26,
+  "changed_files_count": 4
+}

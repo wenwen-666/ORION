@@ -1,0 +1,100 @@
+{
+  "pr_number": 1576,
+  "title": "Do not swallow errors on mv",
+  "url": "https://github.com/fsspec/filesystem_spec/pull/1576",
+  "description": "fixes #1559 . This prevents data corruption when using fsspec.mv and adds a unit test.",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2024-04-18T14:46:40+00:00",
+  "additions": 62,
+  "deletions": 2,
+  "changed_files_count": 3,
+  "comments": [
+    {
+      "author": "Skylion007",
+      "body": "Current failres appear to be flakes",
+      "created_at": "2024-04-16T17:31:17+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Do you think `mv` should have an `on_error` of its own? I can see an argument that we should not delete any file if the copy phase failed, or maybe that we should delete, but only for those files that successfully moved.",
+      "created_at": "2024-04-17T14:16:44+00:00"
+    },
+    {
+      "author": "Skylion007",
+      "body": "@martindurant Regardless, we should never delete the src files if the copy failed, wouldn't you agree? Otherwise, the src files could be lost and data corruption could occur.",
+      "created_at": "2024-04-17T14:44:31+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Agreed, but should we delete the ones that did copy ok? If we raise here, we lose the information on which ones copied and which did not.",
+      "created_at": "2024-04-17T14:49:13+00:00"
+    },
+    {
+      "author": "Skylion007",
+      "body": "> Agreed, but should we delete the ones that did copy ok? If we raise here, we lose the information on which ones copied and which did not.\r\n\r\nHmm, we could try, but we don't guarantee that would could even delete them I suppose. That could be a fix in a subsequent PR for sure, but the current behavior of deleting the files whether the copy succeeds or not is extremely dangerous.\r\n\r\nWhether this is a big or not, `on_error` only ignores FileNotFoundErrors, and does not ignore PermissionDeniedError or other issues which is better than I feared.\r\n\r\nTo be honest, the error handling, path expansion, unit tests and just generally consistency of all all the spec utility functions are in dire need of a clean up.",
+      "created_at": "2024-04-17T14:55:59+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "OK, I'm going to merge this as being better behaviour than before; however, we should \r\n- fix copy to allow on_error=\"return\", returning the list of files that were successfully copied or exception instances for each failure. The output list will be the same length as the number of file copies attempted\r\n- allow mv to have on_error=\"return\"|\"omit\" (or \"ignore\"), which will delete only those files which copied. \"return\" would provide the exceptions back.",
+      "created_at": "2024-04-18T14:38:18+00:00"
+    },
+    {
+      "author": "Skylion007",
+      "body": "@martindurant Why not just allow on_error to be a callback object? That seems like it could be useful instead of adding more and more strings that backends potentially need to support?",
+      "created_at": "2024-04-21T17:30:24+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "> allow on_error to be a callback object?\r\n\r\nIf you can figure out a way to phrase that... but of course, we have quite some code depending on the current structure. Maybe an enum is a good idea, so at least the possibilities are clearly defined.",
+      "created_at": "2024-04-21T17:33:48+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "Skylion007",
+      "body": "This is due a lint failure on master",
+      "path": "docs/source/index.rst",
+      "line": null,
+      "created_at": "2024-04-16T16:22:02+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Does this clean up after the test?",
+      "path": "fsspec/tests/abstract/mv.py",
+      "line": null,
+      "created_at": "2024-04-18T14:02:26+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Oh sorry, I see you did this below; it would leave orphan directories if the test fails before getting there, so a fixture would be better",
+      "path": "fsspec/tests/abstract/mv.py",
+      "line": null,
+      "created_at": "2024-04-18T14:02:59+00:00"
+    },
+    {
+      "author": "Skylion007",
+      "body": "Would this leave orphaned directories though @martindurant ? Wouldn't the tmpdir fixture clean them up? Or am I missing? Or would the permission issue prevent that...",
+      "path": "fsspec/tests/abstract/mv.py",
+      "line": null,
+      "created_at": "2024-04-21T17:29:37+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "That's what I am thining. I don't know how smart the tmpdir fixture is, I am surprised if it considers permissions. ",
+      "path": "fsspec/tests/abstract/mv.py",
+      "line": null,
+      "created_at": "2024-04-21T17:34:40+00:00"
+    }
+  ],
+  "changed_files": [
+    "docs/source/index.rst",
+    "fsspec/spec.py",
+    "fsspec/tests/abstract/mv.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/docs/source/index.rst b/docs/source/index.rst\nindex c04d52eae..1e103fd04 100644\n--- a/docs/source/index.rst\n+++ b/docs/source/index.rst\n@@ -53,7 +53,7 @@ The following libraries use ``fsspec`` internally for path and file handling:\n    maintainable and modular data science code\n #. `pyxet`_, a Python library for mounting and\n    accessing very large datasets from XetHub\n-#. `Huggingface🤗 Datasets`_, a popular library to \n+#. `Huggingface🤗 Datasets`_, a popular library to\n    load&manipulate data for Deep Learning models\n \n ``fsspec`` filesystems are also supported by:\ndiff --git a/fsspec/spec.py b/fsspec/spec.py\nindex b6f73f350..9a7e4e8b9 100644\n--- a/fsspec/spec.py\n+++ b/fsspec/spec.py\n@@ -1177,7 +1177,10 @@ def mv(self, path1, path2, recursive=False, maxdepth=None, **kwargs):\n         if path1 == path2:\n             logger.debug(\"%s mv: The paths are the same, so no files were moved.\", self)\n         else:\n-            self.copy(path1, path2, recursive=recursive, maxdepth=maxdepth)\n+            # explicitly raise exception to prevent data corruption\n+            self.copy(\n+                path1, path2, recursive=recursive, maxdepth=maxdepth, onerror=\"raise\"\n+            )\n             self.rm(path1, recursive=recursive)\n \n     def rm_file(self, path):\ndiff --git a/fsspec/tests/abstract/mv.py b/fsspec/tests/abstract/mv.py\nnew file mode 100644\nindex 000000000..39f6caa3d\n--- /dev/null\n+++ b/fsspec/tests/abstract/mv.py\n@@ -0,0 +1,57 @@\n+import os\n+\n+import pytest\n+\n+import fsspec\n+\n+\n+def test_move_raises_error_with_tmpdir(tmpdir):\n+    # Create a file in the temporary directory\n+    source = tmpdir.join(\"source_file.txt\")\n+    source.write(\"content\")\n+\n+    # Define a destination that simulates a protected or invalid path\n+    destination = tmpdir.join(\"non_existent_directory/destination_file.txt\")\n+\n+    # Instantiate the filesystem (assuming the local file system interface)\n+    fs = fsspec.filesystem(\"file\")\n+\n+    # Use the actual file paths as string\n+    with pytest.raises(FileNotFoundError):\n+        fs.mv(str(source), str(destination))\n+\n+\n+@pytest.mark.parametrize(\"recursive\", (True, False))\n+def test_move_raises_error_with_tmpdir_permission(recursive, tmpdir):\n+    # Create a file in the temporary directory\n+    source = tmpdir.join(\"source_file.txt\")\n+    source.write(\"content\")\n+\n+    # Create a protected directory (non-writable)\n+    protected_dir = tmpdir.mkdir(\"protected_directory\")\n+    protected_path = str(protected_dir)\n+\n+    # Set the directory to read-only\n+    if os.name == \"nt\":\n+        os.system(f'icacls \"{protected_path}\" /deny Everyone:(W)')\n+    else:\n+        os.chmod(protected_path, 0o555)  # Sets the directory to read-only\n+\n+    # Define a destination inside the protected directory\n+    destination = protected_dir.join(\"destination_file.txt\")\n+\n+    # Instantiate the filesystem (assuming the local file system interface)\n+    fs = fsspec.filesystem(\"file\")\n+\n+    # Try to move the file to the read-only directory, expecting a permission error\n+    with pytest.raises(PermissionError):\n+        fs.mv(str(source), str(destination), recursive=recursive)\n+\n+    # Assert the file was not created in the destination\n+    assert not os.path.exists(destination)\n+\n+    # Cleanup: Restore permissions so the directory can be cleaned up\n+    if os.name == \"nt\":\n+        os.system(f'icacls \"{protected_path}\" /remove:d Everyone')\n+    else:\n+        os.chmod(protected_path, 0o755)  # Restore write permission for cleanup\n",
+  "pre_commit": "926ec195c5fb5c0061f369c209b257c1e9189437",
+  "post_commit": "346a589fef9308550ffa3d0d510f2db67281bb05"
+}

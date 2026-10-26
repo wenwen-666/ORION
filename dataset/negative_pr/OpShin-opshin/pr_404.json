@@ -1,0 +1,63 @@
+{
+  "pr_number": 404,
+  "title": "Bug fix, Recursion Error #369",
+  "url": "https://github.com/OpShin/opshin/pull/404",
+  "description": "Targeting #369 \r\n\r\nTODO:\r\n\r\n- [x] implement gt and lt binops for booleans\r\n- [x] implement adding bools and ints\r\n- [x] Write unit tests",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "6f99124f990f47557a65d95c372788e5733e664e",
+  "merged_at": "2024-09-04T13:45:45+00:00",
+  "created_at": "2024-08-23T22:14:01+00:00",
+  "closed_at": "2024-09-04T13:45:45+00:00",
+  "user": "SCMusson",
+  "additions": 42,
+  "deletions": 0,
+  "changed_files_count": 2,
+  "labels": [],
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "\n[![Coverage Status](https://coveralls.io/builds/69603077/badge)](https://coveralls.io/builds/69603077)\n\ncoverage: 89.406% (+0.03%) from 89.376%\nwhen pulling **8df47f1cb479b1c94e1361df5032b1727c8e1c6c on SCMusson:bug_fix_bool_to_int**\ninto **fd297fbdebe44b7b781ef34510850ed16c3291dc on OpShin:dev**.\n",
+      "created_at": "2024-09-04T13:43:56+00:00"
+    },
+    {
+      "author": "nielstron",
+      "body": "Looks good, thank you @SCMusson \r\nPlease send your Cardano Mainnet Address so that I can transfer the bug bounty!",
+      "created_at": "2024-09-04T13:45:31+00:00"
+    },
+    {
+      "author": "SCMusson",
+      "body": "addr1qxuyxgyx9qak0nw2pd8wukvy2vdkmgfmr49jkca8ex5nhf493vtsr3yl4f3553sxfx7wzx58cx5pnhekvtlgqf55lw9s3nt0ty",
+      "created_at": "2024-09-04T16:58:15+00:00"
+    },
+    {
+      "author": "nielstron",
+      "body": "Bounty paid out in e65c681eeadff8283afa7e00c84cb3c3beb6db1db671f0fe57f8e885df956454 🎉 ",
+      "created_at": "2024-09-04T19:39:48+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "nielstron",
+      "body": "```suggestion\r\n    return 5-(a>b)\r\n```",
+      "path": "opshin/tests/test_misc.py",
+      "line": null,
+      "created_at": "2024-09-04T12:35:51+00:00"
+    },
+    {
+      "author": "nielstron",
+      "body": "```suggestion\r\n        self.assertEquals(res, 5 - (a > b))\r\n```",
+      "path": "opshin/tests/test_misc.py",
+      "line": null,
+      "created_at": "2024-09-04T12:36:05+00:00"
+    }
+  ],
+  "changed_files": [
+    "opshin/tests/test_misc.py",
+    "opshin/type_impls.py"
+  ],
+  "diff": "diff --git a/opshin/tests/test_misc.py b/opshin/tests/test_misc.py\nindex b8e43471..be934852 100644\n--- a/opshin/tests/test_misc.py\n+++ b/opshin/tests/test_misc.py\n@@ -3024,3 +3024,21 @@ def validator(_: None) -> None:\n \"\"\"\n         res = eval_uplc(source_code, Unit())\n         self.assertEqual(res, uplc.PlutusConstr(0, []), \"Invalid return\")\n+\n+    @given(a=st.booleans(), b=st.booleans())\n+    def test_cast_bool_to_int_lt(self, a: bool, b: bool):\n+        source_code = \"\"\"\n+def validator(a: bool, b:bool)-> int:\n+    return 5+(a<b)\n+\"\"\"\n+        res = eval_uplc_value(source_code, a, b)\n+        self.assertEquals(res, 5 + (a < b))\n+\n+    @given(a=st.booleans(), b=st.booleans())\n+    def test_cast_bool_to_int_gt(self, a: bool, b: bool):\n+        source_code = \"\"\"\n+def validator(a: bool, b:bool)-> int:\n+    return 5-(a>b)\n+\"\"\"\n+        res = eval_uplc_value(source_code, a, b)\n+        self.assertEquals(res, 5 - (a > b))\ndiff --git a/opshin/type_impls.py b/opshin/type_impls.py\nindex 9bf39bba..7aef7016 100644\n--- a/opshin/type_impls.py\n+++ b/opshin/type_impls.py\n@@ -1645,6 +1645,9 @@ def _binop_return_type(self, binop: operator, other: \"Type\") -> \"Type\":\n         ):\n             if other == IntegerInstanceType:\n                 return IntegerType()\n+            elif other == BoolInstanceType:\n+                # cast to integer\n+                return IntegerType()\n         if isinstance(binop, Mult):\n             if other == IntegerInstanceType:\n                 return IntegerType()\n@@ -1673,6 +1676,23 @@ def _binop_bin_fun(self, binop: operator, other: AST):\n                         PowImpl(x, OVar(\"y\")),\n                     ),\n                 )\n+        if other.typ == BoolInstanceType:\n+            if isinstance(binop, Add):\n+                return lambda x, y: OLet(\n+                    [(\"x\", x), (\"y\", y)],\n+                    plt.Ite(\n+                        OVar(\"y\"), plt.AddInteger(OVar(\"x\"), plt.Integer(1)), OVar(\"x\")\n+                    ),\n+                )\n+            elif isinstance(binop, Sub):\n+                return lambda x, y: OLet(\n+                    [(\"x\", x), (\"y\", y)],\n+                    plt.Ite(\n+                        OVar(\"y\"),\n+                        plt.SubtractInteger(OVar(\"x\"), plt.Integer(1)),\n+                        OVar(\"x\"),\n+                    ),\n+                )\n \n         if isinstance(binop, Mult):\n             if other.typ == IntegerInstanceType:\n@@ -2308,6 +2328,10 @@ def cmp(self, op: cmpop, o: \"Type\") -> plt.AST:\n                 return OLambda([\"x\", \"y\"], plt.Iff(OVar(\"x\"), OVar(\"y\")))\n             if isinstance(op, NotEq):\n                 return OLambda([\"x\", \"y\"], plt.Not(plt.Iff(OVar(\"x\"), OVar(\"y\"))))\n+            if isinstance(op, Lt):\n+                return OLambda([\"x\", \"y\"], plt.And(plt.Not(OVar(\"x\")), OVar(\"y\")))\n+            if isinstance(op, Gt):\n+                return OLambda([\"x\", \"y\"], plt.And(OVar(\"x\"), plt.Not(OVar(\"y\"))))\n         return super().cmp(op, o)\n \n     def stringify(self, recursive: bool = False) -> plt.AST:\n",
+  "pre_commit": "fd297fbdebe44b7b781ef34510850ed16c3291dc",
+  "post_commit": "6f99124f990f47557a65d95c372788e5733e664e",
+  "merge_type": "squash"
+}

@@ -1,0 +1,110 @@
+{
+  "pr_number": 15145,
+  "title": "[ie/youtube] Request ads to not be served",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/15145",
+  "description": "<!--\r\n    **IMPORTANT**: PRs without the template will be CLOSED\r\n    \r\n    Due to the high volume of pull requests, it may be a while before your PR is reviewed.\r\n    Please try to keep your pull request focused on a single bugfix or new feature.\r\n    Pull requests with a vast scope and/or very large diff will take much longer to review.\r\n    It is recommended for new contributors to stick to smaller pull requests, so you can receive much more immediate feedback as you familiarize yourself with the codebase.\r\n\r\n    PLEASE AVOID FORCE-PUSHING after opening a PR, as it makes reviewing more difficult.\r\n-->\r\n\r\n### Description of your *pull request* and other information\r\n\r\nRequest that youtube does not serve ads. This makes the downloads faster as we do not need to wait until the video becomes available.\r\n\r\nFixes #15144\r\n\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n<!--\r\n    # PLEASE FOLLOW THE GUIDE BELOW\r\n\r\n    - You will be asked some questions, please read them **carefully** and answer honestly\r\n    - Put an `x` into all the boxes `[ ]` relevant to your *pull request* (like [x])\r\n    - Use *Preview* tab to see what your *pull request* will actually look like\r\n-->\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check those that apply and remove the others:\r\n- [x] I am the original author of the code in this PR, and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n- [ ] I am not the original author of the code in this PR, but it is in the public domain or released under [Unlicense](http://unlicense.org/) (provide reliable evidence)\r\n- [x] I have read the [policy against AI/LLM contributions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#automated-contributions-ai--llm-policy) and understand I may be blocked from the repository if it is violated\r\n\r\n### What is the purpose of your *pull request*? Check those that apply and remove the others:\r\n- [x] Fix or improvement to an extractor (Make sure to add/update tests)\r\n- [ ] New extractor ([Piracy websites will not be accepted](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#is-the-website-primarily-used-for-piracy))\r\n- [ ] Core bug fix/improvement\r\n- [ ] New feature (It is strongly [recommended to open an issue first](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#adding-new-feature-or-making-overarching-changes))\r\n\r\n</details>\r\n",
+  "comments": [
+    {
+      "author": "bashonly",
+      "body": "Doesn't adding `adPlaybackContext` block premium formats from being served?\r\n\r\nWe tried this before in ff6f94041aeee19c5559e1c1cd693960a1c1dd14, which introduced a regression: #13545",
+      "created_at": "2025-11-23T13:09:07Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "62dd9a5062d80b330fa602d51421f632f83598f3 is insufficient, as some types of premium susbcriptions (Music, trial) cannot be detected by yt-dlp",
+      "created_at": "2025-11-23T18:35:20Z"
+    },
+    {
+      "author": "error-reporting",
+      "body": "also I think this should be off by default ",
+      "created_at": "2025-11-24T05:32:56Z"
+    },
+    {
+      "author": "WhatAmISupposedToPutHere",
+      "body": "> also I think this should be off by default\r\n\r\nMind sharing your reasoning on it?",
+      "created_at": "2025-11-24T08:09:59Z"
+    },
+    {
+      "author": "error-reporting",
+      "body": "to keep the existing behavior and only enable the new behavior when explicitly enabled and avoid surprises additionally the new ad waiting logic recently merged a few days ago still needs to be tested for 403s",
+      "created_at": "2025-11-24T08:12:32Z"
+    },
+    {
+      "author": "WhatAmISupposedToPutHere",
+      "body": "> to keep the existing behavior and only enable the new behavior when explicitly enabled and avoid surprises\r\n\r\nOk, in that case - no. The new behavior is better, as it decreases the latency between the command start, and the end of the download.\r\n\r\n> additionally the new ad waiting logic still needs to be tested for 403s\r\n\r\nIt has been, i have my own downloader that uses this logic, and the two PRs is about incorporating the changes back to yt-dlp\r\n",
+      "created_at": "2025-11-24T08:17:31Z"
+    },
+    {
+      "author": "error-reporting",
+      "body": "> > to keep the existing behavior and only enable the new behavior when explicitly enabled and avoid surprises\r\n> \r\n> Ok, in that case - no. The new behavior is better, as it decreases the latency between the command start, and the end of the download.\r\n> \r\n> > additionally the new ad waiting logic still needs to be tested for 403s\r\n> \r\n> It has been, i have my own downloader that uses this logic, and the two PRs is about incorporating the changes back to yt-dlp\r\n\r\nI meant the logic in https://github.com/yt-dlp/yt-dlp/pull/14646 still needs to tested for 403s and YouTube doesn't like clients that didn't load/wait for ads",
+      "created_at": "2025-11-24T08:20:45Z"
+    },
+    {
+      "author": "WhatAmISupposedToPutHere",
+      "body": "> > > to keep the existing behavior and only enable the new behavior when explicitly enabled and avoid surprises\r\n> > \r\n> > \r\n> > Ok, in that case - no. The new behavior is better, as it decreases the latency between the command start, and the end of the download.\r\n> > > additionally the new ad waiting logic still needs to be tested for 403s\r\n> > \r\n> > \r\n> > It has been, i have my own downloader that uses this logic, and the two PRs is about incorporating the changes back to yt-dlp\r\n> \r\n> I meant the logic in #14646 still needs to tested for 403s and YouTube doesn't like clients that didn't load/wait for ads\r\n\r\nYep, that is what i meant, the logic there matches what yt wants, and this pr makes it possible to go faster.",
+      "created_at": "2025-11-24T08:45:19Z"
+    },
+    {
+      "author": "error-reporting",
+      "body": "you should gate the new behavior behind an experimental option and keep the old behavior by default",
+      "created_at": "2025-11-24T08:47:37Z"
+    },
+    {
+      "author": "WhatAmISupposedToPutHere",
+      "body": "> you should gate the new behavior under an option and keep the old behavior by default\r\n\r\nI still find your reasoning for that to be insufficient, and as such - no.",
+      "created_at": "2025-11-24T08:49:15Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "> I think this should be off by default\r\n\r\nI agree with this. But not because I don't trust that it works; we already know it does work -- we were previously using this exact parameter to work around the wait time.\r\n\r\nI think it should be toggled via extractor-arg (and default to off), because:\r\n\r\n1. I don't like that users are penalized for using cookies under the current implementation, and there's no way to toggle this for them\r\n\r\n2. While I trust that this works, I don't trust that it will *continue* to work for much longer after this change hits mainline yt-dlp. Our ad detection logic should suffice if the parameter merely stops being effective, yes, but YT has a history of punishing workaround seekers with 403 errors and whatnot\r\n\r\nSo, something like this:\r\n\r\n```py\r\n\r\n    def _generate_player_context(self, sts=None):\r\n        context = {\r\n            'html5Preference': 'HTML5_PREF_WANTS',\r\n        }\r\n        if sts is not None:\r\n            context['signatureTimestamp'] = sts\r\n\r\n        ad_playback_context = {\r\n            'adPlaybackContext': {\r\n                'pyv': True,\r\n            },\r\n        } if self._configuration_arg('use_ad_playback_context', ['false'])[0] != 'false' else {}\r\n\r\n        return {\r\n            'playbackContext': {\r\n                **ad_playback_context,\r\n                'contentPlaybackContext': context,\r\n            },\r\n            **self._get_checkok_params(),\r\n        }\r\n```",
+      "created_at": "2025-11-24T08:52:29Z"
+    },
+    {
+      "author": "WhatAmISupposedToPutHere",
+      "body": ">   While I trust that this works, I don't trust that it will _continue_ to work for much longer after this change hits mainline yt-dlp. \r\n\r\nI have a bit more trust in it continuing to work for some time, as ublock origin also uses the same thing.\r\n\r\n> Our ad detection logic should suffice if the parameter merely stops being effective, yes\r\n\r\nYep, that is why i added the ad detection logic first, to make sure it has a graceful fallback.\r\n\r\n> but YT has a history of punishing workaround seekers with 403 errors and whatnot\r\n\r\nOk, _that_ one is fair, changed it to use an arg.\r\n",
+      "created_at": "2025-11-24T09:25:31Z"
+    },
+    {
+      "author": "error-reporting",
+      "body": "> I changed the arg name to `request_no_ads` (nice branch name btw) and I made it default to `true` only if the user is unauthenticated. We'll see how it goes\r\n\r\nwhy not always false by default even if the user is unauthenticated?",
+      "created_at": "2025-12-01T02:24:48Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "@error-reporting as I said above, we'll see how it goes. We very well may end up changing the default to `false` for all users before the next stable release",
+      "created_at": "2025-12-01T03:02:10Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "I think this needs to be reverted entirely: #15212",
+      "created_at": "2025-12-01T04:22:12Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "> but YT has a history of punishing workaround seekers with 403 errors\r\n\r\nIt's like I spoke this regression into existence",
+      "created_at": "2025-12-01T04:24:16Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "Reverted in 017d76edcf05186df2073bdb5b8351a87f596f4c\r\n\r\nIt's likely that this workaround only works for certain clients. My guess would be the `web*` family of clients and `mweb`. It is harmful when used with `tv*` clients, incurring a 403 error during download that is sometimes delayed by 30-60 seconds not unlike PO token enforcement.\r\n\r\nI'm open to adding this extractor-arg again in the future, but as an **opt-in only** feature, and *only* after thorough research has been conducted into which clients it is compatible with. Also, I would prefer a technical & unattractive arg name like `use_ad_playback_context` (which was my initial instinct, along with it being opt-in only, but I stupidly felt like taking a risk tonight)",
+      "created_at": "2025-12-01T05:08:57Z"
+    }
+  ],
+  "diff": "diff --git a/README.md b/README.md\nindex c98c69f4187b..6a97eb0eb200 100644\n--- a/README.md\n+++ b/README.md\n@@ -1871,6 +1871,7 @@ The following extractors use this feature:\n * `pot_trace`: Enable debug logging for PO Token fetching. Either `true` or `false` (default)\n * `fetch_pot`: Policy to use for fetching a PO Token from providers. One of `always` (always try fetch a PO Token regardless if the client requires one for the given context), `never` (never fetch a PO Token), or `auto` (default; only fetch a PO Token if the client requires one for the given context)\n * `jsc_trace`: Enable debug logging for JS Challenge fetching. Either `true` or `false` (default)\n+* `request_no_ads`: Skip preroll ads to eliminate the mandatory wait period before download. Either `true` (the default if unauthenticated) or `false`. The default is `false` when logged-in cookies have been passed to yt-dlp, since `true` will result in a loss of premium formats\n \n #### youtube-ejs\n * `jitless`: Run suported Javascript engines in JIT-less mode. Supported runtimes are `deno`, `node` and `bun`. Provides better security at the cost of performance/speed. Do note that `node` and `bun` are still considered unsecure. Either `true` or `false` (default)\ndiff --git a/yt_dlp/extractor/youtube/_video.py b/yt_dlp/extractor/youtube/_video.py\nindex a792332046bc..0756ce2c4086 100644\n--- a/yt_dlp/extractor/youtube/_video.py\n+++ b/yt_dlp/extractor/youtube/_video.py\n@@ -2628,18 +2628,29 @@ def _real_comment_extract(contents):\n     def _get_checkok_params():\n         return {'contentCheckOk': True, 'racyCheckOk': True}\n \n-    @classmethod\n-    def _generate_player_context(cls, sts=None):\n+    def _generate_player_context(self, sts=None):\n         context = {\n             'html5Preference': 'HTML5_PREF_WANTS',\n         }\n         if sts is not None:\n             context['signatureTimestamp'] = sts\n+\n+        playback_context = {\n+            'contentPlaybackContext': context,\n+        }\n+\n+        # The 'adPlaybackContext'/'request_no_ads' workaround results in a loss of premium formats.\n+        # Only default to 'true' if the user is unauthenticated, since we can't reliably detect all\n+        # types of premium accounts (e.g. YTMusic Premium), and since premium users don't have ads.\n+        default_arg_value = 'false' if self.is_authenticated else 'true'\n+        if self._configuration_arg('request_no_ads', [default_arg_value])[0] != 'false':\n+            playback_context['adPlaybackContext'] = {\n+                'pyv': True,\n+            }\n+\n         return {\n-            'playbackContext': {\n-                'contentPlaybackContext': context,\n-            },\n-            **cls._get_checkok_params(),\n+            'playbackContext': playback_context,\n+            **self._get_checkok_params(),\n         }\n \n     def _get_config_po_token(self, client: str, context: _PoTokenContext):\n",
+  "changed_files": [
+    "README.md",
+    "yt_dlp/extractor/youtube/_video.py"
+  ],
+  "changed_functions": [
+    "_generate_player_context"
+  ],
+  "pre_commit": "2a777ecbd598de19a4c691ba1f790ccbec9cdbc4",
+  "post_commit": "56ea3a00eabb45d926a6b993708acf1b9951e23a",
+  "merged_at": "2025-12-01T01:02:58Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 18,
+  "deletions": 6,
+  "changed_files_count": 2
+}

@@ -1,0 +1,77 @@
+{
+  "pr_number": 5971,
+  "title": "fix: -O/-o option does not work with absolute paths on Windows",
+  "url": "https://github.com/scrapy/scrapy/pull/5971",
+  "description": "fix #5969 ",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-07-24T07:53:41+00:00",
+  "additions": 63,
+  "deletions": 4,
+  "changed_files_count": 3,
+  "comments": [
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/scrapy/scrapy/pull/5971?src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy) Report\n> Merging [#5971](https://app.codecov.io/gh/scrapy/scrapy/pull/5971?src=pr&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy) (161c3b8) into [master](https://app.codecov.io/gh/scrapy/scrapy/commit/8055a948dc2544c4d8ebe7aa1c6227e19b1583ac?el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy) (8055a94) will **increase** coverage by `0.00%`.\n> The diff coverage is `100.00%`.\n\n> :exclamation: Current head 161c3b8 differs from pull request most recent head 4bd3060. Consider uploading reports for the commit 4bd3060 to get more accurate results\n\n```diff\n@@           Coverage Diff           @@\n##           master    #5971   +/-   ##\n=======================================\n  Coverage   89.19%   89.19%           \n=======================================\n  Files         162      162           \n  Lines       11287    11288    +1     \n  Branches     1833     1833           \n=======================================\n+ Hits        10067    10068    +1     \n  Misses        928      928           \n  Partials      292      292           \n```\n\n| [Impacted Files](https://app.codecov.io/gh/scrapy/scrapy/pull/5971?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy) | Coverage Δ | |\n|---|---|---|\n| [scrapy/extensions/feedexport.py](https://app.codecov.io/gh/scrapy/scrapy/pull/5971?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy#diff-c2NyYXB5L2V4dGVuc2lvbnMvZmVlZGV4cG9ydC5weQ==) | `95.82% <100.00%> (ø)` | |\n| [scrapy/utils/conf.py](https://app.codecov.io/gh/scrapy/scrapy/pull/5971?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=scrapy#diff-c2NyYXB5L3V0aWxzL2NvbmYucHk=) | `92.30% <100.00%> (+0.06%)` | :arrow_up: |\n",
+      "created_at": "2023-07-11T03:51:16+00:00"
+    },
+    {
+      "author": "Laerte",
+      "body": "@Gallaecio Can we merge it?",
+      "created_at": "2023-07-21T10:30:13+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "Laerte",
+      "body": "```\r\n>>> from urllib.parse import urlparse\r\n>>> urlparse(\"C:\\Scrapy\\output.json\").scheme\r\n'c'\r\n```\r\nHad to add this condition because `scheme` value for windows absolut paths is misleading. By using `PureWindowsPath` we can look for drive letter if exists it means is a windows absolute path.",
+      "path": "scrapy/extensions/feedexport.py",
+      "line": null,
+      "created_at": "2023-07-11T03:52:08+00:00"
+    },
+    {
+      "author": "Laerte",
+      "body": "Basically to avoid `KeyError` fallback to `file`",
+      "path": "scrapy/extensions/feedexport.py",
+      "line": null,
+      "created_at": "2023-07-11T03:52:29+00:00"
+    },
+    {
+      "author": "wRAR",
+      "body": "```suggestion\r\n        feedcls = self.storages.get(urlparse(uri).scheme, self.storages[\"file\"])\r\n```\r\n\r\n(assuming it works that way)",
+      "path": "scrapy/extensions/feedexport.py",
+      "line": null,
+      "created_at": "2023-07-14T15:58:54+00:00"
+    },
+    {
+      "author": "wRAR",
+      "body": "Can you please use mkdtemp() here too?",
+      "path": "tests/test_commands.py",
+      "line": null,
+      "created_at": "2023-07-14T15:59:58+00:00"
+    },
+    {
+      "author": "Laerte",
+      "body": "Done.",
+      "path": "tests/test_commands.py",
+      "line": null,
+      "created_at": "2023-07-14T16:08:21+00:00"
+    },
+    {
+      "author": "Laerte",
+      "body": "I was wondering because i tried this before now i understand why did not work 🤡 \r\n\r\n![image](https://github.com/scrapy/scrapy/assets/5853172/2b2f97e3-5905-4c00-9c8a-6bc00388efee)\r\n\r\nThanks @wRAR ",
+      "path": "scrapy/extensions/feedexport.py",
+      "line": null,
+      "created_at": "2023-07-14T16:08:43+00:00"
+    }
+  ],
+  "changed_files": [
+    "scrapy/extensions/feedexport.py",
+    "scrapy/utils/conf.py",
+    "tests/test_commands.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/scrapy/extensions/feedexport.py b/scrapy/extensions/feedexport.py\nindex 1cdc78f5915..3bf64dc1289 100644\n--- a/scrapy/extensions/feedexport.py\n+++ b/scrapy/extensions/feedexport.py\n@@ -9,7 +9,7 @@\n import sys\n import warnings\n from datetime import datetime\n-from pathlib import Path\n+from pathlib import Path, PureWindowsPath\n from tempfile import NamedTemporaryFile\n from typing import IO, Any, Callable, List, Optional, Tuple, Union\n from urllib.parse import unquote, urlparse\n@@ -591,7 +591,7 @@ def _settings_are_valid(self):\n \n     def _storage_supported(self, uri, feed_options):\n         scheme = urlparse(uri).scheme\n-        if scheme in self.storages:\n+        if scheme in self.storages or PureWindowsPath(uri).drive:\n             try:\n                 self._get_storage(uri, feed_options)\n                 return True\n@@ -617,7 +617,7 @@ def _get_storage(self, uri, feed_options):\n         It supports not passing the *feed_options* parameters to classes that\n         do not support it, and issuing a deprecation warning instead.\n         \"\"\"\n-        feedcls = self.storages[urlparse(uri).scheme]\n+        feedcls = self.storages.get(urlparse(uri).scheme, self.storages[\"file\"])\n         crawler = getattr(self, \"crawler\", None)\n \n         def build_instance(builder, *preargs):\ndiff --git a/scrapy/utils/conf.py b/scrapy/utils/conf.py\nindex 3ade1d105b4..05d43e4567f 100644\n--- a/scrapy/utils/conf.py\n+++ b/scrapy/utils/conf.py\n@@ -202,7 +202,8 @@ def check_valid_format(output_format):\n     for element in output:\n         try:\n             feed_uri, feed_format = element.rsplit(\":\", 1)\n-        except ValueError:\n+            check_valid_format(feed_format)\n+        except (ValueError, UsageError):\n             feed_uri = element\n             feed_format = Path(element).suffix.replace(\".\", \"\")\n         else:\ndiff --git a/tests/test_commands.py b/tests/test_commands.py\nindex 014f50e92e5..3df9b35af00 100644\n--- a/tests/test_commands.py\n+++ b/tests/test_commands.py\n@@ -919,6 +919,64 @@ def start_requests(self):\n         log = self.get_log(spider_code, args=args)\n         self.assertIn(\"[myspider] DEBUG: FEEDS: {'stdout:': {'format': 'json'}}\", log)\n \n+    @skipIf(platform.system() == \"Windows\", reason=\"Linux only\")\n+    def test_absolute_path_linux(self):\n+        spider_code = \"\"\"\n+import scrapy\n+\n+class MySpider(scrapy.Spider):\n+    name = 'myspider'\n+\n+    start_urls = [\"data:,\"]\n+\n+    def parse(self, response):\n+        yield {\"hello\": \"world\"}\n+        \"\"\"\n+        temp_dir = mkdtemp()\n+\n+        args = [\"-o\", f\"{temp_dir}/output1.json:json\"]\n+        log = self.get_log(spider_code, args=args)\n+        self.assertIn(\n+            f\"[scrapy.extensions.feedexport] INFO: Stored json feed (1 items) in: {temp_dir}/output1.json\",\n+            log,\n+        )\n+\n+        args = [\"-o\", f\"{temp_dir}/output2.json\"]\n+        log = self.get_log(spider_code, args=args)\n+        self.assertIn(\n+            f\"[scrapy.extensions.feedexport] INFO: Stored json feed (1 items) in: {temp_dir}/output2.json\",\n+            log,\n+        )\n+\n+    @skipIf(platform.system() != \"Windows\", reason=\"Windows only\")\n+    def test_absolute_path_windows(self):\n+        spider_code = \"\"\"\n+import scrapy\n+\n+class MySpider(scrapy.Spider):\n+    name = 'myspider'\n+\n+    start_urls = [\"data:,\"]\n+\n+    def parse(self, response):\n+        yield {\"hello\": \"world\"}\n+        \"\"\"\n+        temp_dir = mkdtemp()\n+\n+        args = [\"-o\", f\"{temp_dir}\\\\output1.json:json\"]\n+        log = self.get_log(spider_code, args=args)\n+        self.assertIn(\n+            f\"[scrapy.extensions.feedexport] INFO: Stored json feed (1 items) in: {temp_dir}\\\\output1.json\",\n+            log,\n+        )\n+\n+        args = [\"-o\", f\"{temp_dir}\\\\output2.json\"]\n+        log = self.get_log(spider_code, args=args)\n+        self.assertIn(\n+            f\"[scrapy.extensions.feedexport] INFO: Stored json feed (1 items) in: {temp_dir}\\\\output2.json\",\n+            log,\n+        )\n+\n \n @skipIf(platform.system() != \"Windows\", \"Windows required for .pyw files\")\n class WindowsRunSpiderCommandTest(RunSpiderCommandTest):\n",
+  "pre_commit": "af2aa4b4211f813acca08e165e36d3be0c5f50b5",
+  "post_commit": "7522aeed357d90ed95ee10d3b5a506f1b1049d1f"
+}

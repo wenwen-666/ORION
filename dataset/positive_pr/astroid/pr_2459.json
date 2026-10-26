@@ -1,0 +1,222 @@
+{
+  "pr_number": 2459,
+  "title": "Implement inference for `JoinedStr` and `FormattedValue`",
+  "url": "https://github.com/pylint-dev/astroid/pull/2459",
+  "description": "## Type of Changes\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n\r\n## Description\r\n\r\n`node.inferred()` would return `Uninferable` if inference involved a `JoinedStr`.\r\n`JoinedStr` involves `FormattedValue` so this is addressed for both classes in the same PR\r\n ",
+  "comments": [
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Great work !",
+      "created_at": "2024-08-02T06:29:34Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Oh, I just saw the failing tests. I do think we need to address it.",
+      "created_at": "2024-08-02T06:47:33Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "It's failing on main too, we've merged multiple MR with 3.13 failing in the last week. (Due to a New beta of python 3.13). I think we could (should?) fix it before astroid 3.3.0 release.",
+      "created_at": "2024-08-02T07:53:38Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "> Oh, I just saw the failing tests. I do think we need to address it.\r\n\r\nTBH I'm 100% sure that the failure is unrelated to this PR. The test simply calls `as_string` which is unchanged. Smells like an unrelated bug with 3.13-dev.",
+      "created_at": "2024-08-02T10:24:43Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "It's fixed in the 3.13rc1, which may not be on GH yet.",
+      "created_at": "2024-08-02T13:12:34Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "See #2478",
+      "created_at": "2024-08-02T13:13:16Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex 59e9b8d094..7bcf764e0b 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -17,6 +17,9 @@ Release date: TBA\n \n   Closes pylint-dev/pylint#7126\n \n+* Implement inference for JoinedStr and FormattedValue\n+\n+\n \n What's New in astroid 3.2.5?\n ============================\ndiff --git a/astroid/nodes/node_classes.py b/astroid/nodes/node_classes.py\nindex 4c8b63411d..a87514866d 100644\n--- a/astroid/nodes/node_classes.py\n+++ b/astroid/nodes/node_classes.py\n@@ -4673,6 +4673,37 @@ def get_children(self):\n         if self.format_spec is not None:\n             yield self.format_spec\n \n+    def _infer(\n+        self, context: InferenceContext | None = None, **kwargs: Any\n+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:\n+        if self.format_spec is None:\n+            yield from self.value.infer(context, **kwargs)\n+            return\n+        uninferable_already_generated = False\n+        for format_spec in self.format_spec.infer(context, **kwargs):\n+            if not isinstance(format_spec, Const):\n+                if not uninferable_already_generated:\n+                    yield util.Uninferable\n+                    uninferable_already_generated = True\n+                continue\n+            for value in self.value.infer(context, **kwargs):\n+                if not isinstance(value, Const):\n+                    if not uninferable_already_generated:\n+                        yield util.Uninferable\n+                        uninferable_already_generated = True\n+                    continue\n+                formatted = format(value.value, format_spec.value)\n+                yield Const(\n+                    formatted,\n+                    lineno=self.lineno,\n+                    col_offset=self.col_offset,\n+                    end_lineno=self.end_lineno,\n+                    end_col_offset=self.end_col_offset,\n+                )\n+\n+\n+MISSING_VALUE = \"{MISSING_VALUE}\"\n+\n \n class JoinedStr(NodeNG):\n     \"\"\"Represents a list of string expressions to be joined.\n@@ -4734,6 +4765,34 @@ def postinit(self, values: list[NodeNG] | None = None) -> None:\n     def get_children(self):\n         yield from self.values\n \n+    def _infer(\n+        self, context: InferenceContext | None = None, **kwargs: Any\n+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:\n+        yield from self._infer_from_values(self.values, context)\n+\n+    @classmethod\n+    def _infer_from_values(\n+        cls, nodes: list[NodeNG], context: InferenceContext | None = None, **kwargs: Any\n+    ) -> Generator[InferenceResult, None, InferenceErrorInfo | None]:\n+        if len(nodes) == 1:\n+            yield from nodes[0]._infer(context, **kwargs)\n+            return\n+        uninferable_already_generated = False\n+        for prefix in nodes[0]._infer(context, **kwargs):\n+            for suffix in cls._infer_from_values(nodes[1:], context, **kwargs):\n+                result = \"\"\n+                for node in (prefix, suffix):\n+                    if isinstance(node, Const):\n+                        result += str(node.value)\n+                        continue\n+                    result += MISSING_VALUE\n+                if MISSING_VALUE in result:\n+                    if not uninferable_already_generated:\n+                        uninferable_already_generated = True\n+                        yield util.Uninferable\n+                else:\n+                    yield Const(result)\n+\n \n class NamedExpr(_base_nodes.AssignTypeNode):\n     \"\"\"Represents the assignment from the assignment expression\ndiff --git a/tests/test_inference.py b/tests/test_inference.py\nindex ce2177332a..61378043c3 100644\n--- a/tests/test_inference.py\n+++ b/tests/test_inference.py\n@@ -19,6 +19,7 @@\n import pytest\n \n from astroid import (\n+    Const,\n     Slice,\n     Uninferable,\n     arguments,\n@@ -652,6 +653,34 @@ def process_line(word_pos):\n             )\n         )\n \n+    def test_fstring_inference(self) -> None:\n+        code = \"\"\"\n+            name = \"John\"\n+            result = f\"Hello {name}!\"\n+            \"\"\"\n+        ast = parse(code, __name__)\n+        node = ast[\"result\"]\n+        inferred = node.inferred()\n+        self.assertEqual(len(inferred), 1)\n+        value_node = inferred[0]\n+        self.assertIsInstance(value_node, Const)\n+        self.assertEqual(value_node.value, \"Hello John!\")\n+\n+    def test_formatted_fstring_inference(self) -> None:\n+        code = \"\"\"\n+            width = 10\n+            precision = 4\n+            value = 12.34567\n+            result = f\"result: {value:{width}.{precision}}!\"\n+            \"\"\"\n+        ast = parse(code, __name__)\n+        node = ast[\"result\"]\n+        inferred = node.inferred()\n+        self.assertEqual(len(inferred), 1)\n+        value_node = inferred[0]\n+        self.assertIsInstance(value_node, Const)\n+        self.assertEqual(value_node.value, \"result:      12.35!\")\n+\n     def test_float_complex_ambiguity(self) -> None:\n         code = '''\n             def no_conjugate_member(magic_flag):  #@\n",
+  "changed_files": [
+    "ChangeLog",
+    "astroid/nodes/node_classes.py",
+    "tests/test_inference.py"
+  ],
+  "changed_functions": [
+    "_infer",
+    "_infer_from_values",
+    "test_fstring_inference",
+    "test_formatted_fstring_inference",
+    "test_float_complex_ambiguity"
+  ],
+  "pre_commit": "3bcf5ec78f3c5a064b5149c47ec5ca03ea9f3769",
+  "post_commit": "3dbf1393de191fd10b09741badfe1b075fdadbac",
+  "merged_at": "2024-08-02T13:21:54Z",
+  "review_comments": [
+    {
+      "author": "DanielNoord",
+      "body": "Why no do a `return` here and drop the constant?",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4687,
+      "created_at": "2024-07-15T14:37:56Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "It feels like we should exit early here and not continue to product \"half\" matching values",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-15T14:42:14Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "There are a number of scenarios (such as loops) where `self.value.infer` will return not one but multiple values. I don't think we should drop the properly inferred values just because one (or more) of them can't be inferred.\r\nConsider for example the following code:\r\n```\r\na = some_func()\r\nb = 123\r\nfor value in [a, b]:\r\n    x = value\r\n```\r\nThe proposed implementation would trigger (pseudo code): `[ Uninferable, Const(123) ]`, whereas a `return` statement would trigger `[ Uninferable ]`. I believe the former is in line with the current overall behaviour.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4687,
+      "created_at": "2024-07-22T09:08:01Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "That's philosophical, depending on the strategy for dealing with partially inferred collections of values",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-22T09:11:33Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "I think you need to pass the context arg through.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-28T15:52:50Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "If we tighten the typing of JoinedStr.value to this, we can repeat it here:\r\n```suggestion\r\n        cls, nodes: list[FormattedValue | Const], context: InferenceContext | None = None, **kwargs: Any\r\n```",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4775,
+      "created_at": "2024-07-28T15:53:37Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "It would help to make a decision about this if we could see a test case. At the moment, I do not think we should manufacture a constant that would never exist at runtime with the substring \"Uninferable\" in it.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-28T16:00:27Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Also missing coverage.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-28T16:00:59Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Please also update the assertion in test_no_crash_on_const_reconstruction.",
+      "path": "tests/test_inference.py",
+      "line": 683,
+      "created_at": "2024-07-28T16:02:39Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "There's \"coincidental\" coverage of this line in `test_typing_extensions_types` based on the current implementation of typing, but it would be better to have explicit coverage.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-28T16:04:59Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Actually, that will be moot after https://github.com/pylint-dev/astroid/pull/2484.",
+      "path": "tests/test_inference.py",
+      "line": 683,
+      "created_at": "2024-07-28T16:34:19Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Yes, you are completely right.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4687,
+      "created_at": "2024-07-28T19:27:03Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I agree with Jacob. I think `Uninferable` makes sense to those that have worked on `astroid` and `pylint`, but this will also be shown to users who might have no idea what it means. I would be in favour of exiting early and not creating partially correct values.",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-07-28T19:28:25Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "True, but doesn't that change span beyond the scope of this PR ? Happy to submit a separate PR for narrowing the type of JoinedStr values",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4775,
+      "created_at": "2024-08-01T16:18:38Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "Done",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-08-01T16:20:48Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "This can never happen (it's either Const or Uninferable), it was defensive coding. Line is now removed",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-08-01T16:28:14Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "Done",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-08-01T16:28:41Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "Done anyway",
+      "path": "tests/test_inference.py",
+      "line": 683,
+      "created_at": "2024-08-01T16:34:10Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "It is useful to know which fragment(s) of a JoinedStr cause inference failure, but I agree that half-baked strings can be puzzling. ",
+      "path": "astroid/nodes/node_classes.py",
+      "line": null,
+      "created_at": "2024-08-01T16:47:39Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Good point. And thanks!",
+      "path": "astroid/nodes/node_classes.py",
+      "line": 4775,
+      "created_at": "2024-08-01T16:53:25Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Please move this to the 3.3.0 milestone above.",
+      "path": "ChangeLog",
+      "line": null,
+      "created_at": "2024-08-01T16:58:01Z"
+    },
+    {
+      "author": "ericvergnaud",
+      "body": "Done",
+      "path": "ChangeLog",
+      "line": null,
+      "created_at": "2024-08-01T18:33:32Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\n```\n",
+      "path": "ChangeLog",
+      "line": null,
+      "created_at": "2024-08-02T06:27:53Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 91,
+  "deletions": 0,
+  "changed_files_count": 3
+}

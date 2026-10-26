@@ -1,0 +1,95 @@
+{
+  "pr_number": 1253,
+  "title": "Add python 3.11 support",
+  "url": "https://github.com/minio/minio-py/pull/1253",
+  "description": "The core dependencies used by this package seem to be running with Python version 3.11 (more checks might be due).\r\nThis is an attempt to bump the test matrix and fix a warning regarding the deprecation of `HTTPResponse.getheader()`\r\nHere the warning I was getting:  \r\n```\r\nDeprecationWarning: HTTPResponse.getheader() is deprecated and will be removed in urllib3 v2.1.0. Instead use HTTResponse.headers.get(name, default).\r\n```\r\n\r\nHere my environment:\r\n**MacOS 13.0.1** (M1 chip),\r\nAnaconda **Python version 3.11**\r\nand here the result of **pip list**\r\n```\r\nPackage           Version\r\n----------------- ---------\r\nastroid           2.12.13\r\nattrs             22.1.0\r\nautopep8          2.0.1\r\ncertifi           2022.12.7\r\ndill              0.3.6\r\niniconfig         1.1.1\r\nisort             5.11.3\r\nlazy-object-proxy 1.8.0\r\nmccabe            0.7.0\r\npackaging         22.0\r\npip               22.3.1\r\nplatformdirs      2.6.0\r\npluggy            1.0.0\r\npycodestyle       2.10.0\r\npylint            2.15.9\r\npytest            7.2.0\r\nsetuptools        65.6.3\r\ntomlkit           0.11.6\r\nurllib3           1.26.13\r\nwheel             0.38.4\r\nwrapt             1.14.1\r\n```",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-01-07T08:21:05+00:00",
+  "additions": 63,
+  "deletions": 17,
+  "changed_files_count": 6,
+  "comments": [
+    {
+      "author": "fedepad",
+      "body": "Removed the action `codespell-project/actions-codespell@master` from macos workflow as the CI complained that it is supported only on Linux.",
+      "created_at": "2022-12-20T15:23:52+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "@balamurugana Any idea about this error: https://github.com/minio/minio-py/actions/runs/3741803675/jobs/6352419060#step:7:21 ?\r\nOn my mac functional tests seem to all pass and the log of the action is not pointing to a specific.",
+      "created_at": "2022-12-20T16:20:49+00:00"
+    },
+    {
+      "author": "balamurugana",
+      "body": "> @balamurugana Any idea about this error: https://github.com/minio/minio-py/actions/runs/3741803675/jobs/6352419060#step:7:21 ? On my mac functional tests seem to all pass and the log of the action is not pointing to a specific.\r\n\r\nYou would need to `brew install wget` and other required dependencies.",
+      "created_at": "2022-12-20T16:25:45+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "I changed something in the macos workflow due to issues from GitHub already documented in the commit message plus aligned to current master.\r\nI would give that maybe a try, even if the builds/tests for windows and linux seems ok even for Python 3.11.",
+      "created_at": "2023-01-03T14:43:11+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "Re-added the user local PATH to the Python versions < 3.11 that I mistakenly removed for macos runs. Sorry",
+      "created_at": "2023-01-03T15:14:43+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "balamurugana",
+      "body": "This PR https://github.com/minio/minio-py/pull/1249 fixed and passed CI on `Ubuntu` and `Windows`. You would need to add `macos` in Github workflow to get it passed.",
+      "path": "minio/api.py",
+      "line": null,
+      "created_at": "2022-12-20T14:39:05+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "Ok, will add the github workflow with macos-latest like the others although it's not clear the architecture (https://github.com/actions/runner-images/blob/main/images/macos/macos-12-Readme.md, I assume still Intel if not specified there...)",
+      "path": "minio/api.py",
+      "line": null,
+      "created_at": "2022-12-20T15:01:55+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "Added",
+      "path": "minio/api.py",
+      "line": null,
+      "created_at": "2022-12-20T15:08:02+00:00"
+    },
+    {
+      "author": "balamurugana",
+      "body": "You could remove functional tests task entirely including above `wget` install. It is OK not to run in `macos` now.",
+      "path": ".github/workflows/pythonpackage-macos.yml",
+      "line": null,
+      "created_at": "2022-12-21T00:42:11+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "Sure, will do it! It looks like was an error with self-signed certificates that prevents the download, probably a bit more work to do to have it run...\r\n\r\n```bash\r\nwget -v -O /tmp/minio https://dl.min.io/server/minio/release/darwin-amd64/minio\r\n--2022-12-21 00:35:11--  https://dl.min.io/server/minio/release/darwin-amd64/minio\r\nResolving dl.min.io (dl.min.io)... 138.68.11.125, 178.1[28](https://github.com/minio/minio-py/actions/runs/3743960059/jobs/6359613951#step:8:29).69.202\r\nConnecting to dl.min.io (dl.min.io)|138.68.11.125|:443... connected.\r\nERROR: cannot verify dl.min.io's certificate, issued by ‘CN=Sectigo RSA Domain Validation Secure Server CA,O=Sectigo Limited,L=Salford,ST=Greater Manchester,C=GB’:\r\n  Self-signed certificate encountered.\r\nTo connect to dl.min.io insecurely, use `--no-check-certificate'.\r\n```",
+      "path": ".github/workflows/pythonpackage-macos.yml",
+      "line": null,
+      "created_at": "2022-12-21T10:56:45+00:00"
+    },
+    {
+      "author": "fedepad",
+      "body": "Done",
+      "path": ".github/workflows/pythonpackage-macos.yml",
+      "line": null,
+      "created_at": "2022-12-21T11:14:49+00:00"
+    }
+  ],
+  "changed_files": [
+    ".github/workflows/pythonpackage-linux.yml",
+    ".github/workflows/pythonpackage-macos.yml",
+    ".github/workflows/pythonpackage-windows.yml",
+    "minio/api.py",
+    "minio/datatypes.py",
+    "setup.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/.github/workflows/pythonpackage-linux.yml b/.github/workflows/pythonpackage-linux.yml\nindex 1bece9042..a29395654 100644\n--- a/.github/workflows/pythonpackage-linux.yml\n+++ b/.github/workflows/pythonpackage-linux.yml\n@@ -15,7 +15,7 @@ jobs:\n     strategy:\n       max-parallel: 4\n       matrix:\n-        python-version: [\"3.7\", \"3.8\", \"3.9\", \"3.10\"]\n+        python-version: [\"3.7\", \"3.8\", \"3.9\", \"3.10\", \"3.11\"]\n         os: [ubuntu-latest]\n \n     steps:\ndiff --git a/.github/workflows/pythonpackage-macos.yml b/.github/workflows/pythonpackage-macos.yml\nnew file mode 100644\nindex 000000000..4965f45b4\n--- /dev/null\n+++ b/.github/workflows/pythonpackage-macos.yml\n@@ -0,0 +1,45 @@\n+name: Python package\n+\n+on:\n+  pull_request:\n+    branches:\n+    - master\n+  push:\n+    branches:\n+    - master\n+\n+jobs:\n+  build:\n+    name: Test on python ${{ matrix.python-version }} and ${{ matrix.os }}\n+    runs-on: ${{ matrix.os }}\n+    strategy:\n+      max-parallel: 4\n+      matrix:\n+        python-version: [\"3.7\", \"3.8\", \"3.9\", \"3.10\", \"3.11\"]\n+        os: [macos-12]\n+\n+    steps:\n+    - uses: actions/checkout@v3\n+    - name: Set up Python ${{ matrix.python-version }}\n+      uses: actions/setup-python@v4\n+      with:\n+        python-version: ${{ matrix.python-version }}\n+    - name: Install dependencies\n+      run: |\n+        python -m pip install --upgrade pip setuptools\n+        pip install certifi urllib3 mock pytest\n+    - name: Add to PATH if Python version >= 3.11\n+      if: matrix.python-version == '3.11' && matrix.os == 'macos-12'\n+      run: |\n+        echo \"/Users/runner/Library/Python/3.11/bin\" >> $GITHUB_PATH\n+    - name: Add to PATH for Python version < 3.11\n+      run: |\n+        echo \"$HOME/.local/bin\" >> $GITHUB_PATH\n+        echo \"/Users/runner/.local/bin\" >> $GITHUB_PATH\n+    - name: Run checks\n+      run: |\n+        make check\n+    - name: Run unit tests\n+      run: |\n+        python setup.py install\n+        pytest\ndiff --git a/.github/workflows/pythonpackage-windows.yml b/.github/workflows/pythonpackage-windows.yml\nindex 90124b5a4..26b6a26ac 100644\n--- a/.github/workflows/pythonpackage-windows.yml\n+++ b/.github/workflows/pythonpackage-windows.yml\n@@ -15,7 +15,7 @@ jobs:\n     strategy:\n       max-parallel: 4\n       matrix:\n-        python-version: [\"3.7\", \"3.8\", \"3.9\", \"3.10\"]\n+        python-version: [\"3.7\", \"3.8\", \"3.9\", \"3.10\", \"3.11\"]\n         os: [windows-latest]\n \n     steps:\ndiff --git a/minio/api.py b/minio/api.py\nindex 1f5ee8ce2..ce59b66e3 100644\n--- a/minio/api.py\n+++ b/minio/api.py\n@@ -166,7 +166,7 @@ def _handle_redirect_response(\n             307: (\"Redirect\", \"Temporary redirect\"),\n             400: (\"BadRequest\", \"Bad request\"),\n         }.get(response.status, (None, None))\n-        region = response.getheader(\"x-amz-bucket-region\")\n+        region = response.headers.get(\"x-amz-bucket-region\")\n         if message and region:\n             message += \"; use region \" + region\n \n@@ -297,7 +297,7 @@ def _url_open(  # pylint: disable=too-many-branches\n \n         if (\n                 method != \"HEAD\" and\n-                \"application/xml\" not in response.getheader(\n+                \"application/xml\" not in response.headers.get(\n                     \"content-type\", \"\",\n                 ).split(\";\")\n         ):\n@@ -310,7 +310,7 @@ def _url_open(  # pylint: disable=too-many-branches\n                 )\n             raise InvalidResponseError(\n                 response.status,\n-                response.getheader(\"content-type\"),\n+                response.headers.get(\"content-type\"),\n                 response.data.decode() if response.data else None,\n             )\n \n@@ -319,7 +319,7 @@ def _url_open(  # pylint: disable=too-many-branches\n                 self._trace_stream.write(\"----------END-HTTP----------\\n\")\n             raise InvalidResponseError(\n                 response.status,\n-                response.getheader(\"content-type\"),\n+                response.headers.get(\"content-type\"),\n                 None,\n             )\n \n@@ -373,8 +373,8 @@ def _url_open(  # pylint: disable=too-many-branches\n                 code,\n                 message,\n                 url.path,\n-                response.getheader(\"x-amz-request-id\"),\n-                response.getheader(\"x-amz-id-2\"),\n+                response.headers.get(\"x-amz-request-id\"),\n+                response.headers.get(\"x-amz-id-2\"),\n                 response,\n                 bucket_name=bucket_name,\n                 object_name=object_name,\n@@ -1287,7 +1287,7 @@ def copy_object(self, bucket_name, object_name, source,\n         return ObjectWriteResult(\n             bucket_name,\n             object_name,\n-            response.getheader(\"x-amz-version-id\"),\n+            response.headers.get(\"x-amz-version-id\"),\n             etag,\n             response.headers,\n             last_modified=last_modified,\n@@ -1587,8 +1587,8 @@ def _put_object(self, bucket_name, object_name, data, headers,\n         return ObjectWriteResult(\n             bucket_name,\n             object_name,\n-            response.getheader(\"x-amz-version-id\"),\n-            response.getheader(\"etag\").replace('\"', \"\"),\n+            response.headers.get(\"x-amz-version-id\"),\n+            response.headers.get(\"etag\").replace('\"', \"\"),\n             response.headers,\n         )\n \n@@ -1873,7 +1873,7 @@ def stat_object(self, bucket_name, object_name, ssec=None, version_id=None,\n             query_params=query_params,\n         )\n \n-        last_modified = response.getheader(\"last-modified\")\n+        last_modified = response.headers.get(\"last-modified\")\n         if last_modified:\n             last_modified = time.from_http_header(last_modified)\n \n@@ -1881,11 +1881,11 @@ def stat_object(self, bucket_name, object_name, ssec=None, version_id=None,\n             bucket_name,\n             object_name,\n             last_modified=last_modified,\n-            etag=response.getheader(\"etag\", \"\").replace('\"', \"\"),\n-            size=int(response.getheader(\"content-length\", \"0\")),\n-            content_type=response.getheader(\"content-type\"),\n+            etag=response.headers.get(\"etag\", \"\").replace('\"', \"\"),\n+            size=int(response.headers.get(\"content-length\", \"0\")),\n+            content_type=response.headers.get(\"content-type\"),\n             metadata=response.headers,\n-            version_id=response.getheader(\"x-amz-version-id\"),\n+            version_id=response.headers.get(\"x-amz-version-id\"),\n         )\n \n     def remove_object(self, bucket_name, object_name, version_id=None):\ndiff --git a/minio/datatypes.py b/minio/datatypes.py\nindex 83aa2b979..cb377de52 100644\n--- a/minio/datatypes.py\n+++ b/minio/datatypes.py\n@@ -303,7 +303,7 @@ def __init__(self, response):\n         self._etag = findtext(element, \"ETag\")\n         if self._etag:\n             self._etag = self._etag.replace('\"', \"\")\n-        self._version_id = response.getheader(\"x-amz-version-id\")\n+        self._version_id = response.headers.get(\"x-amz-version-id\")\n         self._http_headers = response.headers\n \n     @property\ndiff --git a/setup.py b/setup.py\nindex 68ee332b8..544d68d00 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -57,6 +57,7 @@\n         \"Programming Language :: Python :: 3.8\",\n         \"Programming Language :: Python :: 3.9\",\n         \"Programming Language :: Python :: 3.10\",\n+        \"Programming Language :: Python :: 3.11\",\n         \"Topic :: Software Development :: Libraries :: Python Modules\",\n     ],\n     long_description=readme,\n",
+  "pre_commit": "851e75217bced7d970e436cb5155c2e1a09cb1aa",
+  "post_commit": "3d5f32606b6500af1c2ede7dbf217e87cbc76bc7"
+}

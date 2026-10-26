@@ -1,0 +1,70 @@
+{
+  "pr_number": 1938,
+  "title": "feat(dbapi2): include object name in procedure call spans",
+  "url": "https://github.com/elastic/apm-agent-python/pull/1938",
+  "description": "## What does this pull request do?\r\n\r\n* include object name in span name when calling procedures\r\n* consistently use span action `exec` when calling procedures\r\n \r\n## Related issues\r\n\r\nCloses #1937\r\n",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-12-01T01:08:35+00:00",
+  "additions": 65,
+  "deletions": 8,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "cla-checker-service[bot]",
+      "body": "<!-- CLA-CHECK:1938 -->\n&#x1F49A; CLA has been signed",
+      "created_at": "2023-11-24T19:11:55+00:00"
+    },
+    {
+      "author": "basepi",
+      "body": "Please merge/rebase this against `main` to get the tests passing. It appears you have pushes from maintainers disabled.",
+      "created_at": "2023-11-28T22:18:19+00:00"
+    },
+    {
+      "author": "anderssonjohan",
+      "body": "Thanks for the comments, I'll add the tests.\r\n\r\nRegarding the access I don't see a checkbox.. probably because of the cross-org issue mentioned here: https://github.com/orgs/community/discussions/5634",
+      "created_at": "2023-11-29T19:49:17+00:00"
+    },
+    {
+      "author": "basepi",
+      "body": "@elasticmachine, run elasticsearch-ci/docs",
+      "created_at": "2023-12-01T00:51:56+00:00"
+    },
+    {
+      "author": "anderssonjohan",
+      "body": "Example output when trying this branch in a real app:\r\n\r\n![Screenshot 2023-12-01 at 14 02 04](https://github.com/elastic/apm-agent-python/assets/435885/32d34bfe-62ba-4918-a226-de1effd43173)\r\n\r\nAction set to `exec`:\r\n\r\n![Screenshot 2023-12-01 at 14 04 23](https://github.com/elastic/apm-agent-python/assets/435885/6a65db6f-3c1b-4d4f-a225-bb90548b2b58)\r\n",
+      "created_at": "2023-12-01T13:06:21+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "basepi",
+      "body": "I'm not certain this line is quite right. It assumes that if there is no parenthesis, we'll grab from the first space to the second to last character (as `first_paren` will be `-1`). What if there's no trailing semicolon? Maybe add a test case for `(\"CALL get_car_stats_by_year\", \"CALL get_car_stats_by_year()\"),`?",
+      "path": "elasticapm/instrumentation/packages/dbapi2.py",
+      "line": null,
+      "created_at": "2023-11-28T22:23:50+00:00"
+    },
+    {
+      "author": "anderssonjohan",
+      "body": "Good catch! I added the test case and refactored the mentioned part.\r\n\r\nNote: In the current commit I have `object_name = procedure_name + \"()\"`. The added parens are there to be consistent with the already existing code in `_trace_sql` for calls coming from `def callproc`.\r\nIf `object_name = procedure_name` is desired, the pre-existing code in _trace_sql should be updated accordingly.\r\n",
+      "path": "elasticapm/instrumentation/packages/dbapi2.py",
+      "line": null,
+      "created_at": "2023-11-29T20:11:14+00:00"
+    },
+    {
+      "author": "basepi",
+      "body": "I think your version is fine. Thanks!",
+      "path": "elasticapm/instrumentation/packages/dbapi2.py",
+      "line": null,
+      "created_at": "2023-12-01T00:08:17+00:00"
+    }
+  ],
+  "changed_files": [
+    "elasticapm/instrumentation/packages/dbapi2.py",
+    "tests/instrumentation/dbapi2_tests.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/elasticapm/instrumentation/packages/dbapi2.py b/elasticapm/instrumentation/packages/dbapi2.py\nindex 8315bd8be..cbe34be59 100644\n--- a/elasticapm/instrumentation/packages/dbapi2.py\n+++ b/elasticapm/instrumentation/packages/dbapi2.py\n@@ -170,30 +170,46 @@ def extract_signature(sql):\n         keyword = \"INTO\" if sql_type == \"INSERT\" else \"FROM\"\n         sql_type = sql_type + \" \" + keyword\n \n-        table_name = look_for_table(sql, keyword)\n+        object_name = look_for_table(sql, keyword)\n     elif sql_type in [\"CREATE\", \"DROP\"]:\n         # 2nd word is part of SQL type\n         sql_type = sql_type + sql[first_space:second_space]\n-        table_name = \"\"\n+        object_name = \"\"\n     elif sql_type == \"UPDATE\":\n-        table_name = look_for_table(sql, \"UPDATE\")\n+        object_name = look_for_table(sql, \"UPDATE\")\n     elif sql_type == \"SELECT\":\n         # Name is first table\n         try:\n             sql_type = \"SELECT FROM\"\n-            table_name = look_for_table(sql, \"FROM\")\n+            object_name = look_for_table(sql, \"FROM\")\n         except Exception:\n-            table_name = \"\"\n+            object_name = \"\"\n+    elif sql_type in [\"EXEC\", \"EXECUTE\"]:\n+        sql_type = \"EXECUTE\"\n+        end = second_space if second_space > first_space else len(sql)\n+        object_name = sql[first_space + 1 : end]\n+    elif sql_type == \"CALL\":\n+        first_paren = sql.find(\"(\", first_space)\n+        end = first_paren if first_paren > first_space else len(sql)\n+        procedure_name = sql[first_space + 1 : end].rstrip(\";\")\n+        object_name = procedure_name + \"()\"\n     else:\n         # No name\n-        table_name = \"\"\n+        object_name = \"\"\n \n-    signature = \" \".join(filter(bool, [sql_type, table_name]))\n+    signature = \" \".join(filter(bool, [sql_type, object_name]))\n     return signature\n \n \n QUERY_ACTION = \"query\"\n EXEC_ACTION = \"exec\"\n+PROCEDURE_STATEMENTS = [\"EXEC\", \"EXECUTE\", \"CALL\"]\n+\n+\n+def extract_action_from_signature(signature, default):\n+    if signature.split(\" \")[0] in PROCEDURE_STATEMENTS:\n+        return EXEC_ACTION\n+    return default\n \n \n class CursorProxy(wrapt.ObjectProxy):\n@@ -226,6 +242,7 @@ def _trace_sql(self, method, sql, params, action=QUERY_ACTION):\n             signature = sql_string + \"()\"\n         else:\n             signature = self.extract_signature(sql_string)\n+            action = extract_action_from_signature(signature, action)\n \n         # Truncate sql_string to 10000 characters to prevent large queries from\n         # causing an error to APM server.\ndiff --git a/tests/instrumentation/dbapi2_tests.py b/tests/instrumentation/dbapi2_tests.py\nindex 7519b0801..d2fc84aab 100644\n--- a/tests/instrumentation/dbapi2_tests.py\n+++ b/tests/instrumentation/dbapi2_tests.py\n@@ -29,7 +29,13 @@\n #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n import pytest\n \n-from elasticapm.instrumentation.packages.dbapi2 import Literal, extract_signature, scan, tokenize\n+from elasticapm.instrumentation.packages.dbapi2 import (\n+    Literal,\n+    extract_action_from_signature,\n+    extract_signature,\n+    scan,\n+    tokenize,\n+)\n \n \n def test_scan_simple():\n@@ -114,3 +120,37 @@ def test_extract_signature_bytes():\n     actual = extract_signature(sql)\n     expected = \"HELLO\"\n     assert actual == expected\n+\n+\n+@pytest.mark.parametrize(\n+    [\"sql\", \"expected\"],\n+    [\n+        (\n+            \"EXEC AdventureWorks2022.dbo.uspGetEmployeeManagers 50;\",\n+            \"EXECUTE AdventureWorks2022.dbo.uspGetEmployeeManagers\",\n+        ),\n+        (\"EXECUTE sp_who2\", \"EXECUTE sp_who2\"),\n+        (\"EXEC sp_updatestats @@all_schemas = 'true'\", \"EXECUTE sp_updatestats\"),\n+        (\"CALL get_car_stats_by_year(2017, @number, @min, @avg, @max);\", \"CALL get_car_stats_by_year()\"),\n+        (\"CALL get_car_stats_by_year\", \"CALL get_car_stats_by_year()\"),\n+        (\"CALL get_car_stats_by_year;\", \"CALL get_car_stats_by_year()\"),\n+        (\"CALL get_car_stats_by_year();\", \"CALL get_car_stats_by_year()\"),\n+    ],\n+)\n+def test_extract_signature_for_procedure_call(sql, expected):\n+    actual = extract_signature(sql)\n+    assert actual == expected\n+\n+\n+@pytest.mark.parametrize(\n+    [\"sql\", \"expected\"],\n+    [\n+        (\"SELECT FROM table\", \"query\"),\n+        (\"EXEC sp_who\", \"exec\"),\n+        (\"EXECUTE sp_updatestats\", \"exec\"),\n+        (\"CALL me_maybe\", \"exec\"),\n+    ],\n+)\n+def test_extract_action_from_signature(sql, expected):\n+    actual = extract_action_from_signature(sql, \"query\")\n+    assert actual == expected\n",
+  "pre_commit": "8ee719b9c562bc3ade3dd4bac761a5157b068552",
+  "post_commit": "1654dd5e83ed160f3dfe457ee7179729a5bd7b43"
+}

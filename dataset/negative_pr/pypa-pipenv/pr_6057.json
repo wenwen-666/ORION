@@ -1,0 +1,125 @@
+{
+  "pr_number": 6057,
+  "title": "Fixed a bug with locking packages with non canonical names",
+  "url": "https://github.com/pypa/pipenv/pull/6057",
+  "description": "### The issue\r\n\r\nFix a bug with locking projects that contains packages with non canonical names from private indexes\r\nMore details here:\r\nhttps://github.com/pypa/pipenv/issues/6056\r\n\r\n### The checklist\r\n\r\n* [ X] Associated issue\r\n* [X ] A news fragment in the `news/` directory to describe this fix with the extension `.bugfix.rst`, `.feature.rst`, `.behavior.rst`, `.doc.rst`. `.vendor.rst`. or `.trivial.rst` (this will appear in the release changelog). Use semantic line breaks and name the file after the issue number or the PR #.\r\n* [] Send a fix to pip ?",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "463d9c8999caa75ec13d5187073d3cbf39345d97",
+  "merged_at": "2024-01-17T10:43:26+00:00",
+  "created_at": "2024-01-05T13:42:30+00:00",
+  "closed_at": "2024-01-17T10:43:26+00:00",
+  "user": "mangin",
+  "additions": 43,
+  "deletions": 5,
+  "changed_files_count": 3,
+  "labels": [],
+  "comments": [
+    {
+      "author": "mangin",
+      "body": "From my point of view the patch can't be send to pip.\r\nBecause they don't handle mapping between packages and indexes.\r\nThey just try to install package from ALL indexes:\r\nhttps://github.com/pypa/pip/blob/e88d39ae49ab11a8b80609a018e5a36ea4ccad89/src/pip/_internal/models/search_scope.py#L112",
+      "created_at": "2024-01-05T13:54:29+00:00"
+    },
+    {
+      "author": "oz123",
+      "body": "This seems like a legitimate fix, yet ... patching pip is a cause of trouble. \r\nYour patch should be here:\r\n```\r\ntasks/vendoring/patches/patched\r\n```\r\n\r\nlike other pip patches.\r\n\r\nIf @matteius is OK with this patch I can move it there.",
+      "created_at": "2024-01-06T13:57:01+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "No problem i would move the fix there.\r\nI would like to finish the job\r\n",
+      "created_at": "2024-01-06T18:43:30+00:00"
+    },
+    {
+      "author": "oz123",
+      "body": "Please go a head and move the patch there. You will also need to apply it to check that our vendoring system understands it.",
+      "created_at": "2024-01-06T18:51:17+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "I am convinced this must be fixable in the code we use from pipenv without patching pip at all.    I will try to help look more into this tonight, assuming we don't loose power in this storm.",
+      "created_at": "2024-01-06T20:06:05+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "Does this have to do with dash vs underscore in the package name?   I do think I broke something there when we factored away requirementslib.",
+      "created_at": "2024-01-06T20:06:52+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "@matteius can you please take a look one more time?\r\nThis change wouldn't require patching pip.",
+      "created_at": "2024-01-08T12:12:50+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "Fixed code style... i forgot to set up precommit hook. Sorry.",
+      "created_at": "2024-01-12T10:44:57+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "Hey @matteius,\r\nDo we have any timeline about releasing the fix?",
+      "created_at": "2024-01-17T09:54:49+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "@mangin I think we will get another 2023 release in (minior or patch) release within the next week and then start looking at our more major 2024 version release after that.   At least that's my plan, I have to travel for work next week so if I can get it in before then,.  Our goal is to adopt semver going forward.",
+      "created_at": "2024-01-17T23:52:50+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "@mangin Your patch is in the release from 15 minutes ago -- I hope that it is helpful.",
+      "created_at": "2024-01-22T03:20:30+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "Thank you for the release ^_^",
+      "created_at": "2024-01-22T14:30:06+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "mangin",
+      "body": "Let's create mapping with canonical package names instead of raw package names",
+      "path": "pipenv/utils/resolver.py",
+      "line": null,
+      "created_at": "2024-01-08T12:10:01+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "From my point of vie we should use canonicalize_name funiction from pip instead of normalize_name function everywhere.\r\nWDYT?",
+      "path": "pipenv/utils/resolver.py",
+      "line": null,
+      "created_at": "2024-01-08T12:10:59+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "Maybe we should use everywhere canonical_package_name instead of raw_package_name.\r\nBut i didn't start to do it because it would make affect on locking files => i'm a little bit afraid of it.\r\n",
+      "path": "pipenv/utils/resolver.py",
+      "line": null,
+      "created_at": "2024-01-08T12:12:13+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "Yeah you are right, I wish this is something I hadn't broke, but I think your patch makes sense as an iteration in the right direction.  I will think more about it.",
+      "path": "pipenv/utils/resolver.py",
+      "line": null,
+      "created_at": "2024-01-09T14:54:35+00:00"
+    },
+    {
+      "author": "mangin",
+      "body": "Can we apply my patch?\r\n\r\nP.S. I sent it because at my team we have some issues with pipenv. And we can't migrate to the freshest version (we still use pretty old one)",
+      "path": "pipenv/utils/resolver.py",
+      "line": null,
+      "created_at": "2024-01-10T08:50:40+00:00"
+    }
+  ],
+  "changed_files": [
+    "news/6056.bugfix.rst",
+    "pipenv/utils/resolver.py",
+    "tests/integration/test_lock.py"
+  ],
+  "diff": "diff --git a/news/6056.bugfix.rst b/news/6056.bugfix.rst\nnew file mode 100644\nindex 0000000000..8ff134e3c6\n--- /dev/null\n+++ b/news/6056.bugfix.rst\n@@ -0,0 +1 @@\n+Fix a bug with locking projects that contains packages with non canonical names from private indexes\ndiff --git a/pipenv/utils/resolver.py b/pipenv/utils/resolver.py\nindex 858f7047c1..a8c313e5ca 100644\n--- a/pipenv/utils/resolver.py\n+++ b/pipenv/utils/resolver.py\n@@ -25,6 +25,7 @@\n from pipenv.patched.pip._internal.req.req_install import InstallRequirement\n from pipenv.patched.pip._internal.utils.temp_dir import global_tempdir_manager\n from pipenv.patched.pip._vendor import pkg_resources, rich\n+from pipenv.patched.pip._vendor.packaging.utils import canonicalize_name\n from pipenv.project import Project\n from pipenv.utils.fileutils import create_tracked_tempdir\n from pipenv.utils.requirements import normalize_name\n@@ -200,6 +201,7 @@ def create(\n         for package_name, dep in deps.items():  # Build up the index and markers lookups\n             if not dep:\n                 continue\n+            canonical_package_name = canonicalize_name(package_name)\n             is_constraint = True\n             install_req, _ = expansive_install_req_from_line(dep, expand_env=True)\n             original_deps[package_name] = dep\n@@ -210,14 +212,18 @@ def create(\n                 pipfile_entries[package_name] = pipfile_entry\n                 if isinstance(pipfile_entry, dict):\n                     if packages[package_name].get(\"index\"):\n-                        index_lookup[package_name] = packages[package_name].get(\"index\")\n+                        index_lookup[canonical_package_name] = packages[package_name].get(\n+                            \"index\"\n+                        )\n                     if packages[package_name].get(\"skip_resolver\"):\n                         is_constraint = False\n                         skipped[package_name] = dep\n                 elif index:\n-                    index_lookup[package_name] = index\n+                    index_lookup[canonical_package_name] = index\n                 else:\n-                    index_lookup[package_name] = project.get_default_index()[\"name\"]\n+                    index_lookup[canonical_package_name] = project.get_default_index()[\n+                        \"name\"\n+                    ]\n             if install_req.markers:\n                 markers_lookup[package_name] = install_req.markers\n             if is_constraint:\n@@ -546,9 +552,13 @@ def collect_hashes(self, ireq):\n             return set()\n \n         sources = self.sources  # Enforce index restrictions\n-        if ireq.name in self.index_lookup:\n+        canonical_ireq_name = canonicalize_name(ireq.name)\n+        if canonical_ireq_name in self.index_lookup:\n             sources = list(\n-                filter(lambda s: s.get(\"name\") == self.index_lookup[ireq.name], sources)\n+                filter(\n+                    lambda s: s.get(\"name\") == self.index_lookup[canonical_ireq_name],\n+                    sources,\n+                )\n             )\n         source = sources[0] if len(sources) else None\n         if source:\ndiff --git a/tests/integration/test_lock.py b/tests/integration/test_lock.py\nindex 0259f6ba13..99f5cd559c 100644\n--- a/tests/integration/test_lock.py\n+++ b/tests/integration/test_lock.py\n@@ -285,6 +285,33 @@ def test_private_index_lock_requirements(pipenv_instance_private_pypi):\n         assert c.returncode == 0\n \n \n+@pytest.mark.lock\n+@pytest.mark.index\n+@pytest.mark.install  # private indexes need to be uncached for resolution\n+@pytest.mark.requirements\n+@pytest.mark.needs_internet\n+def test_private_index_lock_requirements_for_not_canonical_package(pipenv_instance_private_pypi):\n+    with pipenv_instance_private_pypi() as p:\n+        with open(p.pipfile_path, 'w') as f:\n+            contents = \"\"\"\n+[[source]]\n+url = \"https://pypi.org/simple\"\n+verify_ssl = true\n+name = \"pypi\"\n+\n+[[source]]\n+url = \"https://test.pypi.org/simple\"\n+verify_ssl = true\n+name = \"testpypi\"\n+\n+[packages]\n+pipenv_test_private_package = {version = \"*\", index = \"testpypi\"}\n+            \"\"\".strip()\n+            f.write(contents)\n+        c = p.pipenv('lock')\n+        assert c.returncode == 0\n+\n+\n @pytest.mark.index\n @pytest.mark.install\n def test_lock_updated_source(pipenv_instance_private_pypi):\n",
+  "pre_commit": "dc261212c845d3f5e33b472ba11008b07cb8ea19",
+  "post_commit": "463d9c8999caa75ec13d5187073d3cbf39345d97",
+  "merge_type": "squash"
+}

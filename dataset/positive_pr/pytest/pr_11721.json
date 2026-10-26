@@ -1,0 +1,101 @@
+{
+  "pr_number": 11721,
+  "title": "Fix teardown error reporting when `--maxfail=1`",
+  "url": "https://github.com/pytest-dev/pytest/pull/11721",
+  "description": "Closes #11706.\r\n\r\n\r\n",
+  "comments": [
+    {
+      "author": "bbrown1867",
+      "body": "cc: @bluetech ",
+      "created_at": "2023-12-18T18:21:14Z"
+    },
+    {
+      "author": "bbrown1867",
+      "body": "Thanks for the review @RonnyPfannschmidt! Yeah I think backporting to 7.4.x would be useful to pick these changes up sooner.",
+      "created_at": "2023-12-19T18:24:39Z"
+    },
+    {
+      "author": "bbrown1867",
+      "body": "@RonnyPfannschmidt - is anything needed on my end to get this merged? Or are we waiting for more maintainers to review?",
+      "created_at": "2023-12-21T16:27:43Z"
+    },
+    {
+      "author": "RonnyPfannschmidt",
+      "body": "I'm down as with a headache, so I'd like other's to merge ",
+      "created_at": "2023-12-21T16:29:03Z"
+    }
+  ],
+  "diff": "diff --git a/AUTHORS b/AUTHORS\nindex 14a35c3d5c3..67e794527fb 100644\n--- a/AUTHORS\n+++ b/AUTHORS\n@@ -54,6 +54,7 @@ Aviral Verma\n Aviv Palivoda\n Babak Keyvani\n Barney Gale\n+Ben Brown\n Ben Gartner\n Ben Webb\n Benjamin Peterson\ndiff --git a/changelog/11706.bugfix.rst b/changelog/11706.bugfix.rst\nnew file mode 100644\nindex 00000000000..1b90d8f0b60\n--- /dev/null\n+++ b/changelog/11706.bugfix.rst\n@@ -0,0 +1 @@\n+Fix reporting of teardown errors in higher-scoped fixtures when using `--maxfail` or `--stepwise`.\ndiff --git a/src/_pytest/main.py b/src/_pytest/main.py\nindex 9fb96840e5c..51be84164b2 100644\n--- a/src/_pytest/main.py\n+++ b/src/_pytest/main.py\n@@ -6,6 +6,7 @@\n import importlib\n import os\n import sys\n+import warnings\n from pathlib import Path\n from typing import AbstractSet\n from typing import Callable\n@@ -44,6 +45,7 @@\n from _pytest.reports import TestReport\n from _pytest.runner import collect_one_node\n from _pytest.runner import SetupState\n+from _pytest.warning_types import PytestWarning\n \n \n def pytest_addoption(parser: Parser) -> None:\n@@ -548,8 +550,8 @@ def __init__(self, config: Config) -> None:\n         )\n         self.testsfailed = 0\n         self.testscollected = 0\n-        self.shouldstop: Union[bool, str] = False\n-        self.shouldfail: Union[bool, str] = False\n+        self._shouldstop: Union[bool, str] = False\n+        self._shouldfail: Union[bool, str] = False\n         self.trace = config.trace.root.get(\"collection\")\n         self._initialpaths: FrozenSet[Path] = frozenset()\n         self._initialpaths_with_parents: FrozenSet[Path] = frozenset()\n@@ -576,6 +578,42 @@ def __repr__(self) -> str:\n             self.testscollected,\n         )\n \n+    @property\n+    def shouldstop(self) -> Union[bool, str]:\n+        return self._shouldstop\n+\n+    @shouldstop.setter\n+    def shouldstop(self, value: Union[bool, str]) -> None:\n+        # The runner checks shouldfail and assumes that if it is set we are\n+        # definitely stopping, so prevent unsetting it.\n+        if value is False and self._shouldstop:\n+            warnings.warn(\n+                PytestWarning(\n+                    \"session.shouldstop cannot be unset after it has been set; ignoring.\"\n+                ),\n+                stacklevel=2,\n+            )\n+            return\n+        self._shouldstop = value\n+\n+    @property\n+    def shouldfail(self) -> Union[bool, str]:\n+        return self._shouldfail\n+\n+    @shouldfail.setter\n+    def shouldfail(self, value: Union[bool, str]) -> None:\n+        # The runner checks shouldfail and assumes that if it is set we are\n+        # definitely stopping, so prevent unsetting it.\n+        if value is False and self._shouldfail:\n+            warnings.warn(\n+                PytestWarning(\n+                    \"session.shouldfail cannot be unset after it has been set; ignoring.\"\n+                ),\n+                stacklevel=2,\n+            )\n+            return\n+        self._shouldfail = value\n+\n     @property\n     def startpath(self) -> Path:\n         \"\"\"The path from which pytest was invoked.\ndiff --git a/src/_pytest/runner.py b/src/_pytest/runner.py\nindex e20338520eb..3e19f0de50c 100644\n--- a/src/_pytest/runner.py\n+++ b/src/_pytest/runner.py\n@@ -131,6 +131,10 @@ def runtestprotocol(\n             show_test_item(item)\n         if not item.config.getoption(\"setuponly\", False):\n             reports.append(call_and_report(item, \"call\", log))\n+    # If the session is about to fail or stop, teardown everything - this is\n+    # necessary to correctly report fixture teardown errors (see #11706)\n+    if item.session.shouldfail or item.session.shouldstop:\n+        nextitem = None\n     reports.append(call_and_report(item, \"teardown\", log, nextitem=nextitem))\n     # After all teardown hooks have been called\n     # want funcargs and request info to go away.\ndiff --git a/testing/test_runner.py b/testing/test_runner.py\nindex c8b646857e7..26f5b9a0bc2 100644\n--- a/testing/test_runner.py\n+++ b/testing/test_runner.py\n@@ -1087,3 +1087,53 @@ def func() -> None:\n     with pytest.raises(TypeError) as excinfo:\n         OutcomeException(func)  # type: ignore\n     assert str(excinfo.value) == expected\n+\n+\n+def test_teardown_session_failed(pytester: Pytester) -> None:\n+    \"\"\"Test that higher-scoped fixture teardowns run in the context of the last\n+    item after the test session bails early due to --maxfail.\n+\n+    Regression test for #11706.\n+    \"\"\"\n+    pytester.makepyfile(\n+        \"\"\"\n+        import pytest\n+\n+        @pytest.fixture(scope=\"module\")\n+        def baz():\n+            yield\n+            pytest.fail(\"This is a failing teardown\")\n+\n+        def test_foo(baz):\n+            pytest.fail(\"This is a failing test\")\n+\n+        def test_bar(): pass\n+        \"\"\"\n+    )\n+    result = pytester.runpytest(\"--maxfail=1\")\n+    result.assert_outcomes(failed=1, errors=1)\n+\n+\n+def test_teardown_session_stopped(pytester: Pytester) -> None:\n+    \"\"\"Test that higher-scoped fixture teardowns run in the context of the last\n+    item after the test session bails early due to --stepwise.\n+\n+    Regression test for #11706.\n+    \"\"\"\n+    pytester.makepyfile(\n+        \"\"\"\n+        import pytest\n+\n+        @pytest.fixture(scope=\"module\")\n+        def baz():\n+            yield\n+            pytest.fail(\"This is a failing teardown\")\n+\n+        def test_foo(baz):\n+            pytest.fail(\"This is a failing test\")\n+\n+        def test_bar(): pass\n+        \"\"\"\n+    )\n+    result = pytester.runpytest(\"--stepwise\")\n+    result.assert_outcomes(failed=1, errors=1)\ndiff --git a/testing/test_session.py b/testing/test_session.py\nindex 136e85eb640..803bbed5434 100644\n--- a/testing/test_session.py\n+++ b/testing/test_session.py\n@@ -418,3 +418,63 @@ def test_rootdir_wrong_option_arg(pytester: Pytester) -> None:\n     result.stderr.fnmatch_lines(\n         [\"*Directory *wrong_dir* not found. Check your '--rootdir' option.*\"]\n     )\n+\n+\n+def test_shouldfail_is_sticky(pytester: Pytester) -> None:\n+    \"\"\"Test that session.shouldfail cannot be reset to False after being set.\n+\n+    Issue #11706.\n+    \"\"\"\n+    pytester.makeconftest(\n+        \"\"\"\n+        def pytest_sessionfinish(session):\n+            assert session.shouldfail\n+            session.shouldfail = False\n+            assert session.shouldfail\n+        \"\"\"\n+    )\n+    pytester.makepyfile(\n+        \"\"\"\n+        import pytest\n+\n+        def test_foo():\n+            pytest.fail(\"This is a failing test\")\n+\n+        def test_bar(): pass\n+        \"\"\"\n+    )\n+\n+    result = pytester.runpytest(\"--maxfail=1\", \"-Wall\")\n+\n+    result.assert_outcomes(failed=1, warnings=1)\n+    result.stdout.fnmatch_lines(\"*session.shouldfail cannot be unset*\")\n+\n+\n+def test_shouldstop_is_sticky(pytester: Pytester) -> None:\n+    \"\"\"Test that session.shouldstop cannot be reset to False after being set.\n+\n+    Issue #11706.\n+    \"\"\"\n+    pytester.makeconftest(\n+        \"\"\"\n+        def pytest_sessionfinish(session):\n+            assert session.shouldstop\n+            session.shouldstop = False\n+            assert session.shouldstop\n+        \"\"\"\n+    )\n+    pytester.makepyfile(\n+        \"\"\"\n+        import pytest\n+\n+        def test_foo():\n+            pytest.fail(\"This is a failing test\")\n+\n+        def test_bar(): pass\n+        \"\"\"\n+    )\n+\n+    result = pytester.runpytest(\"--stepwise\", \"-Wall\")\n+\n+    result.assert_outcomes(failed=1, warnings=1)\n+    result.stdout.fnmatch_lines(\"*session.shouldstop cannot be unset*\")\n",
+  "changed_files": [
+    "AUTHORS",
+    "changelog/11706.bugfix.rst",
+    "src/_pytest/main.py",
+    "src/_pytest/runner.py",
+    "testing/test_runner.py",
+    "testing/test_session.py"
+  ],
+  "changed_functions": [
+    "shouldstop",
+    "shouldfail",
+    "test_teardown_session_failed",
+    "baz",
+    "test_foo",
+    "test_bar",
+    "test_teardown_session_stopped",
+    "test_shouldfail_is_sticky",
+    "pytest_sessionfinish",
+    "test_shouldstop_is_sticky"
+  ],
+  "pre_commit": "f017df443a589494b0a47488b1616db7c12dc8cd",
+  "post_commit": "12b9bd580198edf88a795b692cbd6a1a05fe408a",
+  "merged_at": "2024-01-03T17:39:25Z",
+  "review_comments": [
+    {
+      "author": "bluetech",
+      "body": "```suggestion\r\ndef test_higher_scoped_teardown_with_maxfail(pytester: Pytester) -> None:\r\n    \"\"\"Test that higher-scoped fixture teardowns run in the context of the last item\r\n    after the test session bails early due to --maxfail.\r\n    \r\n    Regression test for #11706.\r\n    \"\"\"\r\n```",
+      "path": "testing/test_runner.py",
+      "line": null,
+      "created_at": "2023-12-22T07:40:53Z"
+    },
+    {
+      "author": "bluetech",
+      "body": "Better to use [`result.assert_outcomes`](https://docs.pytest.org/en/stable/reference/reference.html#pytest.RunResult.assert_outcomes)",
+      "path": "testing/test_runner.py",
+      "line": null,
+      "created_at": "2023-12-22T07:44:24Z"
+    },
+    {
+      "author": "bbrown1867",
+      "body": "@bluetech should an exception be raised here? Or is simply ignoring the operation okay?",
+      "path": "src/_pytest/main.py",
+      "line": 596,
+      "created_at": "2024-01-02T16:29:22Z"
+    },
+    {
+      "author": "bluetech",
+      "body": "I think silently ignoring is no good, it will be confusing why there is no effect.\r\n\r\nThe two options are issuing a warning, or raising an exception. Since we're already stopping raising an exception seems kinda pointless, so I think we should go with a warning. I think it can be something like this:\r\n\r\n```py\r\n# The runner checks shouldfail and assumes that if it is set we are definitely stopping,\r\n# so prevent unsetting it.\r\nwarnings.warn(PytestWarning(\"session.shouldfail cannot be unset after it has been set; ignoring.\"), stacklevel=2)\r\n```\r\n\r\nUnfortunately it does mean you'll need to write extra tests to cover these warnings, let me know if you need help with that.",
+      "path": "src/_pytest/main.py",
+      "line": 596,
+      "created_at": "2024-01-02T17:08:23Z"
+    },
+    {
+      "author": "bbrown1867",
+      "body": "Okay sounds good, I've added the warnings and and a unit test for the `shouldfail` scenario called `test_shouldfail_is_sticky`. I'm using `pytest_sessionfinish` to trigger the bad behavior. However this same approach did not work for `shouldstop` - it seems like `shouldstop` was still `False` in `pytest_sessionfinish` even if I changed `pytest.fail` to `pytest.exit`. Any ideas on how to test the `shouldstop` scenario?",
+      "path": "src/_pytest/main.py",
+      "line": 596,
+      "created_at": "2024-01-02T18:43:51Z"
+    },
+    {
+      "author": "bluetech",
+      "body": "The only thing which sets `shouldstop` in pytest core is `--stepwise`, which actually has the same problem as `--maxfail`. Since I've already checked out the branch, I've pushed the new test along with some tweaks. This is now good to go, thanks!",
+      "path": "src/_pytest/main.py",
+      "line": 596,
+      "created_at": "2024-01-03T17:06:46Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 156,
+  "deletions": 2,
+  "changed_files_count": 6
+}

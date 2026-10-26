@@ -1,0 +1,40 @@
+{
+  "pr_number": 209,
+  "title": "Do not trust the API's 'posts' and 'liked_count' fields",
+  "url": "https://github.com/bbolli/tumblr-utils/pull/209",
+  "description": "These fields are incorrect in cases such as private posts changed to public, and this leads to missed posts when backing up blogs.\r\n\r\nFor example, create a blog with one private post and one public one, then publish the private post. tumblr_backup.py will only download 1 post without this patch.\r\n\r\nThis change also skips only a single post rather than an entire batch upon parse failures, in a further attempt to avoid dropping posts unnecessarily.",
+  "comments": [
+    {
+      "author": "tu-p",
+      "body": "Commit text line-wrapped.",
+      "created_at": "2020-04-05T20:31:19Z"
+    },
+    {
+      "author": "tu-p",
+      "body": "I've rewritten the logic as suggested.",
+      "created_at": "2020-04-07T22:50:24Z"
+    }
+  ],
+  "diff": "diff --git a/tumblr_backup.py b/tumblr_backup.py\nindex ad3a134..79740e2 100755\n--- a/tumblr_backup.py\n+++ b/tumblr_backup.py\n@@ -537,21 +537,24 @@ def backup(self, account):\n         if options.likes:\n             _get_content = lambda soup: soup['response']['liked_posts']\n             blog = {}\n-            last_post = resp['liked_count']\n+            count_estimate = resp['liked_count']\n         else:\n             _get_content = lambda soup: soup['response']['posts']\n             blog = resp['blog']\n-            last_post = blog['posts']\n+            count_estimate = blog['posts']\n         self.title = escape(blog.get('title', account))\n         self.subtitle = blog.get('description', '')\n \n         # use the meta information to create a HTML header\n         TumblrPost.post_header = self.header(body_class='post')\n \n-        # find the post number limit to back up\n+        # find the limit of how many posts to back up\n         if options.count:\n-            last_post = min(last_post, options.count + options.skip)\n+            desired_count = options.count + options.skip\n+        else:\n+            desired_count = None\n \n+        # returns whether any posts from this batch were saved\n         def _backup(posts):\n             for p in sorted(posts, key=lambda x: x['id'], reverse=True):\n                 post = post_class(p)\n@@ -583,28 +586,27 @@ def _backup(posts):\n         # start the thread pool\n         backup_pool = ThreadPool()\n         try:\n-            # Get the JSON entries from the API, which we can only do for max 50 posts at once.\n+            # Get the JSON entries from the API, which we can only do for MAX_POSTS posts at once.\n             # Posts \"arrive\" in reverse chronological order. Post #0 is the most recent one.\n-            last_batch = MAX_POSTS\n             i = options.skip\n-            while i < last_post:\n+            # Download posts until we have `desired_count` (if specified), or until post range responses are empty\n+            while not desired_count or self.post_count < desired_count:\n                 # find the upper bound\n-                j = min(i + MAX_POSTS, last_post)\n-                log(account, \"Getting posts %d to %d of %d\\r\" % (i, j - 1, last_post))\n+                log(account, \"Getting posts %d to %d (of %d expected)\\r\" % (i, i + MAX_POSTS - 1, count_estimate))\n \n-                soup = apiparse(base, j - i, i)\n+                soup = apiparse(base, MAX_POSTS, i)\n                 if soup is None:\n-                    i += last_batch     # try the next batch\n+                    i += 1 # try skipping a post\n                     self.errors = True\n                     continue\n \n                 posts = _get_content(soup)\n-                # posts can be empty if we don't backup reblogged posts\n+                # `_backup(posts)` can be empty even when `posts` is not if we don't backup reblogged posts\n                 if not posts or not _backup(posts):\n+                    log(account, \"Backing up posts found empty set of posts, finishing\\r\")\n                     break\n \n-                last_batch = len(posts)\n-                i += last_batch\n+                i += MAX_POSTS\n         except:\n             # ensure proper thread pool termination\n             backup_pool.cancel()\n",
+  "changed_files": [
+    "tumblr_backup.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "4961a2f64a8fe17fae2afb412b4222d1202a45a2",
+  "post_commit": "dd40a8894cda36444154670fcc913887127bb6bb",
+  "merged_at": "2020-04-08T09:00:47Z",
+  "review_comments": [
+    {
+      "author": "bbolli",
+      "body": "Now this seems a little backwards. Move the condition to the while statement:\r\n\r\n```python\r\nwhile not desired_count or self.post_count < desired_count:\r\n```",
+      "path": "tumblr_backup.py",
+      "line": null,
+      "created_at": "2020-04-06T10:47:55Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 16,
+  "deletions": 14,
+  "changed_files_count": 1
+}

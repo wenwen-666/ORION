@@ -1,0 +1,63 @@
+{
+  "pr_number": 1694,
+  "title": "fix mongodb transport obsolete calls",
+  "url": "https://github.com/celery/kombu/pull/1694",
+  "description": "## changes\r\n\r\n- replace obsolete collection `remove` by `delete_one`\r\n- add test mock `spec` to check valid methods corresponding to the real objects\r\n  (`AttributeError` raised if real class does not have this attribute/method)\r\n\r\n## tests\r\n\r\nValidated with latest celery using `celery inspect` calls that were failing before this fix.\r\n\r\n## references\r\n\r\n- fixes #1689 ",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-04-18T04:54:17+00:00",
+  "additions": 64,
+  "deletions": 19,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "fmigneault",
+      "body": "The CI failures seems unrelated to the changes (failing dependency install of `codecov`). \r\nI've successfully executed the test suite locally with pytest for everything related to mongodb.",
+      "created_at": "2023-04-13T14:20:05+00:00"
+    },
+    {
+      "author": "fmigneault",
+      "body": "> you used delete one and delete many\r\n\r\nIn the case of delete matching by `_id`, it should be guaranteed to be unique. \r\nOther deletes were comparing only against `queue`, which is not technically unique, hence the use of `delete_many` just in case.",
+      "created_at": "2023-04-13T14:25:43+00:00"
+    },
+    {
+      "author": "auvipy",
+      "body": "restarted the builld",
+      "created_at": "2023-04-13T14:34:11+00:00"
+    },
+    {
+      "author": "fmigneault",
+      "body": "Seems related to the following: \r\nhttps://community.codecov.com/t/codecov-yanked-from-pypi-all-versions/4259",
+      "created_at": "2023-04-13T15:27:22+00:00"
+    },
+    {
+      "author": "auvipy",
+      "body": "uggh have to find out what to clean from the CI",
+      "created_at": "2023-04-13T15:54:30+00:00"
+    },
+    {
+      "author": "auvipy",
+      "body": "but pytest-cov should not be affected",
+      "created_at": "2023-04-13T15:55:03+00:00"
+    },
+    {
+      "author": "fmigneault",
+      "body": "`pytest-cov` works, it is only the coverage uploader that fails. \r\nI use the following approach in multiple repositories: https://github.com/crim-ca/weaver/blob/master/.github/workflows/tests.yml#L134-L141",
+      "created_at": "2023-04-13T16:21:01+00:00"
+    },
+    {
+      "author": "auvipy",
+      "body": "thanks a lot",
+      "created_at": "2023-04-18T04:54:30+00:00"
+    }
+  ],
+  "review_comments": [],
+  "changed_files": [
+    "kombu/transport/mongodb.py",
+    "t/unit/transport/test_mongodb.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/kombu/transport/mongodb.py b/kombu/transport/mongodb.py\nindex b923f5f4b..9eef6b575 100644\n--- a/kombu/transport/mongodb.py\n+++ b/kombu/transport/mongodb.py\n@@ -65,6 +65,7 @@ class BroadcastCursor:\n \n     def __init__(self, cursor):\n         self._cursor = cursor\n+        self._offset = 0\n         self.purge(rewind=False)\n \n     def get_size(self):\n@@ -77,7 +78,7 @@ def purge(self, rewind=True):\n         if rewind:\n             self._cursor.rewind()\n \n-        # Fast forward the cursor past old events\n+        # Fast-forward the cursor past old events\n         self._offset = self._cursor.collection.count_documents({})\n         self._cursor = self._cursor.skip(self._offset)\n \n@@ -221,7 +222,7 @@ def _purge(self, queue):\n         if queue in self._fanout_queues:\n             self._get_broadcast_cursor(queue).purge()\n         else:\n-            self.messages.remove({'queue': queue})\n+            self.messages.delete_many({'queue': queue})\n \n         return size\n \n@@ -257,10 +258,10 @@ def _queue_bind(self, exchange, routing_key, pattern, queue):\n         self.routing.update_one(lookup, {'$set': data}, upsert=True)\n \n     def queue_delete(self, queue, **kwargs):\n-        self.routing.remove({'queue': queue})\n+        self.routing.delete_many({'queue': queue})\n \n         if self.ttl:\n-            self.queues.remove({'_id': queue})\n+            self.queues.delete_one({'_id': queue})\n \n         super().queue_delete(queue, **kwargs)\n \ndiff --git a/t/unit/transport/test_mongodb.py b/t/unit/transport/test_mongodb.py\nindex 6bb5f1f90..bd1aee647 100644\n--- a/t/unit/transport/test_mongodb.py\n+++ b/t/unit/transport/test_mongodb.py\n@@ -10,6 +10,15 @@\n \n pymongo = pytest.importorskip('pymongo')\n \n+# must import following after above validation to avoid error\n+# and skip tests if missing\n+# these are used to define real spec of the corresponding mocks,\n+# to ensure called methods exist in real objects\n+# pylint: disable=C0413\n+from pymongo.collection import Collection  # isort:skip # noqa: E402\n+from pymongo.database import Database  # isort:skip # noqa: E402\n+from kombu.transport.mongodb import BroadcastCursor  # isort:skip # noqa: E402\n+\n \n def _create_mock_connection(url='', **kwargs):\n     from kombu.transport import mongodb\n@@ -22,7 +31,9 @@ class _Channel(mongodb.Channel):\n         now = datetime.datetime.utcnow()\n \n         def _create_client(self):\n-            mock = MagicMock(name='client')\n+            # not really a 'MongoClient',\n+            # but an actual pre-established Database connection\n+            mock = MagicMock(name='client', spec=Database)\n \n             # we need new mock object for every collection\n             def get_collection(name):\n@@ -30,7 +41,9 @@ def get_collection(name):\n                     return self.collections[name]\n                 except KeyError:\n                     mock = self.collections[name] = MagicMock(\n-                        name='collection:%s' % name)\n+                        name='collection:%s' % name,\n+                        spec=Collection,\n+                    )\n \n                     return mock\n \n@@ -108,7 +121,7 @@ def set_operation_return_value(self, cname, mname, *values):\n         else:\n             method.side_effect = values\n \n-    def declare_droadcast_queue(self, queue):\n+    def declare_broadcast_queue(self, queue):\n         self.channel.exchange_declare('fanout_exchange', type='fanout')\n \n         self.channel._queue_bind('fanout_exchange', 'foo', '*', queue)\n@@ -119,9 +132,9 @@ def get_broadcast(self, queue):\n         return self.channel._broadcast_cursors[queue]\n \n     def set_broadcast_return_value(self, queue, *values):\n-        self.declare_droadcast_queue(queue)\n+        self.declare_broadcast_queue(queue)\n \n-        cursor = MagicMock(name='cursor')\n+        cursor = MagicMock(name='cursor', spec=BroadcastCursor)\n         cursor.__iter__.return_value = iter(values)\n \n         self.channel._broadcast_cursors[queue]._cursor = iter(cursor)\n@@ -200,7 +213,7 @@ def test_put(self):\n         })\n \n     def test_put_fanout(self):\n-        self.declare_droadcast_queue('foobar')\n+        self.declare_broadcast_queue('foobar')\n \n         self.channel._put_fanout('foobar', {'some': 'data'}, 'foo')\n \n@@ -221,9 +234,9 @@ def test_size(self):\n         assert result == 77\n \n     def test_size_fanout(self):\n-        self.declare_droadcast_queue('foobar')\n+        self.declare_broadcast_queue('foobar')\n \n-        cursor = MagicMock(name='cursor')\n+        cursor = MagicMock(name='cursor', spec=BroadcastCursor)\n         cursor.get_size.return_value = 77\n         self.channel._broadcast_cursors['foobar'] = cursor\n \n@@ -237,15 +250,15 @@ def test_purge(self):\n         result = self.channel._purge('foobar')\n         self.assert_collection_accessed('messages')\n         self.assert_operation_called_with(\n-            'messages', 'remove', {'queue': 'foobar'},\n+            'messages', 'delete_many', {'queue': 'foobar'},\n         )\n \n         assert result == 77\n \n     def test_purge_fanout(self):\n-        self.declare_droadcast_queue('foobar')\n+        self.declare_broadcast_queue('foobar')\n \n-        cursor = MagicMock(name='cursor')\n+        cursor = MagicMock(name='cursor', spec=BroadcastCursor)\n         cursor.get_size.return_value = 77\n         self.channel._broadcast_cursors['foobar'] = cursor\n \n@@ -293,13 +306,13 @@ def test_queue_delete(self):\n         self.channel.queue_delete('foobar')\n         self.assert_collection_accessed('messages.routing')\n         self.assert_operation_called_with(\n-            'routing', 'remove', {'queue': 'foobar'},\n+            'routing', 'delete_many', {'queue': 'foobar'},\n         )\n \n     def test_queue_delete_fanout(self):\n-        self.declare_droadcast_queue('foobar')\n+        self.declare_broadcast_queue('foobar')\n \n-        cursor = MagicMock(name='cursor')\n+        cursor = MagicMock(name='cursor', spec=BroadcastCursor)\n         self.channel._broadcast_cursors['foobar'] = cursor\n \n         self.channel.queue_delete('foobar')\n@@ -318,6 +331,28 @@ def test_create_broadcast(self):\n             'messages.broadcast', capped=True, size=100000,\n         )\n \n+    def test_create_broadcast_exists(self):\n+        # simulate already created collection\n+        self.channel.client.list_collection_names.return_value = [\n+            'messages.broadcast'\n+        ]\n+\n+        broadcast = self.channel._create_broadcast(self.channel.client)\n+        self.channel.client.create_collection.assert_not_called()\n+        assert broadcast is None  # not returned since not created\n+\n+    def test_get_broadcast_cursor_created(self):\n+        self.channel._fanout_queues['foobar'] = 'fanout_exchange'\n+        created_cursor = self.channel._get_broadcast_cursor('foobar')\n+        cached_cursor = self.channel._broadcast_cursors['foobar']\n+        assert cached_cursor is created_cursor\n+\n+    def test_get_broadcast_cursor_exists(self):\n+        self.declare_broadcast_queue('foobar')\n+        cached_cursor = self.channel._broadcast_cursors['foobar']\n+        getter_cursor = self.channel._get_broadcast_cursor('foobar')\n+        assert cached_cursor is getter_cursor\n+\n     def test_ensure_indexes(self):\n         self.channel._ensure_indexes(self.channel.client)\n \n@@ -455,7 +490,7 @@ def test_queue_delete(self):\n         self.channel.queue_delete('foobar')\n         self.assert_collection_accessed('messages.queues')\n         self.assert_operation_called_with(\n-            'queues', 'remove', {'_id': 'foobar'})\n+            'queues', 'delete_one', {'_id': 'foobar'})\n \n     def test_ensure_indexes(self):\n         self.channel._ensure_indexes(self.channel.client)\n@@ -531,3 +566,12 @@ def test_size(self):\n         self.assert_operation_has_calls('messages', 'find', [])\n \n         assert result == 0\n+\n+\n+class test_mongodb_transport(BaseMongoDBChannelCase):\n+    def setup(self):\n+        self.connection = _create_mock_connection()\n+\n+    def test_driver_version(self):\n+        version = self.connection.transport.driver_version()\n+        assert version == pymongo.__version__\n",
+  "pre_commit": "0dd813a81997a42a1a40477641a5349116662b70",
+  "post_commit": "f86f1fc6e1caab6bcd2351e3b95424cece6015e4"
+}

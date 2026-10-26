@@ -1,0 +1,286 @@
+{
+  "pr_number": 14702,
+  "title": "MNT Add estimator check for not calling __array_function__",
+  "url": "https://github.com/scikit-learn/scikit-learn/pull/14702",
+  "description": "test for #14687.\r\n\r\nI don't think we test against numpy 1.17 so this will only fail on cron not here?",
+  "comments": [
+    {
+      "author": "amueller",
+      "body": "this is not a complete fix and is also breaking some things.\r\nI feel like we might want to allow ``may_share_memory``? If someone implements that wrongly and doesn't provide ``True`` or ``False`` they can figure that out themselves ;)",
+      "created_at": "2019-08-20T21:33:57Z"
+    },
+    {
+      "author": "amueller",
+      "body": "hm this is actually nearly ok but I gotta run ;)",
+      "created_at": "2019-08-20T21:40:41Z"
+    },
+    {
+      "author": "amueller",
+      "body": "now added a test for ``sample_weights`` as well. That wasn't tested with ``NotAnArray`` before (so didn't work) and I needed to add some logic to the slicing in ``GridSearchCV`` to make this work with ``NotAnArray`` ``fit_params``",
+      "created_at": "2019-08-21T14:29:38Z"
+    },
+    {
+      "author": "amueller",
+      "body": "Should be good now?",
+      "created_at": "2019-08-21T19:05:47Z"
+    },
+    {
+      "author": "amueller",
+      "body": "oh coverage fails because we don't test on new numpy I guess. Should we? I think waiting till it's on conda might be ok?",
+      "created_at": "2019-08-21T19:13:14Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "> oh coverage fails because we don't test on new numpy I guess. Should we? I think waiting till it's on conda might be ok?\r\n\r\nI'm not sure how many people install numpy from pypi, but my guess is \"many\". I'd rather have that, or conda-forge as the \"test against the latest\" in the CI, rather than conda. WDYT?",
+      "created_at": "2019-08-22T13:29:42Z"
+    },
+    {
+      "author": "amueller",
+      "body": "The test failure is due to me using ``pytest`` in ``test_estimator_checks`` :-/ That will be fixed in #14381 I think.\r\n\r\nI'm ok with moving the \"latest\" CI to conda-forge",
+      "created_at": "2019-08-22T14:10:43Z"
+    },
+    {
+      "author": "amueller",
+      "body": "Never mind,  #14381 doesn't fix that, I just won't use pytest in that file.",
+      "created_at": "2019-08-26T16:45:07Z"
+    },
+    {
+      "author": "amueller",
+      "body": "any takers? Should I include the change to CI in this PR?",
+      "created_at": "2019-09-03T19:24:07Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "I was gonna do the CI change, if you don't, I'll do in a separate PR.",
+      "created_at": "2019-09-03T19:42:59Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "@amueller , CI change is merged.",
+      "created_at": "2019-09-08T16:46:03Z"
+    },
+    {
+      "author": "amueller",
+      "body": "merged master. let's see what happens.",
+      "created_at": "2019-09-09T15:57:19Z"
+    },
+    {
+      "author": "amueller",
+      "body": "passes?",
+      "created_at": "2019-09-09T19:56:16Z"
+    },
+    {
+      "author": "amueller",
+      "body": "@glemaitre @jnothman ? ;)",
+      "created_at": "2019-09-20T18:09:41Z"
+    },
+    {
+      "author": "amueller",
+      "body": "this is quite hard to keep in sync with master :-/",
+      "created_at": "2019-09-27T19:16:38Z"
+    },
+    {
+      "author": "amueller",
+      "body": "greeeeen",
+      "created_at": "2019-09-27T20:46:09Z"
+    },
+    {
+      "author": "amueller",
+      "body": "@ogrisel like this?",
+      "created_at": "2019-10-07T13:58:17Z"
+    },
+    {
+      "author": "NicolasHug",
+      "body": "The only test is that estimators don't complain when you pass `_NotAnArray`, but it doesn't make sure `__array_function__` isn't used, which is what we ultimately want right? At least that's what the what'snew says.\r\n\r\nI think we should have `_NotAnArray.__array_function__` raise an exception to properly cover that?\r\n\r\n@amueller I addressed Joel's comments and merged with master. I'm happy to address future comments if you need\r\n\r\n----\r\n\r\nRegarding all the changes to sample_weight, I agree with @glemaitre that we could/should be using `_check_sample_weights`.\r\nBut I'm fine with doing that in another PR.",
+      "created_at": "2019-10-24T18:12:12Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "> I think we should have _NotAnArray.__array_function__ raise an exception\nto properly cover that?\n\nIsn't that what this pr does?\n",
+      "created_at": "2019-10-24T20:32:17Z"
+    },
+    {
+      "author": "NicolasHug",
+      "body": "Ah, indeed. I wasn't reading that well for some reason",
+      "created_at": "2019-10-24T20:39:53Z"
+    }
+  ],
+  "diff": "diff --git a/doc/whats_new/v0.22.rst b/doc/whats_new/v0.22.rst\nindex 6e331f6d0f1f8..9f98ae6dc7a74 100644\n--- a/doc/whats_new/v0.22.rst\n+++ b/doc/whats_new/v0.22.rst\n@@ -687,6 +687,12 @@ Changelog\n Miscellaneous\n .............\n \n+- |API| Scikit-learn now converts any input data structure implementing a\n+  duck array to a numpy array (using ``__array__``) to ensure consistent\n+  behavior instead of relying on ``__array_function__`` (see `NEP 18\n+  <https://numpy.org/neps/nep-0018-array-function-protocol.html>`_).\n+  :pr:`14702` by `Andreas Müller`_.\n+\n - |API| Replace manual checks with ``check_is_fitted``. Errors thrown when\n   using a non-fitted estimators are now more uniform.\n   :pr:`13013` by :user:`Agamemnon Krasoulis <agamemnonc>`.\n@@ -709,6 +715,12 @@ These changes mostly affect library developers.\n   Such classifiers need to have the `binary_only=True` estimator tag.\n   :pr:`13875` by `Trevor Stephens`_.\n \n+- Estimators are expected to convert input data (``X``, ``y``,\n+  ``sample_weights``) to :class:`numpy.ndarray` and never call\n+  ``__array_function__`` on the original datatype that is passed (see `NEP 18\n+  <https://numpy.org/neps/nep-0018-array-function-protocol.html>`_).\n+  :pr:`14702` by `Andreas Müller`_.\n+\n - `requires_positive_X` estimator tag (for models that require\n   X to be non-negative) is now used by :meth:`utils.estimator_checks.check_estimator`\n   to make sure a proper error message is raised if X contains some negative entries.\ndiff --git a/sklearn/cross_decomposition/_pls_.py b/sklearn/cross_decomposition/_pls_.py\nindex 3573adf330179..e32a46f15dee0 100644\n--- a/sklearn/cross_decomposition/_pls_.py\n+++ b/sklearn/cross_decomposition/_pls_.py\n@@ -881,6 +881,7 @@ def transform(self, X, Y=None):\n         Xr = (X - self.x_mean_) / self.x_std_\n         x_scores = np.dot(Xr, self.x_weights_)\n         if Y is not None:\n+            Y = check_array(Y, ensure_2d=False, dtype=np.float64)\n             if Y.ndim == 1:\n                 Y = Y.reshape(-1, 1)\n             Yr = (Y - self.y_mean_) / self.y_std_\ndiff --git a/sklearn/dummy.py b/sklearn/dummy.py\nindex 4d77241601de7..b12b314c4a91f 100644\n--- a/sklearn/dummy.py\n+++ b/sklearn/dummy.py\n@@ -133,6 +133,7 @@ def fit(self, X, y, sample_weight=None):\n         self.sparse_output_ = sp.issparse(y)\n \n         if not self.sparse_output_:\n+            y = np.asarray(y)\n             y = np.atleast_1d(y)\n \n         if y.ndim == 1:\n@@ -470,6 +471,8 @@ def fit(self, X, y, sample_weight=None):\n         self.n_outputs_ = y.shape[1]\n \n         check_consistent_length(X, y, sample_weight)\n+        if sample_weight is not None:\n+            sample_weight = np.asarray(sample_weight)\n \n         if self.strategy == \"mean\":\n             self.constant_ = np.average(y, axis=0, weights=sample_weight)\ndiff --git a/sklearn/linear_model/_base.py b/sklearn/linear_model/_base.py\nindex 3407ea4b4ef32..d2fd66780e31d 100644\n--- a/sklearn/linear_model/_base.py\n+++ b/sklearn/linear_model/_base.py\n@@ -120,6 +120,8 @@ def _preprocess_data(X, y, fit_intercept, normalize=False, copy=True,\n \n     if isinstance(sample_weight, numbers.Number):\n         sample_weight = None\n+    if sample_weight is not None:\n+        sample_weight = np.asarray(sample_weight)\n \n     if check_input:\n         X = check_array(X, copy=copy, accept_sparse=['csr', 'csc'],\n@@ -181,8 +183,10 @@ def _preprocess_data(X, y, fit_intercept, normalize=False, copy=True,\n def _rescale_data(X, y, sample_weight):\n     \"\"\"Rescale data so as to support sample_weight\"\"\"\n     n_samples = X.shape[0]\n-    sample_weight = np.full(n_samples, sample_weight,\n-                            dtype=np.array(sample_weight).dtype)\n+    sample_weight = np.array(sample_weight)\n+    if sample_weight.ndim == 0:\n+        sample_weight = np.full(n_samples, sample_weight,\n+                                dtype=sample_weight.dtype)\n     sample_weight = np.sqrt(sample_weight)\n     sw_matrix = sparse.dia_matrix((sample_weight, 0),\n                                   shape=(n_samples, n_samples))\n@@ -467,7 +471,7 @@ def fit(self, X, y, sample_weight=None):\n         X, y = check_X_y(X, y, accept_sparse=['csr', 'csc', 'coo'],\n                          y_numeric=True, multi_output=True)\n \n-        if sample_weight is not None and np.atleast_1d(sample_weight).ndim > 1:\n+        if sample_weight is not None and np.asarray(sample_weight).ndim > 1:\n             raise ValueError(\"Sample weights must be 1D array or scalar\")\n \n         X, y, X_offset, y_offset, X_scale = self._preprocess_data(\ndiff --git a/sklearn/linear_model/_ridge.py b/sklearn/linear_model/_ridge.py\nindex 66d8d38e9b2dc..0b93675e42fdc 100644\n--- a/sklearn/linear_model/_ridge.py\n+++ b/sklearn/linear_model/_ridge.py\n@@ -567,7 +567,7 @@ def fit(self, X, y, sample_weight=None):\n             solver = self.solver\n \n         if ((sample_weight is not None) and\n-                np.atleast_1d(sample_weight).ndim > 1):\n+                np.asarray(sample_weight).ndim > 1):\n             raise ValueError(\"Sample weights must be 1D array or scalar\")\n \n         # when X is sparse we only remove offset from y\ndiff --git a/sklearn/model_selection/_search.py b/sklearn/model_selection/_search.py\nindex f016c045f4d9a..9e20943d0625e 100644\n--- a/sklearn/model_selection/_search.py\n+++ b/sklearn/model_selection/_search.py\n@@ -643,6 +643,10 @@ def fit(self, X, y=None, groups=None, **fit_params):\n             refit_metric = 'score'\n \n         X, y, groups = indexable(X, y, groups)\n+        # make sure fit_params are sliceable\n+        fit_params_values = indexable(*fit_params.values())\n+        fit_params = dict(zip(fit_params.keys(), fit_params_values))\n+\n         n_splits = cv.get_n_splits(X, y, groups)\n \n         base_estimator = clone(self.estimator)\ndiff --git a/sklearn/model_selection/tests/test_search.py b/sklearn/model_selection/tests/test_search.py\nindex 85d64545b1377..440a26c08cd29 100644\n--- a/sklearn/model_selection/tests/test_search.py\n+++ b/sklearn/model_selection/tests/test_search.py\n@@ -209,10 +209,11 @@ def check_hyperparameter_searcher_with_fit_params(klass, **klass_kwargs):\n     assert_raise_message(AssertionError,\n                          \"Expected fit parameter(s) ['eggs'] not seen.\",\n                          searcher.fit, X, y, spam=np.ones(10))\n-    assert_raise_message(AssertionError,\n-                         \"Fit parameter spam has length 1; expected\",\n-                         searcher.fit, X, y, spam=np.ones(1),\n-                         eggs=np.zeros(10))\n+    assert_raise_message(\n+        ValueError,\n+        \"Found input variables with inconsistent numbers of samples: [\",\n+        searcher.fit, X, y, spam=np.ones(1),\n+        eggs=np.zeros(10))\n     searcher.fit(X, y, spam=np.ones(10), eggs=np.zeros(10))\n \n \ndiff --git a/sklearn/naive_bayes.py b/sklearn/naive_bayes.py\nindex 709d74c052daf..be9450d7334f0 100644\n--- a/sklearn/naive_bayes.py\n+++ b/sklearn/naive_bayes.py\n@@ -31,7 +31,7 @@\n from .utils.extmath import safe_sparse_dot\n from .utils.fixes import logsumexp\n from .utils.multiclass import _check_partial_fit_first_call\n-from .utils.validation import check_is_fitted, check_non_negative\n+from .utils.validation import check_is_fitted, check_non_negative, column_or_1d\n \n __all__ = ['BernoulliNB', 'GaussianNB', 'MultinomialNB', 'ComplementNB',\n            'CategoricalNB']\n@@ -204,6 +204,7 @@ def fit(self, X, y, sample_weight=None):\n         -------\n         self : object\n         \"\"\"\n+        y = column_or_1d(y, warn=True)\n         return self._partial_fit(X, y, np.unique(y), _refit=True,\n                                  sample_weight=sample_weight)\n \n@@ -622,6 +623,7 @@ def fit(self, X, y, sample_weight=None):\n         # this means we also don't have to cast X to floating point\n         if sample_weight is not None:\n             Y = Y.astype(np.float64, copy=False)\n+            sample_weight = np.asarray(sample_weight)\n             sample_weight = np.atleast_2d(sample_weight)\n             Y *= check_array(sample_weight).T\n \ndiff --git a/sklearn/utils/estimator_checks.py b/sklearn/utils/estimator_checks.py\nindex 552f1d243dcc3..18b85beb95a49 100644\n--- a/sklearn/utils/estimator_checks.py\n+++ b/sklearn/utils/estimator_checks.py\n@@ -80,6 +80,7 @@ def _yield_checks(name, estimator):\n     yield check_estimators_dtypes\n     yield check_fit_score_takes_y\n     yield check_sample_weights_pandas_series\n+    yield check_sample_weights_not_an_array\n     yield check_sample_weights_list\n     yield check_sample_weights_invariance\n     yield check_estimators_fit_returns_self\n@@ -538,11 +539,17 @@ class _NotAnArray:\n     \"\"\"\n \n     def __init__(self, data):\n-        self.data = data\n+        self.data = np.asarray(data)\n \n     def __array__(self, dtype=None):\n         return self.data\n \n+    def __array_function__(self, func, types, args, kwargs):\n+        if func.__name__ == \"may_share_memory\":\n+            return True\n+        raise TypeError(\"Don't want to call array_function {}!\".format(\n+            func.__name__))\n+\n \n @deprecated(\"NotAnArray is deprecated in version \"\n             \"0.22 and will be removed in version 0.24.\")\n@@ -719,6 +726,23 @@ def check_sample_weights_pandas_series(name, estimator_orig):\n                            \"input of type pandas.Series to class weight.\")\n \n \n+@ignore_warnings(category=(DeprecationWarning, FutureWarning))\n+def check_sample_weights_not_an_array(name, estimator_orig):\n+    # check that estimators will accept a 'sample_weight' parameter of\n+    # type _NotAnArray in the 'fit' function.\n+    estimator = clone(estimator_orig)\n+    if has_fit_parameter(estimator, \"sample_weight\"):\n+        X = np.array([[1, 1], [1, 2], [1, 3], [1, 4],\n+                      [2, 1], [2, 2], [2, 3], [2, 4],\n+                      [3, 1], [3, 2], [3, 3], [3, 4]])\n+        X = _NotAnArray(pairwise_estimator_convert_X(X, estimator_orig))\n+        y = _NotAnArray([1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 2, 2])\n+        weights = _NotAnArray([1] * 12)\n+        if _safe_tags(estimator, \"multioutput_only\"):\n+            y = _NotAnArray(y.data.reshape(-1, 1))\n+        estimator.fit(X, y, sample_weight=weights)\n+\n+\n @ignore_warnings(category=(DeprecationWarning, FutureWarning))\n def check_sample_weights_list(name, estimator_orig):\n     # check that estimators will accept a 'sample_weight' parameter of\n@@ -1162,8 +1186,10 @@ def _check_transformer(name, transformer_orig, X, y):\n     # fit\n \n     if name in CROSS_DECOMPOSITION:\n-        y_ = np.c_[y, y]\n+        y_ = np.c_[np.asarray(y), np.asarray(y)]\n         y_[::2, 1] *= 2\n+        if isinstance(X, _NotAnArray):\n+            y_ = _NotAnArray(y_)\n     else:\n         y_ = y\n \ndiff --git a/sklearn/utils/multiclass.py b/sklearn/utils/multiclass.py\nindex ebd3dd77b876c..70ca4e4c8bf72 100644\n--- a/sklearn/utils/multiclass.py\n+++ b/sklearn/utils/multiclass.py\n@@ -353,6 +353,8 @@ def class_distribution(y, sample_weight=None):\n     class_prior = []\n \n     n_samples, n_outputs = y.shape\n+    if sample_weight is not None:\n+        sample_weight = np.asarray(sample_weight)\n \n     if issparse(y):\n         y = y.tocsc()\n@@ -362,7 +364,7 @@ def class_distribution(y, sample_weight=None):\n             col_nonzero = y.indices[y.indptr[k]:y.indptr[k + 1]]\n             # separate sample weights for zero and non-zero elements\n             if sample_weight is not None:\n-                nz_samp_weight = np.asarray(sample_weight)[col_nonzero]\n+                nz_samp_weight = sample_weight[col_nonzero]\n                 zeros_samp_weight_sum = (np.sum(sample_weight) -\n                                          np.sum(nz_samp_weight))\n             else:\ndiff --git a/sklearn/utils/tests/test_estimator_checks.py b/sklearn/utils/tests/test_estimator_checks.py\nindex c7ff23c386567..f5938aa737bd3 100644\n--- a/sklearn/utils/tests/test_estimator_checks.py\n+++ b/sklearn/utils/tests/test_estimator_checks.py\n@@ -13,7 +13,7 @@\n                                    ignore_warnings,\n                                    assert_warns, assert_raises,\n                                    SkipTest)\n-from sklearn.utils.estimator_checks import check_estimator\n+from sklearn.utils.estimator_checks import check_estimator, _NotAnArray\n from sklearn.utils.estimator_checks \\\n     import check_class_weight_balanced_linear_classifier\n from sklearn.utils.estimator_checks import set_random_state\n@@ -23,6 +23,7 @@\n from sklearn.utils.estimator_checks import check_no_attributes_set_in_init\n from sklearn.utils.validation import check_is_fitted\n from sklearn.utils.estimator_checks import check_outlier_corruption\n+from sklearn.utils.fixes import _parse_version\n from sklearn.ensemble import RandomForestClassifier\n from sklearn.linear_model import LinearRegression, SGDClassifier\n from sklearn.mixture import GaussianMixture\n@@ -305,6 +306,17 @@ def _more_tags(self):\n         return {\"requires_positive_y\": True}\n \n \n+def test_not_an_array_array_function():\n+    np_version = _parse_version(np.__version__)\n+    if np_version < (1, 17):\n+        raise SkipTest(\"array_function protocol not supported in numpy <1.17\")\n+    not_array = _NotAnArray(np.ones(10))\n+    msg = \"Don't want to call array_function sum!\"\n+    assert_raises_regex(TypeError, msg, np.sum, not_array)\n+    # always returns True\n+    assert np.may_share_memory(not_array, None)\n+\n+\n def test_check_fit_score_takes_y_works_on_deprecated_fit():\n     # Tests that check_fit_score_takes_y works on a class with\n     # a deprecated fit method\ndiff --git a/sklearn/utils/validation.py b/sklearn/utils/validation.py\nindex 77f0e0b0d1612..74906a4ec2e4e 100644\n--- a/sklearn/utils/validation.py\n+++ b/sklearn/utils/validation.py\n@@ -765,6 +765,7 @@ def column_or_1d(y, warn=False):\n     y : array\n \n     \"\"\"\n+    y = np.asarray(y)\n     shape = np.shape(y)\n     if len(shape) == 1:\n         return np.ravel(y)\n",
+  "changed_files": [
+    "doc/whats_new/v0.22.rst",
+    "sklearn/cross_decomposition/_pls_.py",
+    "sklearn/dummy.py",
+    "sklearn/linear_model/_base.py",
+    "sklearn/linear_model/_ridge.py",
+    "sklearn/model_selection/_search.py",
+    "sklearn/model_selection/tests/test_search.py",
+    "sklearn/naive_bayes.py",
+    "sklearn/utils/estimator_checks.py",
+    "sklearn/utils/multiclass.py",
+    "sklearn/utils/tests/test_estimator_checks.py",
+    "sklearn/utils/validation.py"
+  ],
+  "changed_functions": [
+    "__array_function__",
+    "check_sample_weights_not_an_array",
+    "test_not_an_array_array_function",
+    "test_check_fit_score_takes_y_works_on_deprecated_fit"
+  ],
+  "pre_commit": "7effc37174ff82e2252a7f4ff442a2bc7562ea0b",
+  "post_commit": "a91bae74aaca4979f5d927db327654b1d8e3ae58",
+  "merged_at": "2019-10-24T20:42:11Z",
+  "review_comments": [
+    {
+      "author": "thomasjpfan",
+      "body": "Returning `True` and raising `TypeError` needs to be tested?",
+      "path": "sklearn/utils/estimator_checks.py",
+      "line": 547,
+      "created_at": "2019-08-21T19:14:41Z"
+    },
+    {
+      "author": "amueller",
+      "body": "you mean explicitly tested? Sure, i could do that. Thought that was a bit overkill for a test helper. They are obviously used in the tests, but on CI there's no ``__array_function__`` protocol.",
+      "path": "sklearn/utils/estimator_checks.py",
+      "line": 547,
+      "created_at": "2019-08-21T19:16:16Z"
+    },
+    {
+      "author": "thomasjpfan",
+      "body": "I would be more onboard if `NotAnArray` was private, which goes back to \"public vs private utils\" https://github.com/scikit-learn/scikit-learn/issues/6616#issuecomment-516479413\r\n\r\nOn the other hand, we are depending on this raising when something is wrong. When everything is working, our tests do not run `__array_function__`.",
+      "path": "sklearn/utils/estimator_checks.py",
+      "line": 547,
+      "created_at": "2019-08-21T19:44:27Z"
+    },
+    {
+      "author": "amueller",
+      "body": "That's a good point. I'll add a test (that won't be run)",
+      "path": "sklearn/utils/estimator_checks.py",
+      "line": 547,
+      "created_at": "2019-08-21T20:25:35Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "do we not want to have a more complex `atleast_1d` instead?",
+      "path": "sklearn/dummy.py",
+      "line": 136,
+      "created_at": "2019-08-22T13:32:15Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "I feel like this belongs to `check_array` too, doesn't it?",
+      "path": "sklearn/dummy.py",
+      "line": 474,
+      "created_at": "2019-08-22T13:33:01Z"
+    },
+    {
+      "author": "amueller",
+      "body": "you mean ``column_or_1d``? I honestly don't know why we would need ``atleast_1d``. We usually want scalars to be treated differently.",
+      "path": "sklearn/dummy.py",
+      "line": 136,
+      "created_at": "2019-08-22T14:04:44Z"
+    },
+    {
+      "author": "amueller",
+      "body": "there's also ``check_array(ensure_2d=False)`` which might be more suitable here?",
+      "path": "sklearn/dummy.py",
+      "line": 136,
+      "created_at": "2019-08-22T14:06:58Z"
+    },
+    {
+      "author": "amueller",
+      "body": "not sure what you mean. Using ``check_array(sample_weights, ensure_2d=True)`` instead of asarray? We don't have any tests for NaN in sample weights, do we? I'm not sure how much I want to make this PR about adding way more checks to sample weights",
+      "path": "sklearn/dummy.py",
+      "line": 474,
+      "created_at": "2019-08-22T14:08:08Z"
+    },
+    {
+      "author": "adrinjalali",
+      "body": "yep, I tend to forget that we have both `column_or_1d` and `atleast_1d`. Ideally I think I'd rather have `ensure_ndims=n` in `check_array` maybe.",
+      "path": "sklearn/dummy.py",
+      "line": 136,
+      "created_at": "2019-08-22T14:19:21Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "we have _check_sample_weight in validation",
+      "path": "sklearn/dummy.py",
+      "line": 474,
+      "created_at": "2019-09-10T17:11:43Z"
+    },
+    {
+      "author": "amueller",
+      "body": "that does a lot more though, right?",
+      "path": "sklearn/dummy.py",
+      "line": 474,
+      "created_at": "2019-09-24T20:53:05Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "```suggestion\r\n  to a numpy array (using ``__array__``) to ensure consistent behavior instead of\r\n```",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-08T13:23:28Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "```suggestion\r\n  relying on ``__array_function__`` (see `NEP 18`_).\r\n```\r\n\r\nThen later:\r\n\r\n```\r\n.. _NEP 18: https://numpy.org/neps/nep-0018-array-function-protocol.html\r\n```",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-08T13:23:47Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "```suggestion\r\n  ``__array_function__`` on the original datatype that is passed. This means that,\r\n  by default, estimators are not expected to support the array function dispatching\r\n  mechanism of `NEP 18`_.\r\n```",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-08T13:28:43Z"
+    },
+    {
+      "author": "amueller",
+      "body": "I don't think this wording is particularly clear. Estimators are forbidden from supporting the mechanism of NEP 18 with this PR.",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-08T15:46:10Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "I did not want to phrase it in a way that this will always be the case in the future. But phrase it as you wish as long as NEP 18 is mentioned :)",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-09T08:13:06Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "why not use ```:class:`numpy.ndarray` ``` to get the cross-reference?",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-23T13:08:05Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "Reference this PR.",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": 721,
+      "created_at": "2019-10-23T13:09:44Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "reference this PR",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": 693,
+      "created_at": "2019-10-23T13:10:11Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "Do you mean \"now\" instead of \"currently\"?",
+      "path": "doc/whats_new/v0.22.rst",
+      "line": null,
+      "created_at": "2019-10-23T13:11:04Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 81,
+  "deletions": 13,
+  "changed_files_count": 12
+}

@@ -1,0 +1,99 @@
+{
+  "pr_number": 636,
+  "title": "Fix #630: relative tokenUrl",
+  "url": "https://github.com/fastapi-users/fastapi-users/pull/636",
+  "description": "",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "455f695f520d646389767bcde3b0fe7c8b2f9b4d",
+  "merged_at": "2021-05-20T06:52:03+00:00",
+  "created_at": "2021-05-17T08:01:13+00:00",
+  "closed_at": "2021-05-20T06:52:03+00:00",
+  "user": "frankie567",
+  "additions": 33,
+  "deletions": 33,
+  "changed_files_count": 10,
+  "labels": [],
+  "comments": [
+    {
+      "author": "codecov[bot]",
+      "body": "# [Codecov](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron) Report\n> Merging [#636](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron) (dc67ebe) into [master](https://codecov.io/gh/frankie567/fastapi-users/commit/5267e605f41574910a29ab2cf22034ffb09e39f7?el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron) (5267e60) will **not change** coverage.\n> The diff coverage is `n/a`.\n\n> :exclamation: Current head dc67ebe differs from pull request most recent head 1db7d8a. Consider uploading reports for the commit 1db7d8a to get more accurate results\n[![Impacted file tree graph](https://codecov.io/gh/frankie567/fastapi-users/pull/636/graphs/tree.svg?width=650&height=150&src=pr&token=sZYJlUTzGr&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron)](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron)\n\n```diff\n@@            Coverage Diff            @@\n##            master      #636   +/-   ##\n=========================================\n  Coverage   100.00%   100.00%           \n=========================================\n  Files           24        24           \n  Lines         1005      1012    +7     \n=========================================\n+ Hits          1005      1012    +7     \n```\n\n\n| [Impacted Files](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron) | Coverage Δ | |\n|---|---|---|\n| [fastapi\\_users/authentication/jwt.py](https://codecov.io/gh/frankie567/fastapi-users/pull/636/diff?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron#diff-ZmFzdGFwaV91c2Vycy9hdXRoZW50aWNhdGlvbi9qd3QucHk=) | `100.00% <ø> (ø)` | |\n| [fastapi\\_users/db/sqlalchemy.py](https://codecov.io/gh/frankie567/fastapi-users/pull/636/diff?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron#diff-ZmFzdGFwaV91c2Vycy9kYi9zcWxhbGNoZW15LnB5) | `100.00% <0.00%> (ø)` | |\n\n------\n\n[Continue to review full report at Codecov](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron).\n> **Legend** - [Click here to learn more](https://docs.codecov.io/docs/codecov-delta?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron)\n> `Δ = absolute <relative> (impact)`, `ø = not affected`, `? = missing data`\n> Powered by [Codecov](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=footer&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron). Last update [5267e60...1db7d8a](https://codecov.io/gh/frankie567/fastapi-users/pull/636?src=pr&el=lastupdated&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron). Read the [comment docs](https://docs.codecov.io/docs/pull-request-comments?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=Fran%C3%A7ois+Voron).\n",
+      "created_at": "2021-05-17T08:03:05+00:00"
+    },
+    {
+      "author": "frankie567",
+      "body": "Thank you for the very relevant comments, much appreciated 🙂 I've improved things a bit!",
+      "created_at": "2021-05-18T06:05:07+00:00"
+    },
+    {
+      "author": "eddsalkield",
+      "body": "Nice improvements - thanks!  I think this is pretty near good to go.  The only other thing I thought of was quoting the strings when showing the defaults, e.g.:\r\n\r\n> A constant `SECRET`\r\n\r\nbecomes\r\n\r\n> A constant `\"SECRET\"`\r\n\r\nor\r\n\r\n> A constant \"SECRET\"\r\n\r\nAlthough this is really minor, so feel free to pick whichever (that said, it's probably worth making this consistent throughout the docs.  While looking to see what is done elsewhere, it seems from the [cookie page](https://github.com/frankie567/fastapi-users/blob/dc67ebe23920070a151a01ee9f308634e258742a/docs/configuration/authentication/cookie.md) that it's a mixture of back-ticked and single-quoted).",
+      "created_at": "2021-05-18T13:18:58+00:00"
+    },
+    {
+      "author": "frankie567",
+      "body": "I've improved the consistency accross cookie/jwt documentation. Thank you for your help 👍",
+      "created_at": "2021-05-20T06:51:54+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "eddsalkield",
+      "body": "Shouldn't the default parameter here be `tokenUrl=\"login\"`, in accordance with the class definition?",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-17T16:03:23+00:00"
+    },
+    {
+      "author": "eddsalkield",
+      "body": "Perhaps specify that it should _probably_ be relative - there may be a few small use cases where people explicitly want an absolute path.",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-17T16:06:42+00:00"
+    },
+    {
+      "author": "eddsalkield",
+      "body": "You don't have to define three arguments - `secret` and `lifetime_seconds` are the only required arguments.  `tokenUrl` and `name` are optional.  Perhaps it's also worth mentioning the arguments by their name as well?",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-17T16:11:11+00:00"
+    },
+    {
+      "author": "frankie567",
+      "body": "I think it's okay to have `auth/jwt/login` because it's the working value when configuring the JWT authentication router when following the documentation. If the user follows this, it should have a working example out-of-the-box (like full examples).",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-18T05:57:00+00:00"
+    },
+    {
+      "author": "eddsalkield",
+      "body": "I think this can make sense, since you've specified that the `tokenUrl` \"defaults to `login`\".",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-18T13:10:36+00:00"
+    },
+    {
+      "author": "frankie567",
+      "body": "Maybe I should change the default actually 🤔",
+      "path": "docs/configuration/authentication/jwt.md",
+      "line": null,
+      "created_at": "2021-05-20T06:45:48+00:00"
+    }
+  ],
+  "changed_files": [
+    "docs/configuration/authentication/cookie.md",
+    "docs/configuration/authentication/jwt.md",
+    "docs/src/full_mongodb.py",
+    "docs/src/full_ormar.py",
+    "docs/src/full_sqlalchemy.py",
+    "docs/src/full_tortoise.py",
+    "docs/src/oauth_full_mongodb.py",
+    "docs/src/oauth_full_sqlalchemy.py",
+    "docs/src/oauth_full_tortoise.py",
+    "fastapi_users/authentication/jwt.py"
+  ],
+  "diff": "diff --git a/docs/configuration/authentication/cookie.md b/docs/configuration/authentication/cookie.md\nindex e3fe888a..a1040b68 100644\n--- a/docs/configuration/authentication/cookie.md\n+++ b/docs/configuration/authentication/cookie.md\n@@ -16,27 +16,25 @@ cookie_authentication = CookieAuthentication(secret=SECRET, lifetime_seconds=360\n auth_backends.append(cookie_authentication)\n ```\n \n-As you can see, instantiation is quite simple. You just have to define a constant `SECRET` which is used to encode the token and the lifetime of the cookie (in seconds).\n-\n-You can also define the parameters for the generated cookie:\n+As you can see, instantiation is quite simple. It accepts the following arguments:\n \n+* `secret` (`str`): A constant secret which is used to encode the cookie. **Use a strong passphrase and keep it secure.**\n+* `lifetime_seconds` (`int`): The lifetime of the cookie in seconds.\n * `cookie_name` (`fastapiusersauth`): Name of the cookie.\n * `cookie_path` (`/`): Cookie path.\n * `cookie_domain` (`None`): Cookie domain.\n * `cookie_secure` (`True`): Whether to only send the cookie to the server via SSL request.\n * `cookie_httponly` (`True`): Whether to prevent access to the cookie via JavaScript.\n-* `cookie_samesite` (`lax`): A string that specifies the samesite strategy for the cookie. Valid values are 'lax', 'strict' and 'none'. Defaults to 'lax'. \n+* `cookie_samesite` (`lax`): A string that specifies the samesite strategy for the cookie. Valid values are `lax`, `strict` and `none`. Defaults to `lax`.\n+* `name` (`Optional[str]`): Name of the backend. It's useful in the case you wish to have several backends of the same class. Each backend should have a unique name. Defaults to `cookie`.\n \n-!!! tip\n-    You can also optionally define the `name`. It's useful in the case you wish to have several backends of the same class. Each backend should have a unique name. **Defaults to `cookie`**.\n-\n-    ```py\n-    cookie_authentication = CookieAuthentication(\n-        secret=SECRET,\n-        lifetime_seconds=3600,\n-        name=\"my-cookie\",\n-    )\n-    ```\n+```py\n+cookie_authentication = CookieAuthentication(\n+    secret=SECRET,\n+    lifetime_seconds=3600,\n+    name=\"my-cookie\",\n+)\n+```\n \n !!! tip\n     The value of the cookie is actually a JWT. This authentication backend shares most of its logic with the [JWT](./jwt.md) one.\ndiff --git a/docs/configuration/authentication/jwt.md b/docs/configuration/authentication/jwt.md\nindex 953905e1..f0508894 100644\n--- a/docs/configuration/authentication/jwt.md\n+++ b/docs/configuration/authentication/jwt.md\n@@ -11,23 +11,25 @@ SECRET = \"SECRET\"\n \n auth_backends = []\n \n-jwt_authentication = JWTAuthentication(secret=SECRET, lifetime_seconds=3600)\n+jwt_authentication = JWTAuthentication(secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\")\n \n auth_backends.append(jwt_authentication)\n ```\n \n-As you can see, instantiation is quite simple. You just have to define a constant `SECRET` which is used to encode the token and the lifetime of token (in seconds).\n+As you can see, instantiation is quite simple. It accepts the following arguments:\n \n-!!! tip\n-    You can also optionally define the `name`. It's useful in the case you wish to have several backends of the same class. Each backend should have a unique name. **Defaults to `jwt`**.\n+* `secret` (`str`): A constant secret which is used to encode the token. **Use a strong passphrase and keep it secure.**\n+* `lifetime_seconds` (`int`): The lifetime of the token in seconds.\n+* `tokenUrl` (`Optional[str]`): The exact path of your login endpoint. It'll allow the interactive documentation to automatically discover it and get a working *Authorize* button. In most cases, you'll probably need a **relative** path, not absolute. You can read more details about this in the [FastAPI documentation](https://fastapi.tiangolo.com/tutorial/security/first-steps/#fastapis-oauth2passwordbearer). Defaults to `auth/jwt/login`.\n+* `name` (`Optional[str]`): Name of the backend. It's useful in the case you wish to have several backends of the same class. Each backend should have a unique name. Defaults to `jwt`.\n \n-    ```py\n-    jwt_authentication = JWTAuthentication(\n-        secret=SECRET,\n-        lifetime_seconds=3600,\n-        name=\"my-jwt\",\n-    )\n-    ```\n+```py\n+jwt_authentication = JWTAuthentication(\n+    secret=SECRET,\n+    lifetime_seconds=3600,\n+    name=\"my-jwt\",\n+)\n+```\n \n ## Login\n \ndiff --git a/docs/src/full_mongodb.py b/docs/src/full_mongodb.py\nindex b93311e4..fadad450 100644\n--- a/docs/src/full_mongodb.py\n+++ b/docs/src/full_mongodb.py\n@@ -45,7 +45,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n app = FastAPI()\ndiff --git a/docs/src/full_ormar.py b/docs/src/full_ormar.py\nindex 5b1a2555..c2eada18 100644\n--- a/docs/src/full_ormar.py\n+++ b/docs/src/full_ormar.py\n@@ -54,7 +54,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n app = FastAPI()\ndiff --git a/docs/src/full_sqlalchemy.py b/docs/src/full_sqlalchemy.py\nindex 2b28c5d0..3302a6f7 100644\n--- a/docs/src/full_sqlalchemy.py\n+++ b/docs/src/full_sqlalchemy.py\n@@ -56,7 +56,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n app = FastAPI()\ndiff --git a/docs/src/full_tortoise.py b/docs/src/full_tortoise.py\nindex f474b2bc..d6f2679e 100644\n--- a/docs/src/full_tortoise.py\n+++ b/docs/src/full_tortoise.py\n@@ -54,7 +54,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n fastapi_users = FastAPIUsers(\ndiff --git a/docs/src/oauth_full_mongodb.py b/docs/src/oauth_full_mongodb.py\nindex 0159e062..b0fd9037 100644\n--- a/docs/src/oauth_full_mongodb.py\n+++ b/docs/src/oauth_full_mongodb.py\n@@ -49,7 +49,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n app = FastAPI()\ndiff --git a/docs/src/oauth_full_sqlalchemy.py b/docs/src/oauth_full_sqlalchemy.py\nindex fdd22540..83510898 100644\n--- a/docs/src/oauth_full_sqlalchemy.py\n+++ b/docs/src/oauth_full_sqlalchemy.py\n@@ -69,7 +69,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n app = FastAPI()\ndiff --git a/docs/src/oauth_full_tortoise.py b/docs/src/oauth_full_tortoise.py\nindex 02789e5e..651b9b67 100644\n--- a/docs/src/oauth_full_tortoise.py\n+++ b/docs/src/oauth_full_tortoise.py\n@@ -67,7 +67,7 @@ def after_verification_request(user: UserDB, token: str, request: Request):\n \n \n jwt_authentication = JWTAuthentication(\n-    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"/auth/jwt/login\"\n+    secret=SECRET, lifetime_seconds=3600, tokenUrl=\"auth/jwt/login\"\n )\n \n fastapi_users = FastAPIUsers(\ndiff --git a/fastapi_users/authentication/jwt.py b/fastapi_users/authentication/jwt.py\nindex 24cb5d74..006bc773 100644\n--- a/fastapi_users/authentication/jwt.py\n+++ b/fastapi_users/authentication/jwt.py\n@@ -30,7 +30,7 @@ def __init__(\n         self,\n         secret: str,\n         lifetime_seconds: int,\n-        tokenUrl: str = \"/login\",\n+        tokenUrl: str = \"auth/jwt/login\",\n         name: str = \"jwt\",\n     ):\n         super().__init__(name, logout=False)\n",
+  "pre_commit": "a690e824089556332e8d7ef15503389ea6c44cd0",
+  "post_commit": "455f695f520d646389767bcde3b0fe7c8b2f9b4d",
+  "merge_type": "squash"
+}

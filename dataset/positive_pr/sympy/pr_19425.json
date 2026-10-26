@@ -1,0 +1,269 @@
+{
+  "pr_number": 19425,
+  "title": "printing.latex: Move duplicated code to a mixin class",
+  "url": "https://github.com/sympy/sympy/pull/19425",
+  "description": "<!-- Your title above should be a short description of what\r\nwas changed. Do not include the issue number in the title. -->\r\n\r\n#### References to other Issues or PRs\r\n<!-- If this pull request fixes an issue, write \"Fixes #NNNN\" in that exact\r\nformat, e.g. \"Fixes #1234\" (see\r\nhttps://tinyurl.com/auto-closing for more information). Also, please\r\nwrite a comment on that issue linking back to this pull request once it is\r\nopen. -->\r\n\r\n\r\n#### Brief description of what is fixed or changed\r\n\r\n\r\n#### Other comments\r\n\r\n\r\n#### Release Notes\r\n\r\n<!-- Write the release notes for this release below. See\r\nhttps://github.com/sympy/sympy/wiki/Writing-Release-Notes for more information\r\non how to write release notes. The bot will check your release notes\r\nautomatically to see if they are formatted correctly. -->\r\n\r\n<!-- BEGIN RELEASE NOTES -->\r\n* printing\r\n  * A new `sympy.printing.defaults.Printable` base class was added, which is a mixin providing `_repr_latex_` in terms of `LatexPrinter().doprint()`. Any user type which subclasses this will opt into `init_printing`.\r\n<!-- END RELEASE NOTES -->",
+  "comments": [
+    {
+      "author": "sympy-bot",
+      "body": ":white_check_mark:\n\nHi, I am the [SymPy bot](https://github.com/sympy/sympy-bot) (v160). I'm here to help you write a release notes entry. Please read the [guide on how to write release notes](https://github.com/sympy/sympy/wiki/Writing-Release-Notes).\n\n\n\nYour release notes are in good order.\n\nHere is what the release notes will look like:\n* printing\n  * A new `sympy.printing.defaults.Printable` base class was added, which is a mixin providing `_repr_latex_` in terms of `LatexPrinter().doprint()`. Any user type which subclasses this will opt into `init_printing`. ([#19425](https://github.com/sympy/sympy/pull/19425) by [@eric-wieser](https://github.com/eric-wieser))\n\nThis will be added to https://github.com/sympy/sympy/wiki/Release-Notes-for-1.7.\n\nNote: This comment will be updated with the latest check if you edit the pull request. You need to reload the page to see it. <details><summary>Click here to see the pull request description that was parsed.</summary>\n\n    <!-- Your title above should be a short description of what\r\n    was changed. Do not include the issue number in the title. -->\r\n\r\n    #### References to other Issues or PRs\r\n    <!-- If this pull request fixes an issue, write \"Fixes #NNNN\" in that exact\r\n    format, e.g. \"Fixes #1234\" (see\r\n    https://tinyurl.com/auto-closing for more information). Also, please\r\n    write a comment on that issue linking back to this pull request once it is\r\n    open. -->\r\n\r\n\r\n    #### Brief description of what is fixed or changed\r\n\r\n\r\n    #### Other comments\r\n\r\n\r\n    #### Release Notes\r\n\r\n    <!-- Write the release notes for this release below. See\r\n    https://github.com/sympy/sympy/wiki/Writing-Release-Notes for more information\r\n    on how to write release notes. The bot will check your release notes\r\n    automatically to see if they are formatted correctly. -->\r\n\r\n    <!-- BEGIN RELEASE NOTES -->\r\n    * printing\r\n      * A new `sympy.printing.defaults.Printable` base class was added, which is a mixin providing `_repr_latex_` in terms of `LatexPrinter().doprint()`. Any user type which subclasses this will opt into `init_printing`.\r\n    <!-- END RELEASE NOTES -->\n\n</details><p>\n\n\n**Update**\n\nThe release notes on the [wiki](https://github.com/sympy/sympy/wiki/Release-Notes-for-1.7) have been updated.\n",
+      "created_at": "2020-05-25T08:29:21Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "The delayed imports from printing in Basic are there to prevent import cycles",
+      "created_at": "2020-05-25T10:53:29Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Perhaps I'll try to reverse the delayed imports",
+      "created_at": "2020-05-25T12:02:17Z"
+    },
+    {
+      "author": "sympy-bot",
+      "body": "### 🟠\n\nHi, I am the [SymPy bot](https://github.com/sympy/sympy-bot) (v158). I've noticed that some of your commits add or delete files. Since this is sometimes done unintentionally, I wanted to alert you about it.\n\nThis is an experimental feature of SymPy Bot. If you have any feedback on it, please comment at https://github.com/sympy/sympy-bot/issues/75.\n\nThe following commits **add new files**:\n* a9049cda2320728701311730493c0a64b9d196c8:\n  - `sympy/core/_print_helpers.py`\n\nIf these files were added/deleted on purpose, you can ignore this message.\n",
+      "created_at": "2020-05-25T12:23:55Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "That wasn't possible, because `printers.ast` creates new `Basic` subclasses, and it's not possible to import one printer without importing all the printers.",
+      "created_at": "2020-05-25T12:25:21Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Test failure is:\r\n```\r\n_____ sympy/interactive/tests/test_ipythonprinting.py:test_ipythonprinting _____\r\nTraceback (most recent call last):\r\n  File \"/home/travis/miniconda/envs/test-environment/lib/python3.6/site-packages/sympy-1.7.dev0-py3.6.egg/sympy/testing/runtests.py\", line 1335, in _timeout\r\n    function()\r\n  File \"/home/travis/miniconda/envs/test-environment/lib/python3.6/site-packages/sympy-1.7.dev0-py3.6.egg/sympy/interactive/tests/test_ipythonprinting.py\", line 46, in test_ipythonprinting\r\n    assert app.user_ns['a2'][0]['text/plain'] in (' 2\\n\\N{GREEK SMALL LETTER PI} ', '  2\\npi ')\r\nAssertionError\r\n```\r\n\r\nUnfortunately, I can't seem to run these tests at all on windows, they blow up with `prompt_toolkit.output.win32.NoConsoleScreenBufferError: No Windows console found. Are you running cmd.exe?`",
+      "created_at": "2020-05-26T13:05:02Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "The output from pytest is more useful as it shows the values failing the assert:\r\n```\r\n$ pytest sympy/interactive/tests/test_ipythonprinting.py::test_ipythonprinting\r\n====================================================== test session starts =======================================================\r\nplatform darwin -- Python 3.7.4, pytest-5.3.2, py-1.8.0, pluggy-0.12.0\r\narchitecture: 64-bit\r\ncache:        yes\r\nground types: gmpy 1.17\r\n\r\nrootdir: /Users/enojb/current/sympy/sympy, inifile: pytest.ini\r\nplugins: xdist-1.29.0, forked-1.0.2, instafail-0.4.1, cov-2.8.1, xonsh-0.9.13.dev1, doctestplus-0.4.0\r\ncollected 1 item                                                                                                                 \r\n\r\nsympy/interactive/tests/test_ipythonprinting.py F                                                                          [100%]\r\n\r\n============================================================ FAILURES ============================================================\r\n______________________________________________________ test_ipythonprinting ______________________________________________________\r\n\r\n    def test_ipythonprinting():\r\n        # Initialize and setup IPython session\r\n        app = init_ipython_session()\r\n        app.run_cell(\"ip = get_ipython()\")\r\n        app.run_cell(\"inst = ip.instance()\")\r\n        app.run_cell(\"format = inst.display_formatter.format\")\r\n        app.run_cell(\"from sympy import Symbol\")\r\n    \r\n        # Printing without printing extension\r\n        app.run_cell(\"a = format(Symbol('pi'))\")\r\n        app.run_cell(\"a2 = format(Symbol('pi')**2)\")\r\n        # Deal with API change starting at IPython 1.0\r\n        if int(ipython.__version__.split(\".\")[0]) < 1:\r\n            assert app.user_ns['a']['text/plain'] == \"pi\"\r\n            assert app.user_ns['a2']['text/plain'] == \"pi**2\"\r\n        else:\r\n            assert app.user_ns['a'][0]['text/plain'] == \"pi\"\r\n            assert app.user_ns['a2'][0]['text/plain'] == \"pi**2\"\r\n    \r\n        # Load printing extension\r\n        app.run_cell(\"from sympy import init_printing\")\r\n        app.run_cell(\"init_printing()\")\r\n        # Printing with printing extension\r\n        app.run_cell(\"a = format(Symbol('pi'))\")\r\n        app.run_cell(\"a2 = format(Symbol('pi')**2)\")\r\n        # Deal with API change starting at IPython 1.0\r\n        if int(ipython.__version__.split(\".\")[0]) < 1:\r\n            assert app.user_ns['a']['text/plain'] in ('\\N{GREEK SMALL LETTER PI}', 'pi')\r\n            assert app.user_ns['a2']['text/plain'] in (' 2\\n\\N{GREEK SMALL LETTER PI} ', '  2\\npi ')\r\n        else:\r\n            assert app.user_ns['a'][0]['text/plain'] in ('\\N{GREEK SMALL LETTER PI}', 'pi')\r\n>           assert app.user_ns['a2'][0]['text/plain'] in (' 2\\n\\N{GREEK SMALL LETTER PI} ', '  2\\npi ')\r\nE           AssertionError: assert 'pi**2' in (' 2\\nπ ', '  2\\npi ')\r\n\r\nsympy/interactive/tests/test_ipythonprinting.py:46: AssertionError\r\n------------------------------------------------------ Captured stdout call ------------------------------------------------------\r\n\r\n                                                         DO *NOT* COMMIT!                                                         \r\n======================================================= 1 failed in 0.56s ========================================================\r\n```",
+      "created_at": "2020-05-26T15:32:30Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "This isn't a strong oppose, but I don't necessarily feel we need a mixin class just for a single (short) method. ",
+      "created_at": "2020-05-26T16:19:18Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "This single short method (`_repr_latex_`) is monkey-patched by `init_printing`. By providing it in a base class, user classes can subclass this class to opt-in to the monkey-patching.",
+      "created_at": "2020-05-26T16:39:36Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "@oscarbenjamin: Thanks! That's what I was trying to do on my machine. Is there a reason CI does not use pytest?",
+      "created_at": "2020-05-26T16:40:16Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "> By providing it in a base class, user classes can subclass this class to opt-in to the monkey-patching.\r\n\r\nPerhaps `LatexPrintable` is too granular, and types should just opt into `SympyPrintable`?\r\n\r\n",
+      "created_at": "2020-05-27T14:59:21Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "> Perhaps `LatexPrintable` is too granular, and types should just opt into `SympyPrintable`?\r\n\r\nI was going to suggest the same",
+      "created_at": "2020-05-27T15:36:53Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Updated to do that",
+      "created_at": "2020-05-27T16:03:00Z"
+    },
+    {
+      "author": "codecov[bot]",
+      "body": "# [Codecov](https://codecov.io/gh/sympy/sympy/pull/19425?src=pr&el=h1) Report\n> Merging [#19425](https://codecov.io/gh/sympy/sympy/pull/19425?src=pr&el=desc) into [master](https://codecov.io/gh/sympy/sympy/commit/e31c4cdedb5080325b3fd04f4b4826d9dab65b26&el=desc) will **decrease** coverage by `0.005%`.\n> The diff coverage is `78.378%`.\n\n```diff\n@@              Coverage Diff              @@\n##            master    #19425       +/-   ##\n=============================================\n- Coverage   75.653%   75.648%   -0.006%     \n=============================================\n  Files          652       653        +1     \n  Lines       169716    169691       -25     \n  Branches     40051     40049        -2     \n=============================================\n- Hits        128396    128368       -28     \n- Misses       35713     35719        +6     \n+ Partials      5607      5604        -3     \n```\n",
+      "created_at": "2020-05-27T17:04:52Z"
+    },
+    {
+      "author": "codecov[bot]",
+      "body": "# [Codecov](https://codecov.io/gh/sympy/sympy/pull/19425?src=pr&el=h1) Report\n> Merging [#19425](https://codecov.io/gh/sympy/sympy/pull/19425?src=pr&el=desc) into [master](https://codecov.io/gh/sympy/sympy/commit/e31c4cdedb5080325b3fd04f4b4826d9dab65b26&el=desc) will **increase** coverage by `0.016%`.\n> The diff coverage is `57.500%`.\n\n```diff\n@@              Coverage Diff              @@\n##            master    #19425       +/-   ##\n=============================================\n+ Coverage   75.653%   75.669%   +0.016%     \n=============================================\n  Files          652       653        +1     \n  Lines       169716    169686       -30     \n  Branches     40051     40049        -2     \n=============================================\n+ Hits        128396    128401        +5     \n+ Misses       35713     35684       -29     \n+ Partials      5607      5601        -6     \n```\n",
+      "created_at": "2020-05-27T17:37:26Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "This looks good to me. @asmeurer does it look good to you?",
+      "created_at": "2020-06-03T00:42:34Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Those are my only comments here. I didn't realize we already had a DefaultPrinter class. It makes sense to just extend that class to support Jupyter, and to use it in the core. I would do it without changing the name or module name, so we don't break API if anyone was already using this. We should also double check the classes that currently use DefaultPrinting work correctly with this (looks like stuff in the polys and group theory). ",
+      "created_at": "2020-06-03T00:55:51Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "See my comments above - the sorting out of `__str__` vs `_sympystr` is something I don't want to deal with in this patch, as it touches way too many things.\r\n\r\n> I would do it without changing the name or module name, so we don't break API if anyone was already using this.\r\n\r\nI've left behind an alias, so there's no API breakage here.\r\n\r\n> We should also double check the classes that currently use DefaultPrinting work correctly with this.\r\n\r\nThe full list of those classes is:\r\n\r\n* `sympy.combinatorics.fp_groups.FpGroup`\r\n* `sympy.combinatorics.fp_groups.FpSubgroup`\r\n* `sympy.combinatorics.free_groups.FreeGroup`\r\n* `sympy.combinatorics.pc_groups.PolycyclicGroup`\r\n* `sympy.combinatorics.pc_groups.Collector`\r\n* `sympy.polys.agca.extensions.ExtensionElement`\r\n* `sympy.polys.domains.pythonrational.PythonRational`\r\n* `sympy.polys.fields.FracField`\r\n* `sympy.polys.fields.FracElement`\r\n* `sympy.polys.polys.PolyRing`\r\n* `sympy.polys.polys.PolyElement`\r\n\r\nYou're right, it causes the default latex printer to be engaged for these types, which looks bad.\r\n\r\n![image](https://user-images.githubusercontent.com/425260/84518817-2b1dd200-acc9-11ea-8cc7-022e96b174d4.png)\r\n\r\nShould I go back to having separate `StringPrintable` and `LatexPrintable` classes?",
+      "created_at": "2020-06-12T15:25:39Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Note that really the bug is in `LatexPrinter.emptyPrinter`, which even on master does a bad job of rendering anything that isn't a number.\r\n```\r\nimport sympy\r\nfrom IPython.display import Math\r\nMath(sympy.latex(object()))\r\n```\r\n![image](https://user-images.githubusercontent.com/425260/84519579-358c9b80-acca-11ea-8011-b0a498fc8ddb.png)\r\n",
+      "created_at": "2020-06-12T15:32:24Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "I think this looks good",
+      "created_at": "2020-06-22T00:36:37Z"
+    },
+    {
+      "author": "oscarbenjamin",
+      "body": "The comments above seem to be addressed. There are issues identified here that could be followed up later.\r\n\r\nI'll merge this now and hopefully further improvements can be made later.\r\n\r\nThanks @eric-wieser ",
+      "created_at": "2020-06-22T00:41:08Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Partially followed up in #19611.",
+      "created_at": "2020-06-22T12:14:02Z"
+    }
+  ],
+  "diff": "diff --git a/sympy/core/_print_helpers.py b/sympy/core/_print_helpers.py\nnew file mode 100644\nindex 000000000000..1e3b1d837e3a\n--- /dev/null\n+++ b/sympy/core/_print_helpers.py\n@@ -0,0 +1,47 @@\n+\"\"\"\n+Base class to provide str and repr hooks that `init_printing` can overwrite.\n+\n+This is exposed publicly in the `printing.defaults` module,\n+but cannot be defined there without causing circular imports.\n+\"\"\"\n+from typing import Any\n+\n+\n+class Printable:\n+    \"\"\"\n+    The default implementation of printing for SymPy classes.\n+\n+    This implements a hack that allows us to print elements of built-in\n+    Python containers in a readable way. Natively Python uses ``repr()``\n+    even if ``str()`` was explicitly requested. Mix in this trait into\n+    a class to get proper default printing.\n+\n+    This also adds support for LaTeX printing in jupyter notebooks.\n+    \"\"\"\n+\n+    # Note, we always use the default ordering (lex) in __str__ and __repr__,\n+    # regardless of the global setting. See issue 5487.\n+    def __str__(self):\n+        from sympy.printing.str import sstr\n+        return sstr(self, order=None)\n+\n+    __repr__ = __str__\n+\n+    # We don't define _repr_png_ here because it would add a large amount of\n+    # data to any notebook containing SymPy expressions, without adding\n+    # anything useful to the notebook. It can still enabled manually, e.g.,\n+    # for the qtconsole, with init_printing().\n+    def _repr_latex_(self):\n+        \"\"\"\n+        IPython/Jupyter LaTeX printing\n+\n+        To change the behavior of this (e.g., pass in some settings to LaTeX),\n+        use init_printing(). init_printing() will also enable LaTeX printing\n+        for built in numeric types like ints and container types that contain\n+        SymPy objects, like lists and dictionaries of expressions.\n+        \"\"\"\n+        from sympy.printing.latex import latex\n+        s = latex(self, mode='plain')\n+        return \"$\\\\displaystyle %s$\" % s\n+\n+    _repr_latex_orig = _repr_latex_  # type: Any\ndiff --git a/sympy/core/basic.py b/sympy/core/basic.py\nindex 53beba2396f7..45e9b4cf3ce7 100644\n--- a/sympy/core/basic.py\n+++ b/sympy/core/basic.py\n@@ -7,6 +7,7 @@\n from .sympify import _sympify, sympify, SympifyError\n from .compatibility import iterable, ordered, Mapping\n from .singleton import S\n+from ._print_helpers import Printable\n \n from inspect import getmro\n \n@@ -24,7 +25,7 @@ def as_Basic(expr):\n             expr))\n \n \n-class Basic(metaclass=ManagedProperties):\n+class Basic(Printable, metaclass=ManagedProperties):\n     \"\"\"\n     Base class for all SymPy objects.\n \n@@ -411,39 +412,6 @@ def dummy_eq(self, other, symbol=None):\n \n         return s.xreplace({dummy: tmp}) == o.xreplace({symbol: tmp})\n \n-    # Note, we always use the default ordering (lex) in __str__ and __repr__,\n-    # regardless of the global setting.  See issue 5487.\n-    def __repr__(self):\n-        \"\"\"Method to return the string representation.\n-\n-        Return the expression as a string.\n-        \"\"\"\n-        from sympy.printing import sstr\n-        return sstr(self, order=None)\n-\n-    def __str__(self):\n-        from sympy.printing import sstr\n-        return sstr(self, order=None)\n-\n-    # We don't define _repr_png_ here because it would add a large amount of\n-    # data to any notebook containing SymPy expressions, without adding\n-    # anything useful to the notebook. It can still enabled manually, e.g.,\n-    # for the qtconsole, with init_printing().\n-    def _repr_latex_(self):\n-        \"\"\"\n-        IPython/Jupyter LaTeX printing\n-\n-        To change the behavior of this (e.g., pass in some settings to LaTeX),\n-        use init_printing(). init_printing() will also enable LaTeX printing\n-        for built in numeric types like ints and container types that contain\n-        SymPy objects, like lists and dictionaries of expressions.\n-        \"\"\"\n-        from sympy.printing.latex import latex\n-        s = latex(self, mode='plain')\n-        return \"$\\\\displaystyle %s$\" % s\n-\n-    _repr_latex_orig = _repr_latex_\n-\n     def atoms(self, *types):\n         \"\"\"Returns the atoms that form the current object.\n \ndiff --git a/sympy/interactive/printing.py b/sympy/interactive/printing.py\nindex 59f86a58fe61..55455b383d05 100644\n--- a/sympy/interactive/printing.py\n+++ b/sympy/interactive/printing.py\n@@ -7,6 +7,7 @@\n from sympy import latex as default_latex\n from sympy import preview\n from sympy.utilities.misc import debug\n+from sympy.printing.defaults import Printable\n \n \n def _init_python_printing(stringify_func, **settings):\n@@ -85,7 +86,7 @@ def _init_ipython_printing(ip, stringify_func, use_latex, euler, forecolor,\n \n     def _print_plain(arg, p, cycle):\n         \"\"\"caller for pretty, for use in IPython 0.11\"\"\"\n-        if _can_print_latex(arg):\n+        if _can_print(arg):\n             p.text(stringify_func(arg))\n         else:\n             p.text(IPython.lib.pretty.pretty(arg))\n@@ -134,20 +135,15 @@ def _matplotlib_wrapper(o):\n             return None\n \n \n-    from sympy import Basic\n-    from sympy.matrices import MatrixBase\n-    from sympy.physics.vector import Vector, Dyadic\n-    from sympy.tensor.array import NDimArray\n+    # Hook methods for builtin sympy printers\n+    printing_hooks = ('_latex', '_sympystr', '_pretty', '_sympyrepr')\n \n-    # These should all have _repr_latex_ and _repr_latex_orig. If you update\n-    # this also update printable_types below.\n-    sympy_latex_types = (Basic, MatrixBase, Vector, Dyadic, NDimArray)\n \n-    def _can_print_latex(o):\n-        \"\"\"Return True if type o can be printed with LaTeX.\n+    def _can_print(o):\n+        \"\"\"Return True if type o can be printed with one of the sympy printers.\n \n         If o is a container type, this is True if and only if every element of\n-        o can be printed with LaTeX.\n+        o can be printed in this way.\n         \"\"\"\n \n         try:\n@@ -161,15 +157,15 @@ def _can_print_latex(o):\n                 if (type(o).__str__ not in (i.__str__ for i in builtin_types) or\n                     type(o).__repr__ not in (i.__repr__ for i in builtin_types)):\n                     return False\n-                return all(_can_print_latex(i) for i in o)\n+                return all(_can_print(i) for i in o)\n             elif isinstance(o, dict):\n-                return all(_can_print_latex(i) and _can_print_latex(o[i]) for i in o)\n+                return all(_can_print(i) and _can_print(o[i]) for i in o)\n             elif isinstance(o, bool):\n                 return False\n-            elif isinstance(o, sympy_latex_types):\n-                # types known to the printer\n+            elif isinstance(o, Printable):\n+                # types known to sympy\n                 return True\n-            elif hasattr(o, '_latex'):\n+            elif any(hasattr(o, hook) for hook in printing_hooks):\n                 # types which add support themselves\n                 return True\n             elif isinstance(o, (float, int)) and print_builtin:\n@@ -186,7 +182,7 @@ def _print_latex_png(o):\n         A function that returns a png rendered by an external latex\n         distribution, falling back to matplotlib rendering\n         \"\"\"\n-        if _can_print_latex(o):\n+        if _can_print(o):\n             s = latex(o, mode=latex_mode, **settings)\n             if latex_mode == 'plain':\n                 s = '$\\\\displaystyle %s$' % s\n@@ -204,7 +200,7 @@ def _print_latex_svg(o):\n         A function that returns a svg rendered by an external latex\n         distribution, no fallback available.\n         \"\"\"\n-        if _can_print_latex(o):\n+        if _can_print(o):\n             s = latex(o, mode=latex_mode, **settings)\n             if latex_mode == 'plain':\n                 s = '$\\\\displaystyle %s$' % s\n@@ -218,7 +214,7 @@ def _print_latex_matplotlib(o):\n         \"\"\"\n         A function that returns a png rendered by mathtext\n         \"\"\"\n-        if _can_print_latex(o):\n+        if _can_print(o):\n             s = latex(o, mode='inline', **settings)\n             return _matplotlib_wrapper(s)\n \n@@ -226,7 +222,7 @@ def _print_latex_text(o):\n         \"\"\"\n         A function to generate the latex representation of sympy expressions.\n         \"\"\"\n-        if _can_print_latex(o):\n+        if _can_print(o):\n             s = latex(o, mode=latex_mode, **settings)\n             if latex_mode == 'plain':\n                 return '$\\\\displaystyle %s$' % s\n@@ -252,13 +248,9 @@ def _result_display(self, arg):\n \n     import IPython\n     if V(IPython.__version__) >= '0.11':\n-        from sympy.core.basic import Basic\n-        from sympy.matrices.matrices import MatrixBase\n-        from sympy.physics.vector import Vector, Dyadic\n-        from sympy.tensor.array import NDimArray\n \n-        printable_types = [Basic, MatrixBase, float, tuple, list, set,\n-                frozenset, dict, Vector, Dyadic, NDimArray, int]\n+        printable_types = [Printable, float, tuple, list, set,\n+                frozenset, dict, int]\n \n         plaintext_formatter = ip.display_formatter.formatters['text/plain']\n \n@@ -300,8 +292,7 @@ def _result_display(self, arg):\n             debug(\"init_printing: using mathjax formatter\")\n             for cls in printable_types:\n                 latex_formatter.for_type(cls, _print_latex_text)\n-            for typ in sympy_latex_types:\n-                typ._repr_latex_ = typ._repr_latex_orig\n+            Printable._repr_latex_ = Printable._repr_latex_orig\n         else:\n             debug(\"init_printing: not using text/latex formatter\")\n             for cls in printable_types:\n@@ -310,8 +301,7 @@ def _result_display(self, arg):\n                 if cls in latex_formatter.type_printers:\n                     latex_formatter.type_printers.pop(cls)\n \n-            for typ in sympy_latex_types:\n-                typ._repr_latex_ = None\n+            Printable._repr_latex_ = None\n \n     else:\n         ip.set_hook('result_display', _result_display)\ndiff --git a/sympy/matrices/matrices.py b/sympy/matrices/matrices.py\nindex ae6f9e10d9d7..9870cf529e3c 100644\n--- a/sympy/matrices/matrices.py\n+++ b/sympy/matrices/matrices.py\n@@ -1,4 +1,3 @@\n-from typing import Any\n import mpmath as mp\n \n from sympy.core.add import Add\n@@ -16,6 +15,7 @@\n from sympy.functions.special.tensor_functions import KroneckerDelta\n from sympy.polys import cancel\n from sympy.printing import sstr\n+from sympy.printing.defaults import Printable\n from sympy.simplify import simplify as _simplify\n from sympy.utilities.exceptions import SymPyDeprecationWarning\n from sympy.utilities.iterables import flatten\n@@ -752,7 +752,8 @@ def permuteFwd(self, perm):\n class MatrixBase(MatrixDeprecated,\n                  MatrixCalculus,\n                  MatrixEigen,\n-                 MatrixCommon):\n+                 MatrixCommon,\n+                 Printable):\n     \"\"\"Base class for matrix objects.\"\"\"\n     # Added just for numpy compatibility\n     __array_priority__ = 11\n@@ -763,27 +764,6 @@ class MatrixBase(MatrixDeprecated,\n     zero = S.Zero\n     one = S.One\n \n-    # Defined here the same as on Basic.\n-\n-    # We don't define _repr_png_ here because it would add a large amount of\n-    # data to any notebook containing SymPy expressions, without adding\n-    # anything useful to the notebook. It can still enabled manually, e.g.,\n-    # for the qtconsole, with init_printing().\n-    def _repr_latex_(self):\n-        \"\"\"\n-        IPython/Jupyter LaTeX printing\n-\n-        To change the behavior of this (e.g., pass in some settings to LaTeX),\n-        use init_printing(). init_printing() will also enable LaTeX printing\n-        for built in numeric types like ints and container types that contain\n-        SymPy objects, like lists and dictionaries of expressions.\n-        \"\"\"\n-        from sympy.printing.latex import latex\n-        s = latex(self, mode='plain')\n-        return \"$\\\\displaystyle %s$\" % s\n-\n-    _repr_latex_orig = _repr_latex_  # type: Any\n-\n     def __array__(self, dtype=object):\n         from .dense import matrix2numpy\n         return matrix2numpy(self, dtype=dtype)\ndiff --git a/sympy/physics/vector/dyadic.py b/sympy/physics/vector/dyadic.py\nindex ad4a5bce00e4..eed0a3e65bc6 100644\n--- a/sympy/physics/vector/dyadic.py\n+++ b/sympy/physics/vector/dyadic.py\n@@ -1,12 +1,13 @@\n from sympy.core.backend import sympify, Add, ImmutableMatrix as Matrix\n from sympy.core.compatibility import unicode\n+from sympy.printing.defaults import Printable\n from .printing import (VectorLatexPrinter, VectorPrettyPrinter,\n                        VectorStrPrinter)\n \n __all__ = ['Dyadic']\n \n \n-class Dyadic(object):\n+class Dyadic(Printable):\n     \"\"\"A Dyadic object.\n \n     See:\n@@ -373,25 +374,6 @@ def __xor__(self, other):\n             ol += v[0] * (v[1] | (v[2] ^ other))\n         return ol\n \n-    # We don't define _repr_png_ here because it would add a large amount of\n-    # data to any notebook containing SymPy expressions, without adding\n-    # anything useful to the notebook. It can still enabled manually, e.g.,\n-    # for the qtconsole, with init_printing().\n-    def _repr_latex_(self):\n-        \"\"\"\n-        IPython/Jupyter LaTeX printing\n-\n-        To change the behavior of this (e.g., pass in some settings to LaTeX),\n-        use init_printing(). init_printing() will also enable LaTeX printing\n-        for built in numeric types like ints and container types that contain\n-        SymPy objects, like lists and dictionaries of expressions.\n-        \"\"\"\n-        from sympy.printing.latex import latex\n-        s = latex(self, mode='plain')\n-        return \"$\\\\displaystyle %s$\" % s\n-\n-    _repr_latex_orig = _repr_latex_\n-\n     _sympystr = __str__\n     _sympyrepr = _sympystr\n     __repr__ = __str__\ndiff --git a/sympy/physics/vector/vector.py b/sympy/physics/vector/vector.py\nindex 888e91a54c6b..3f3bf737e0f0 100644\n--- a/sympy/physics/vector/vector.py\n+++ b/sympy/physics/vector/vector.py\n@@ -1,13 +1,14 @@\n from sympy.core.backend import (S, sympify, expand, sqrt, Add, zeros,\n     ImmutableMatrix as Matrix)\n from sympy import trigsimp\n+from sympy.printing.defaults import Printable\n from sympy.core.compatibility import unicode\n from sympy.utilities.misc import filldedent\n \n __all__ = ['Vector']\n \n \n-class Vector(object):\n+class Vector(Printable):\n     \"\"\"The class used to define vectors.\n \n     It along with ReferenceFrame are the building blocks of describing a\n@@ -448,26 +449,6 @@ def _det(mat):\n             outlist += _det(tempm).args\n         return Vector(outlist)\n \n-\n-    # We don't define _repr_png_ here because it would add a large amount of\n-    # data to any notebook containing SymPy expressions, without adding\n-    # anything useful to the notebook. It can still enabled manually, e.g.,\n-    # for the qtconsole, with init_printing().\n-    def _repr_latex_(self):\n-        \"\"\"\n-        IPython/Jupyter LaTeX printing\n-\n-        To change the behavior of this (e.g., pass in some settings to LaTeX),\n-        use init_printing(). init_printing() will also enable LaTeX printing\n-        for built in numeric types like ints and container types that contain\n-        SymPy objects, like lists and dictionaries of expressions.\n-        \"\"\"\n-        from sympy.printing.latex import latex\n-        s = latex(self, mode='plain')\n-        return \"$\\\\displaystyle %s$\" % s\n-\n-    _repr_latex_orig = _repr_latex_\n-\n     _sympystr = __str__\n     _sympyrepr = _sympystr\n     __repr__ = __str__\ndiff --git a/sympy/polys/agca/extensions.py b/sympy/polys/agca/extensions.py\nindex bacf43d39f5f..fe9c4b83df67 100644\n--- a/sympy/polys/agca/extensions.py\n+++ b/sympy/polys/agca/extensions.py\n@@ -4,8 +4,10 @@\n \n from sympy.polys.polyerrors import CoercionFailed\n from sympy.polys.polytools import Poly\n+from sympy.printing.defaults import DefaultPrinting\n \n-class ExtensionElement(object):\n+\n+class ExtensionElement(DefaultPrinting):\n     \"\"\"\n     Element of a finite extension.\n \ndiff --git a/sympy/printing/defaults.py b/sympy/printing/defaults.py\nindex 76877a66f56e..1b747ef83250 100644\n--- a/sympy/printing/defaults.py\n+++ b/sympy/printing/defaults.py\n@@ -1,20 +1,7 @@\n from __future__ import print_function, division\n \n-class DefaultPrinting(object):\n-    \"\"\"\n-    The default implementation of printing for SymPy classes.\n+from sympy.core._print_helpers import Printable\n \n-    This implements a hack that allows us to print elements of built-in\n-    Python containers in a readable way. Natively Python uses ``repr()``\n-    even if ``str()`` was explicitly requested. Mix in this trait into\n-    a class to get proper default printing.\n-\n-    \"\"\"\n-\n-    # Note, we always use the default ordering (lex) in __str__ and __repr__,\n-    # regardless of the global setting. See issue 5487.\n-    def __str__(self):\n-        from sympy.printing.str import sstr\n-        return sstr(self, order=None)\n-\n-    __repr__ = __str__\n+# alias for compatibility\n+Printable.__module__ = __name__\n+DefaultPrinting = Printable\ndiff --git a/sympy/tensor/array/ndim_array.py b/sympy/tensor/array/ndim_array.py\nindex f3861a28e0dd..0b95afbb2f16 100644\n--- a/sympy/tensor/array/ndim_array.py\n+++ b/sympy/tensor/array/ndim_array.py\n@@ -1,17 +1,16 @@\n from __future__ import print_function, division\n \n-from typing import Any\n-\n from sympy import Basic\n from sympy import S\n from sympy.core.expr import Expr\n from sympy.core.numbers import Integer\n from sympy.core.sympify import sympify\n from sympy.core.compatibility import SYMPY_INTS, Iterable\n+from sympy.printing.defaults import Printable\n \n import itertools\n \n-class NDimArray(object):\n+class NDimArray(Printable):\n     \"\"\"\n \n     Examples\n@@ -320,25 +319,6 @@ def f(sh, shape_left, i, j):\n     def __repr__(self):\n         return self.__str__()\n \n-    # We don't define _repr_png_ here because it would add a large amount of\n-    # data to any notebook containing SymPy expressions, without adding\n-    # anything useful to the notebook. It can still enabled manually, e.g.,\n-    # for the qtconsole, with init_printing().\n-    def _repr_latex_(self):\n-        \"\"\"\n-        IPython/Jupyter LaTeX printing\n-\n-        To change the behavior of this (e.g., pass in some settings to LaTeX),\n-        use init_printing(). init_printing() will also enable LaTeX printing\n-        for built in numeric types like ints and container types that contain\n-        SymPy objects, like lists and dictionaries of expressions.\n-        \"\"\"\n-        from sympy.printing.latex import latex\n-        s = latex(self, mode='plain')\n-        return \"$\\\\displaystyle %s$\" % s\n-\n-    _repr_latex_orig = _repr_latex_  # type: Any\n-\n     def tolist(self):\n         \"\"\"\n         Converting MutableDenseNDimArray to one-dim list\n",
+  "changed_files": [
+    "sympy/core/_print_helpers.py",
+    "sympy/core/basic.py",
+    "sympy/interactive/printing.py",
+    "sympy/matrices/matrices.py",
+    "sympy/physics/vector/dyadic.py",
+    "sympy/physics/vector/vector.py",
+    "sympy/polys/agca/extensions.py",
+    "sympy/printing/defaults.py",
+    "sympy/tensor/array/ndim_array.py"
+  ],
+  "changed_functions": [
+    "__str__",
+    "_repr_latex_",
+    "__repr__",
+    "atoms",
+    "_can_print_latex",
+    "_can_print",
+    "__array__",
+    "tolist"
+  ],
+  "pre_commit": "2d5c901e44fe289499e747ee04bf2065719cb666",
+  "post_commit": "3d8216faa4d8d22b407455043117aa2a24401a39",
+  "merged_at": "2020-06-22T00:41:12Z",
+  "review_comments": [
+    {
+      "author": "eric-wieser",
+      "body": "```suggestion\r\nBase class to provide str and repr hooks that `init_printing` can overwrite.\r\n\r\nThis is exposed publicly in the `printing.defaults` module,\r\nbut cannot be defined there without causing circular imports.\r\n```",
+      "path": "sympy/core/_print_helpers.py",
+      "line": null,
+      "created_at": "2020-05-30T12:09:30Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "> Natively Python uses ``repr()``\r\n    even if ``str()`` was explicitly requested.\r\n\r\nI don't understand what this sentence is saying. How does this change the behavior of Python calling repr when the user calls str? Is this referring to the behavior where Python uses `repr` on `str(list)`, or something else? ",
+      "path": "sympy/core/_print_helpers.py",
+      "line": 16,
+      "created_at": "2020-06-03T00:46:03Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Perhaps this logic should be moved to the class (and we can probably do the same for png). ",
+      "path": "sympy/interactive/printing.py",
+      "line": 295,
+      "created_at": "2020-06-03T00:47:44Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "I think it should be doable with `__getattr__`, unless there's some technical detail about it I'm missing. ",
+      "path": "sympy/interactive/printing.py",
+      "line": 295,
+      "created_at": "2020-06-03T00:48:20Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Maybe we should rename `__str__` above to `_sympystr`. ",
+      "path": "sympy/physics/vector/dyadic.py",
+      "line": 377,
+      "created_at": "2020-06-03T00:49:23Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Oh I never realized this was here. Why not just put the new class in this file, instead of creating a new file? ",
+      "path": "sympy/printing/defaults.py",
+      "line": 3,
+      "created_at": "2020-06-03T00:50:18Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Same here and with the other non-Basic classes. The mixin will define `__str__`, so we should probably rename `__str__` to `_sympystr`.",
+      "path": "sympy/tensor/array/ndim_array.py",
+      "line": 320,
+      "created_at": "2020-06-03T00:51:04Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "That's better too because we don't have an invalid flag on `__str__` this way.",
+      "path": "sympy/physics/vector/dyadic.py",
+      "line": 377,
+      "created_at": "2020-06-03T00:51:53Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "This will also allow us to do the right thing by recursively calling `printer.doprint`. ",
+      "path": "sympy/tensor/array/ndim_array.py",
+      "line": 320,
+      "created_at": "2020-06-03T00:52:57Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "I guess this was from the old class. This is probably what was meant:\r\n\r\n```py\r\n>>> class Test:\r\n...     def __repr__(self):\r\n...         return 'repr'\r\n...     def __str__(self):\r\n...         return 'str'\r\n>>> str([Test()])\r\n'[repr]'\r\n```\r\n\r\nIt's the reasoning why we keep `repr` and `str` the same for SymPy types.",
+      "path": "sympy/core/_print_helpers.py",
+      "line": 16,
+      "created_at": "2020-06-03T00:53:51Z"
+    },
+    {
+      "author": "asmeurer",
+      "body": "Or better just add the methods to this class. No need to rename things. ",
+      "path": "sympy/printing/defaults.py",
+      "line": 3,
+      "created_at": "2020-06-03T00:56:18Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "We cant use this class in core/basic, as it creates circular imports - so we have no choice but to move it to a file somewhere in core..\r\n\r\nI figured since no one really knew that this existed, it was a good opportunity to pick a more understandable name. I'm can change it back if you want me to, but I'd argue the new name is way clearer. Using gerunds as a class name is very odd.",
+      "path": "sympy/printing/defaults.py",
+      "line": 3,
+      "created_at": "2020-06-03T06:47:44Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "This is quite a can of worms, and something I'd prefer to handle in a follow up patch. There are whole subpackages using wierd patterns like this.",
+      "path": "sympy/tensor/array/ndim_array.py",
+      "line": 320,
+      "created_at": "2020-06-03T06:48:55Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "We need access to the local `settings` and `latex_printer` variables in the implementation of `_repr_latex_`. While there may be a nicer way to handle it, I think it's a little involved, and I'd rather leave it to a follow-up patch.",
+      "path": "sympy/interactive/printing.py",
+      "line": 295,
+      "created_at": "2020-06-03T06:53:02Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Yeah, this comment is unchanged, it just moved file.",
+      "path": "sympy/core/_print_helpers.py",
+      "line": 16,
+      "created_at": "2020-06-03T06:53:44Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Hmm, this caused a regression in ipython plaintext printing of `MatrixBase`. The summary is:\r\n\r\n* previously, we had an explicit pretty printer registered directly for `MatrixBase`, which was used after callling `init_printing`.\r\n* now that we only register one for the base class, `MatrixBase.__repr__` is used instead of the pretty printer, as that's \r\n\"more specialized\".",
+      "path": "sympy/interactive/printing.py",
+      "line": 144,
+      "created_at": "2020-08-06T12:12:23Z"
+    },
+    {
+      "author": "eric-wieser",
+      "body": "Fixed in:\r\n* #19902 for `MatrixBase`\r\n* #19903 for `NDimArray`\r\n\r\n`Vector`,`Dyadic`, and `Basic` were immune",
+      "path": "sympy/interactive/printing.py",
+      "line": 144,
+      "created_at": "2020-08-06T15:08:24Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 85,
+  "deletions": 168,
+  "changed_files_count": 9
+}

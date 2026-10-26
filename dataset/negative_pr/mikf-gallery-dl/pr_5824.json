@@ -1,0 +1,51 @@
+{
+  "pr_number": 5824,
+  "title": "[furaffinity] Add 'thumbnail' (#1284) and 'folders' properties",
+  "url": "https://github.com/mikf/gallery-dl/pull/5824",
+  "description": "Retrieve 'thumbnail' and 'folders' properties for each post. A test case is included for each property.\r\n\r\n**'thumbnail'**:\r\n - Preview image used for search results, writing posts, music, etc.\r\n - URL format: <post_id>@600-<directory_containing_full_image>.jpg (usually matches the number at the start of the 'filename' property, but not always)\r\n - Uses 600px version; other sizes exist, but 600px seems to be the largest\r\n\r\n**'folders'**:\r\n - A list of all gallery folders containing this post\r\n - Folder name format: [<folder_category> - ]<folder_name>\r\n - **Only accurate on new layout**; old layout does not show folders, so if old layout is active, 'folders' defaults to an empty list\r\n\r\nUsers can now use --filter with folder names, providing a workaround for #1817.\r\n\r\nIn the future, 'thumbnail' could be used to automatically download thumbnails for writing, music, and other non-image posts, which would fully resolve #1284.",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "4f3be2f571973b860d7475245cb0c4d27202b645",
+  "merged_at": "2024-07-17T23:45:47+00:00",
+  "created_at": "2024-07-04T21:01:12+00:00",
+  "closed_at": "2024-07-17T23:45:47+00:00",
+  "user": "theorangesauce",
+  "additions": 52,
+  "deletions": 0,
+  "changed_files_count": 2,
+  "labels": [
+    "site:metadata"
+  ],
+  "comments": [],
+  "review_comments": [
+    {
+      "author": "mikf",
+      "body": "```suggestion\r\n            data[\"folders\"] = folders = []\r\n            for folder in extr(\r\n                    \"<h3>Listed in Folders</h3>\", \"</section>\").split(\"</a>\"):\r\n                folder = rh(folder)\r\n                if folder:\r\n                    folders.append(folder)\r\n```\r\n\r\nMore code, but it calls `remove_html()` only once.\r\nWalrus operator would be useful here when using a list comprehension, but that's Python 3.8+.",
+      "path": "gallery_dl/extractor/furaffinity.py",
+      "line": null,
+      "created_at": "2024-07-11T21:22:06+00:00"
+    },
+    {
+      "author": "mikf",
+      "body": "```suggestion\r\n            data[\"folders\"] = ()  # folders not present in old layout\r\n            \r\n```\r\n\r\nEmpty tuple is more lightweight than constructing a new empty list every time.",
+      "path": "gallery_dl/extractor/furaffinity.py",
+      "line": null,
+      "created_at": "2024-07-11T21:23:22+00:00"
+    },
+    {
+      "author": "mikf",
+      "body": "```suggestion\r\n        data[\"thumbnail\"] = \"https://t.furaffinity.net/{}@600-{}.jpg\".format(\r\n            post_id, path.rsplit(\"/\", 2)[1])\r\n```\r\nA format string is simpler and `rsplit` is a bit faster here.\r\nWe can also reuse some variables instead of accessing `data`.",
+      "path": "gallery_dl/extractor/furaffinity.py",
+      "line": null,
+      "created_at": "2024-07-11T21:25:01+00:00"
+    }
+  ],
+  "changed_files": [
+    "gallery_dl/extractor/furaffinity.py",
+    "test/results/furaffinity.py"
+  ],
+  "diff": "diff --git a/gallery_dl/extractor/furaffinity.py b/gallery_dl/extractor/furaffinity.py\nindex 6040187e4..683db0bc3 100644\n--- a/gallery_dl/extractor/furaffinity.py\n+++ b/gallery_dl/extractor/furaffinity.py\n@@ -113,6 +113,9 @@ def _parse_post(self, post_id):\n             data[\"gender\"] = rh(extr('>Gender</strong>', '</div>'))\n             data[\"width\"] = pi(extr(\"<span>\", \"x\"))\n             data[\"height\"] = pi(extr(\"\", \"p\"))\n+            data[\"folders\"] = [rh(folder) for folder in extr(\n+                '<h3>Listed in Folders</h3>',\n+                '</section>').split('</a>') if rh(folder) != '']\n         else:\n             # old site layout\n             data[\"title\"] = text.unescape(extr(\"<h2>\", \"</h2>\"))\n@@ -132,11 +135,16 @@ def _parse_post(self, post_id):\n             data[\"_description\"] = extr(\n                 '<td valign=\"top\" align=\"left\" width=\"70%\" class=\"alt1\" '\n                 'style=\"padding:8px\">', '                               </td>')\n+            data[\"folders\"] = []  # folders not present in old layout\n \n         data[\"artist_url\"] = data[\"artist\"].replace(\"_\", \"\").lower()\n         data[\"user\"] = self.user or data[\"artist_url\"]\n         data[\"date\"] = text.parse_timestamp(data[\"filename\"].partition(\".\")[0])\n         data[\"description\"] = self._process_description(data[\"_description\"])\n+        data[\"thumbnail\"] = (\n+            'https://t.furaffinity.net/' +\n+            str(data['id']) + '@600-' +\n+            data['url'].split('/')[-2] + '.jpg')\n \n         return data\n \ndiff --git a/test/results/furaffinity.py b/test/results/furaffinity.py\nindex fffaec566..92ce239c5 100644\n--- a/test/results/furaffinity.py\n+++ b/test/results/furaffinity.py\n@@ -115,6 +115,50 @@\n     \"width\"      : 1280,\n },\n \n+{\n+    \"#url\"     : \"https://www.furaffinity.net/view/22964019/\",\n+    \"#comment\" : \"get thumbnails for posts (#1284)\",\n+    \"#category\": (\"\", \"furaffinity\", \"post\"),\n+    \"#class\"   : furaffinity.FuraffinityPostExtractor,\n+\n+    \"artist\"      : \"Dwale\",\n+    \"artist_url\"  : \"dwale\",\n+    \"date\"        : \"dt:2017-03-21 14:21:29\",\n+    \"fa_category\" : \"Poetry\",\n+    \"filename\"    : \"1490106089.dwale_poem_for_children\",\n+    \"folders\"     : [],\n+    \"height\"      : 50,\n+    \"id\"          : 22964019,\n+    \"rating\"      : \"General\",\n+    \"title\"       : \"Poem for Children Wishing to Summon Evil Spirits\",\n+    \"thumbnail\"   : \"https://t.furaffinity.net/22964019@600-1490106089.jpg\",\n+    \"width\"       : 50,\n+},\n+\n+{\n+    \"#url\"     : \"https://www.furaffinity.net/view/34260156/\",\n+    \"#comment\" : \"list gallery folders for image\",\n+    \"#category\": (\"\", \"furaffinity\", \"post\"),\n+    \"#class\"   : furaffinity.FuraffinityPostExtractor,\n+\n+    \"artist\"      : \"dbd\",\n+    \"artist_url\"  : \"dbd\",\n+    \"date\"        : \"dt:2019-12-17 22:52:01\",\n+    \"fa_category\" : \"All\",\n+    \"filename\"    : \"1576623121.dbd_patreoncustom-wdg13-web\",\n+    \"folders\"     : [\"By Year - 2019\",\n+                     \"Custom Character Folder - All Custom Characters\",\n+                     \"Custom Character Folder - Other Ungulates\",\n+                     \"Custom Character Folder - Female\",\n+                     \"Custom Character Folder - Patreon Supported Custom Characters\"],\n+    \"height\"      : 900,\n+    \"id\"          : 34260156,\n+    \"rating\"      : \"General\",\n+    \"title\"       : \"Patreon Custom Deer\",\n+    \"thumbnail\"   : \"https://t.furaffinity.net/34260156@600-1576623121.jpg\",\n+    \"width\"       : 488,\n+},\n+\n {\n     \"#url\"     : \"https://furaffinity.net/view/21835115/\",\n     \"#category\": (\"\", \"furaffinity\", \"post\"),\n",
+  "pre_commit": "f43bccb5beb7387b388cfa651987cac54da99b23",
+  "post_commit": "4f3be2f571973b860d7475245cb0c4d27202b645",
+  "merge_type": "squash"
+}

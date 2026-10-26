@@ -1,0 +1,119 @@
+{
+  "pr_number": 7386,
+  "title": "Fix crash while iteraring over a class attribute",
+  "url": "https://github.com/pylint-dev/pylint/pull/7386",
+  "description": "- [x] Add yourself to CONTRIBUTORS if you are a new contributor.\r\n- [x] Add a ChangeLog entry describing what your PR does.\r\n- [x] If it's a new feature, or an important bug fix, add a What's New entry in\r\n      `doc/whatsnew/<current release.rst>`.\r\n- [x] Write a good description on what the PR does.\r\n\r\n## Type of Changes\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n\r\n## Description\r\n\r\nCloses #7380\r\n\r\n@orSolocate I haven't created an issue for this but:\r\n\r\n```python\r\nclass MyClass:\r\n    def __init__(self) -> None:\r\n        self.attribute = [1, 2, 3]\r\n\r\n   def my_other_method(self):\r\n        \"\"\"This should raise as we are appending.\"\"\"\r\n        for var in self.attribute:\r\n            self.attribute.append(var)  # [modified-iterating-list]\r\n```\r\n\r\nCurrently doesn't raise like it should.\r\n\r\nThis would require quite a bit of refactoring in the current checker as it isn't really suited for checking class attributes. I'm not sure and there is no obligation, but perhaps you find this interesting and want to look into it?",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 2966111299](https://coveralls.io/builds/52106917)\n\n* **4** of **4**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* No unchanged relevant lines lost coverage.\n* Overall coverage increased (+**0.0008%**) to **95.318%**\n\n---\n\n\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/52106917/badge)](https://coveralls.io/builds/52106917) |\n| :-- | --: |\n| Change from base [Build 2962079951](https://coveralls.io/builds/52088521): |  0.0008% |\n| Covered Lines: | 16939 |\n| Relevant Lines: | 17771 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-08-31T08:58:15Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 5fe8a2cfa729ff52feef76b0b5c5f0e208a3830d*",
+      "created_at": "2022-08-31T09:16:08Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "@Pierre-Sassoulas  you guys can merge it. You can open a new issue to add support for class attributes with my checker and assign me :)",
+      "created_at": "2022-08-31T18:46:37Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 339abe20504e5b5d3ad832ab9cd9d767b3b222bc*",
+      "created_at": "2022-08-31T18:58:23Z"
+    }
+  ],
+  "diff": "diff --git a/doc/whatsnew/fragments/7380.bugfix b/doc/whatsnew/fragments/7380.bugfix\nnew file mode 100644\nindex 0000000000..dc5ea5fa6b\n--- /dev/null\n+++ b/doc/whatsnew/fragments/7380.bugfix\n@@ -0,0 +1,3 @@\n+Update ``modified_iterating`` checker to fix a crash with ``for`` loops on empty list.\n+\n+Closes #7380\ndiff --git a/pylint/checkers/modified_iterating_checker.py b/pylint/checkers/modified_iterating_checker.py\nindex bdabc26503..62e887a954 100644\n--- a/pylint/checkers/modified_iterating_checker.py\n+++ b/pylint/checkers/modified_iterating_checker.py\n@@ -81,7 +81,7 @@ def _modified_iterating_check(\n                 msg_id = \"modified-iterating-dict\"\n             elif isinstance(inferred, nodes.Set):\n                 msg_id = \"modified-iterating-set\"\n-        elif not isinstance(iter_obj, nodes.Name):\n+        elif not isinstance(iter_obj, (nodes.Name, nodes.Attribute)):\n             pass\n         elif self._modified_iterating_list_cond(node, iter_obj):\n             msg_id = \"modified-iterating-list\"\n@@ -90,10 +90,14 @@ def _modified_iterating_check(\n         elif self._modified_iterating_set_cond(node, iter_obj):\n             msg_id = \"modified-iterating-set\"\n         if msg_id:\n+            if isinstance(iter_obj, nodes.Attribute):\n+                obj_name = iter_obj.attrname\n+            else:\n+                obj_name = iter_obj.name\n             self.add_message(\n                 msg_id,\n                 node=node,\n-                args=(iter_obj.name,),\n+                args=(obj_name,),\n                 confidence=interfaces.INFERENCE,\n             )\n \ndiff --git a/tests/functional/m/modified_iterating.py b/tests/functional/m/modified_iterating.py\nindex 166bf4f6c4..527ce358cb 100644\n--- a/tests/functional/m/modified_iterating.py\n+++ b/tests/functional/m/modified_iterating.py\n@@ -1,5 +1,5 @@\n \"\"\"Tests for iterating-modified messages\"\"\"\n-# pylint: disable=not-callable,unnecessary-comprehension\n+# pylint: disable=not-callable,unnecessary-comprehension,too-few-public-methods\n \n import copy\n \n@@ -26,7 +26,7 @@\n i = 1\n for item in my_dict:\n     item_list[0] = i  # for coverage, see reference at /pull/5628#discussion_r792181642\n-    my_dict[i] = 1      # [modified-iterating-dict]\n+    my_dict[i] = 1  # [modified-iterating-dict]\n     i += 1\n \n i = 1\n@@ -93,3 +93,15 @@ def update_existing_key():\n     for key in my_dict:\n         new_key = key.lower()\n         my_dict[new_key] = 1  # [modified-iterating-dict]\n+\n+\n+class MyClass:\n+    \"\"\"Regression test for https://github.com/PyCQA/pylint/issues/7380\"\"\"\n+\n+    def __init__(self) -> None:\n+        self.attribute = [1, 2, 3]\n+\n+    def my_method(self):\n+        \"\"\"This should raise as we are deleting.\"\"\"\n+        for var in self.attribute:\n+            del var  # [modified-iterating-list]\ndiff --git a/tests/functional/m/modified_iterating.txt b/tests/functional/m/modified_iterating.txt\nindex c63095556f..7d5e3014d7 100644\n--- a/tests/functional/m/modified_iterating.txt\n+++ b/tests/functional/m/modified_iterating.txt\n@@ -13,3 +13,4 @@ modified-iterating-list:64:4:64:23::Iterated list 'item_list' is being modified\n modified-iterating-list:67:12:67:31::Iterated list 'item_list' is being modified inside for loop body, consider iterating through a copy of it instead.:INFERENCE\n modified-iterating-list:69:16:69:35::Iterated list 'item_list' is being modified inside for loop body, consider iterating through a copy of it instead.:INFERENCE\n modified-iterating-dict:95:8:95:28:update_existing_key:Iterated dict 'my_dict' is being modified inside for loop body, iterate through a copy of it instead.:INFERENCE\n+modified-iterating-list:107:12:107:19:MyClass.my_method:Iterated list 'attribute' is being modified inside for loop body, consider iterating through a copy of it instead.:INFERENCE\n",
+  "changed_files": [
+    "doc/whatsnew/fragments/7380.bugfix",
+    "pylint/checkers/modified_iterating_checker.py",
+    "tests/functional/m/modified_iterating.py",
+    "tests/functional/m/modified_iterating.txt"
+  ],
+  "changed_functions": [
+    "__init__",
+    "my_method"
+  ],
+  "pre_commit": "c116349e256886edd33fc66efd4e5d7ff2a71fed",
+  "post_commit": "bcd4ca3052411e8c0823712d38cb970e354713f6",
+  "merged_at": "2022-08-31T20:06:41Z",
+  "review_comments": [
+    {
+      "author": "orSolocate",
+      "body": "This is the only class in the test file. you can add the disable flag at the top of the file",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": null,
+      "created_at": "2022-08-31T17:43:30Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "```suggestion\r\n        self.iterated_attributes = [1, 2, 3]\r\n```",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 102,
+      "created_at": "2022-08-31T17:48:22Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "```suggestion\r\n    def modifying_list_(self):\r\n    # should be fine to modify a copy\r\n            for var in self.iterated_attributes.copy():\r\n            del var  # [modified-iterating-list]\r\n     # should raise a message when modifying\r\n        for var in self.iterated_attributes:\r\n            del var  # [modified-iterating-list]\r\n\r\n```\r\n\r\nAlso check the false positive case. Fix the `.txt` file accordingly.",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T17:52:24Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "```suggestion\r\nUpdate ``modified_iterating`` checker to fix a crash with ``for`` loops on empty list\r\n```",
+      "path": "doc/whatsnew/fragments/7380.bugfix",
+      "line": null,
+      "created_at": "2022-08-31T17:55:06Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "This is personal preference I think. I like disabling at the occurrence as it allows more freedom in checking for some message further down the file.\r\n\r\nBut I'll change it here 😄 ",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": null,
+      "created_at": "2022-08-31T18:16:05Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I think we should hold off on actually fixing any false negatives and positives here. As I said, the current code really doesn't work well with class attributes as we depend on functions like `.append` being attributes of the iterable object. This complicates things massively when actually looking for attributes.",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T18:17:32Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "@DanielNoord  yeah i re-read it and understood that the case which is not working is the class case. \r\nI don't fully understand the `append` example, how can you put `list.append` in a for loop? ",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T18:42:22Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```python\r\nfor x in a_list:\r\n    a_list.append(x)\r\n```\r\n\r\nThe issue here is that `append` is an `Attribute` node on `a_list` just as `attribute` is an `Attribute` node in the following example:\r\n```python\r\nclass MyClass:\r\n    def __init__():\r\n        self.attribute = [1,2,3]\r\n\r\n    def method(self):\r\n        for x in self.attribute:\r\n            del x\r\n```\r\n\r\n`Astroid` only recognises that they are nodes that come after a period, not that they are attributes in the traditional sense of the word.\r\nThis complicates the logic we're currently using in the checker. I tried to fix it, but it turned out to be a pretty large refactor which probably should be taken in multiple steps for ease of reviewing.\r\nTo make sure we no longer crash I wanted to push this fix at least.",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T18:46:22Z"
+    },
+    {
+      "author": "orSolocate",
+      "body": "You mean like when iterating through a dictionary `d` :  iterating on  `d.keys` is an  `Attribute` which is actually a fix the our error of iterating through `d`? something like that? so your current solution will throw false-postive now?",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T19:34:27Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I think you'll understand what you mean when you add the example I gave in the opening post to the functional tests. If you run `pytest` then you'll see that some of the `isinstance(node, nodes.Attribute)` test you are using to pick up `d.append` will now also pick up `MyClass.attribute`. This causes some issues and methods such as `_modified_iterating_list_cond` will need to be changed to allow checking both type of nodes.",
+      "path": "tests/functional/m/modified_iterating.py",
+      "line": 107,
+      "created_at": "2022-08-31T20:06:32Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 24,
+  "deletions": 4,
+  "changed_files_count": 4
+}

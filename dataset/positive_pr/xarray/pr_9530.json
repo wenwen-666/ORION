@@ -1,0 +1,87 @@
+{
+  "pr_number": 9530,
+  "title": "allow using `__array_function__` as a fallback for missing Array API functions",
+  "url": "https://github.com/pydata/xarray/pull/9530",
+  "description": "As discussed in https://github.com/pydata/xarray/issues/8834#issuecomment-2124914727, this swaps the order of special casing for types implementing both `__array_function__` and `__array_namespace__`, such that the Array API is preferred over `__array_function__`.\n\nI've also disabled passing the `out` kwarg to `nanprod`, as that was the only occurrence where we actually do that, all other `nan*` functions silently ignore that kwarg.\n\n- [x] Tests added\n- [ ] User visible changes (including notable bug fixes) are documented in `whats-new.rst`\n\ncc @tomwhite",
+  "comments": [
+    {
+      "author": "TomNicholas",
+      "body": "This seems good, but does it cover this comment? https://github.com/pydata/xarray/issues/8834#issuecomment-2124943965",
+      "created_at": "2024-09-22T22:10:40Z"
+    },
+    {
+      "author": "tomwhite",
+      "body": "Thanks @keewis - this would be very helpful!",
+      "created_at": "2024-09-23T09:12:41Z"
+    },
+    {
+      "author": "keewis",
+      "body": "> does it cover this comment? https://github.com/pydata/xarray/issues/8834#issuecomment-2124943965\r\n\r\nI don't think it does, but I think array types that implement both `__array_{ufunc,function}__` and `__array_namespace__` would prefer to use `__array_namespace__`, so I believe we don't change anything for that (not that I know of any array type that actually fully implements both besides `numpy`).",
+      "created_at": "2024-09-23T09:47:40Z"
+    },
+    {
+      "author": "dcherian",
+      "body": "This almost certainly breaks vectorized indexing with cupy if you don't implement the fallback `vindex` using `explicit_indexing_adapter`.\r\n\r\nThough how are the pint tests passing? Do we have indexing tests with pint?",
+      "created_at": "2024-09-23T19:23:55Z"
+    },
+    {
+      "author": "keewis",
+      "body": "> This almost certainly breaks vectorized indexing with cupy\r\n\r\nAs far as I can tell, `cupy` does not implement `__array_namespace__` (unless you used `cupy.array_api` or `array_api_compat.cupy` to create the array, where the former apparently is sunset in `cupy=14`), so it will still use the `NdArrayLikeIndexingAdapter`. Same with `pint`, it doesn't implement `__array_namespace__`.\r\n\r\nThat said, we should definitely try to provide an implementation for `vindex`, I just don't think it is as urgent.",
+      "created_at": "2024-09-23T20:42:37Z"
+    },
+    {
+      "author": "dcherian",
+      "body": "OK yes, lot less urgent then. I thought they had all implemented `__array_namespace__` for their main api like numpy.",
+      "created_at": "2024-09-23T20:43:55Z"
+    },
+    {
+      "author": "keewis",
+      "body": "`cupy` plans to do so in v14 (see cupy/cupy#8470), they try to be a drop-in replacement for `numpy` – though obviously there is some lag.",
+      "created_at": "2024-09-23T20:46:03Z"
+    }
+  ],
+  "diff": "diff --git a/xarray/core/indexing.py b/xarray/core/indexing.py\nindex 67912908a2b..6985d6681a5 100644\n--- a/xarray/core/indexing.py\n+++ b/xarray/core/indexing.py\n@@ -875,10 +875,10 @@ def as_indexable(array):\n         return PandasIndexingAdapter(array)\n     if is_duck_dask_array(array):\n         return DaskIndexingAdapter(array)\n-    if hasattr(array, \"__array_function__\"):\n-        return NdArrayLikeIndexingAdapter(array)\n     if hasattr(array, \"__array_namespace__\"):\n         return ArrayApiIndexingAdapter(array)\n+    if hasattr(array, \"__array_function__\"):\n+        return NdArrayLikeIndexingAdapter(array)\n \n     raise TypeError(f\"Invalid array type: {type(array)}\")\n \ndiff --git a/xarray/core/nanops.py b/xarray/core/nanops.py\nindex fc7240139aa..7fbb63068c0 100644\n--- a/xarray/core/nanops.py\n+++ b/xarray/core/nanops.py\n@@ -162,7 +162,7 @@ def nanstd(a, axis=None, dtype=None, out=None, ddof=0):\n \n def nanprod(a, axis=None, dtype=None, out=None, min_count=None):\n     mask = isnull(a)\n-    result = nputils.nanprod(a, axis=axis, dtype=dtype, out=out)\n+    result = nputils.nanprod(a, axis=axis, dtype=dtype)\n     if min_count is not None:\n         return _maybe_null_out(result, axis, mask, min_count)\n     else:\ndiff --git a/xarray/tests/test_indexing.py b/xarray/tests/test_indexing.py\nindex 985fb02a87e..92c21cc32fb 100644\n--- a/xarray/tests/test_indexing.py\n+++ b/xarray/tests/test_indexing.py\n@@ -894,6 +894,74 @@ def test_posify_mask_subindexer(indices, expected) -> None:\n     np.testing.assert_array_equal(expected, actual)\n \n \n+class ArrayWithNamespace:\n+    def __array_namespace__(self, version=None):\n+        pass\n+\n+\n+class ArrayWithArrayFunction:\n+    def __array_function__(self, func, types, args, kwargs):\n+        pass\n+\n+\n+class ArrayWithNamespaceAndArrayFunction:\n+    def __array_namespace__(self, version=None):\n+        pass\n+\n+    def __array_function__(self, func, types, args, kwargs):\n+        pass\n+\n+\n+def as_dask_array(arr, chunks):\n+    try:\n+        import dask.array as da\n+    except ImportError:\n+        return None\n+\n+    return da.from_array(arr, chunks=chunks)\n+\n+\n+@pytest.mark.parametrize(\n+    [\"array\", \"expected_type\"],\n+    (\n+        pytest.param(\n+            indexing.CopyOnWriteArray(np.array([1, 2])),\n+            indexing.CopyOnWriteArray,\n+            id=\"ExplicitlyIndexed\",\n+        ),\n+        pytest.param(\n+            np.array([1, 2]), indexing.NumpyIndexingAdapter, id=\"numpy.ndarray\"\n+        ),\n+        pytest.param(\n+            pd.Index([1, 2]), indexing.PandasIndexingAdapter, id=\"pandas.Index\"\n+        ),\n+        pytest.param(\n+            as_dask_array(np.array([1, 2]), chunks=(1,)),\n+            indexing.DaskIndexingAdapter,\n+            id=\"dask.array\",\n+            marks=requires_dask,\n+        ),\n+        pytest.param(\n+            ArrayWithNamespace(), indexing.ArrayApiIndexingAdapter, id=\"array_api\"\n+        ),\n+        pytest.param(\n+            ArrayWithArrayFunction(),\n+            indexing.NdArrayLikeIndexingAdapter,\n+            id=\"array_like\",\n+        ),\n+        pytest.param(\n+            ArrayWithNamespaceAndArrayFunction(),\n+            indexing.ArrayApiIndexingAdapter,\n+            id=\"array_api_with_fallback\",\n+        ),\n+    ),\n+)\n+def test_as_indexable(array, expected_type):\n+    actual = indexing.as_indexable(array)\n+\n+    assert isinstance(actual, expected_type)\n+\n+\n def test_indexing_1d_object_array() -> None:\n     items = (np.arange(3), np.arange(6))\n     arr = DataArray(np.array(items, dtype=object))\n",
+  "changed_files": [
+    "xarray/core/indexing.py",
+    "xarray/core/nanops.py",
+    "xarray/tests/test_indexing.py"
+  ],
+  "changed_functions": [
+    "__array_namespace__",
+    "__array_function__",
+    "as_dask_array",
+    "test_as_indexable",
+    "test_indexing_1d_object_array"
+  ],
+  "pre_commit": "cde720f21788a1dbff2bdb0775a56b3ee6da6b1a",
+  "post_commit": "a14d202ed91e5bbc93035b25ffc3d334193c9590",
+  "merged_at": "2024-09-30T17:51:58Z",
+  "review_comments": [
+    {
+      "author": "dcherian",
+      "body": "I'm confused now, why does the indexing adapter affect what's used for reductions?",
+      "path": "xarray/core/indexing.py",
+      "line": 880,
+      "created_at": "2024-09-25T15:38:01Z"
+    },
+    {
+      "author": "keewis",
+      "body": "I don't think that's the case. What I mentioned in the meeting was that we could use `__array_function__` as a fallback for `nan*` reductions, whereas choosing the wrong indexing adapter will cause `xarray` to try indexing with a method the array type might not support.\r\n\r\nI guess this is kinda hard to figure out implicitly, and I'd love to have a way (a special attribute like `__xarray_preferred_array_protocol__`?) to explicitly communicate which protocol is preferred. That way, we won't have to worry about `cupy` and `pint` implementing the Array API, and `cubed` can just set that attribute to state that it considers `__array_function__` a fallback and instead prefers to use `__array_namespace__` indexing.",
+      "path": "xarray/core/indexing.py",
+      "line": 880,
+      "created_at": "2024-09-25T18:10:00Z"
+    },
+    {
+      "author": "dcherian",
+      "body": "> __array_function__ as a fallback for nan* reductions, \r\n\r\n:+1: sorry I got confused.",
+      "path": "xarray/core/indexing.py",
+      "line": 880,
+      "created_at": "2024-09-25T19:52:35Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 71,
+  "deletions": 3,
+  "changed_files_count": 3
+}

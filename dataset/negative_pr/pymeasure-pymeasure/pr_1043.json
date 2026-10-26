@@ -1,0 +1,206 @@
+{
+  "pr_number": 1043,
+  "title": "Add Keithley 2182",
+  "url": "https://github.com/pymeasure/pymeasure/pull/1043",
+  "description": "- Create a driver for the Keithley-2182 nanovoltmeter\r\n- Small bug fix on the keithley buffer (bitwise comparison with status bit)",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "fb3eec188d59860872fcba50345edbd1fe162886",
+  "merged_at": "2024-03-11T16:19:34+00:00",
+  "created_at": "2024-02-14T22:22:11+00:00",
+  "closed_at": "2024-03-11T16:19:34+00:00",
+  "user": "ConnorGCarr",
+  "additions": 513,
+  "deletions": 6,
+  "changed_files_count": 7,
+  "labels": [],
+  "comments": [
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) Report\nAttention: Patch coverage is `80.26316%` with `15 lines` in your changes are missing coverage. Please review.\n> Project coverage is 57.89%. Comparing base [(`97bd82c`)](https://app.codecov.io/gh/pymeasure/pymeasure/commit/97bd82ce56fb7b4d2a52488b888a48f1c1c3b96e?el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) to head [(`2e8acbc`)](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).\n\n| [Files](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | Patch % | Lines |\n|---|---|---|\n| [pymeasure/instruments/keithley/keithley2182.py](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure#diff-cHltZWFzdXJlL2luc3RydW1lbnRzL2tlaXRobGV5L2tlaXRobGV5MjE4Mi5weQ==) | 82.19% | [13 Missing :warning: ](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) |\n| [pymeasure/instruments/keithley/buffer.py](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure#diff-cHltZWFzdXJlL2luc3RydW1lbnRzL2tlaXRobGV5L2J1ZmZlci5weQ==) | 0.00% | [2 Missing :warning: ](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) |\n\n<details><summary>Additional details and impacted files</summary>\n\n\n```diff\n@@            Coverage Diff             @@\n##           master    #1043      +/-   ##\n==========================================\n+ Coverage   57.79%   57.89%   +0.10%     \n==========================================\n  Files         254      255       +1     \n  Lines       17683    17757      +74     \n==========================================\n+ Hits        10220    10281      +61     \n- Misses       7463     7476      +13     \n```\n\n| [Flag](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043/flags?src=pr&el=flags&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | Coverage Δ | |\n|---|---|---|\n| [unittests](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | `57.89% <80.26%> (+0.10%)` | :arrow_up: |\n\nFlags with carried forward coverage won't be shown. [Click here](https://docs.codecov.io/docs/carryforward-flags?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure#carryforward-flags-in-the-pull-request-comment) to find out more.\n\n\n</details>\n\n[:umbrella: View full report in Codecov by Sentry](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1043?src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).   \n:loudspeaker: Have feedback on the report? [Share it here](https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).\n",
+      "created_at": "2024-02-20T17:06:53+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "I'm done with edits on my side, unless there are additional changes that need to be made.",
+      "created_at": "2024-03-06T19:24:07+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "May I merge this PR?",
+      "created_at": "2024-03-11T14:50:16+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "Yes, thank you!",
+      "created_at": "2024-03-11T16:17:27+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Thanks for your contribution.",
+      "created_at": "2024-03-11T16:19:45+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "BenediktBurger",
+      "body": "To make it explicit, you should use both times the same representation:\r\n`(status_bit & 65) == 65` or `(status_bit & 0b1000001) == 0b1000001`\r\n\r\n(or in hex etc.)",
+      "path": "pymeasure/instruments/keithley/buffer.py",
+      "line": null,
+      "created_at": "2024-02-15T12:35:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Docstrings of Proterties should start with \"Set\", \"Get\" (or \"Measure\"), or \"Control\", depending on the type, see https://pymeasure.readthedocs.io/en/latest/dev/coding_standards.html#docstrings .\r\n\r\nDid you copy that code? Maybe you could inherit?",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-15T12:36:36+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "It's good to have the init at the top, to find it easily.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-15T12:51:37+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please add, whether it supports SCPI or not, for example if it does:\r\n```suggestion\r\n        super().__init__(\r\n            adapter, name, includeSCPI=True, **kwargs\r\n        )\r\n```",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-15T12:53:14+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "For boolean properties, it is good to use a name like `voltage_range_auto_enabled`, which makes the code descriptive:\r\n`voltage_range_auto_enabled = True` is clear, while otherwise you never know, what True means: enabled or disabled.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:12:50+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "For boolean properties, it is good to use a name like `voltage_range_auto_enabled`, which makes the code descriptive:\r\n`voltage_range_auto_enabled = True` is clear, while otherwise you never know, what True means: enabled or disabled.\r\n```suggestion\r\n    voltage_range_auto_enabled = Channel.control(\r\n        \":SENS:VOLT:CHAN{ch}:RANG:AUTO?\", \":SENS:VOLT:CHAN{ch}:RANG:AUTO %d\",\r\n        \"\"\"Control whether auto voltage ranging is enabled.\r\n        Valid values are True and False.\"\"\",\r\n```",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:15:30+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please add empty lines between two properties:\r\n```suggestion\r\n    )\r\n\r\n    voltage_offset = Channel.control(\r\n```",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:15:54+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Why don't you make it boolean (also changing the name)?\r\n```suggestion\r\n    voltage_offset_enabled = Channel.control(\r\n        \":SENS:VOLT:CHAN{ch}:REF:STAT?\", \":SENS:VOLT:CHAN{ch}:REF:STAT %s\",\r\n        \"\"\"Control whether voltage is measured as a relative or absolute value.\r\n        Enabled by default for Ch. 2 voltage, which is measured relative to Ch. 1\r\n        voltage (bool).\"\"\",\r\n        validator=strict_discrete_set,\r\n        values={False: 0, True: 1},\r\n        map_values=True\r\n    )\r\n```\r\n\r\nsimilarly below.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:17:19+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Consider making two methods, one for voltage and one for temperature.\r\nUsing strings for choosing options is not that handy.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:19:41+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Here again, using `enabled` in the name, makes it self evident, without the need to write the values into the docstring:\r\n```suggestion\r\n    auto_zero_enabled = Instrument.control(\r\n        \":SYST:AZER:STAT?\", \":SYST:AZER:STAT %d\",\r\n        \"\"\"Control the auto zero option (bool).\"\"\",\r\n        validator=strict_discrete_set,\r\n        values={True: 1, False: 0},\r\n        map_values=True,\r\n    )\r\n```",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:20:44+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "If I remember correctly, this property is called `next_error` and is already included for SCPI devices. See `Instrument` itself.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:24:07+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Check, whether that code is necessary, or it is sufficient to use the inherited method (from `Instrument`).",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T10:24:44+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "Thanks for the suggestion, I wasn't aware `next_error` and `check_errors` were already implemented.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T15:51:23+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "Thanks for the advice on boolean naming, I've updated the properties accordingly",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-02-20T15:53:51+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please follow the parent class name scheme: `parent` and `id`:\r\n```suggestion\r\n    def __init__(self, parent, id):\r\n        \"\"\"Set max voltage depending on channel.\"\"\"\r\n        if id == 1:\r\n            self.voltage_range_values = [0, 120]\r\n            self.voltage_offset_values = [-120, 120]\r\n        else:\r\n            self.voltage_range_values = [0, 12]\r\n            self.voltage_offset_values = [-12, 12]\r\n        super().__init__(parent, id)\r\n```\r\n\r\nBasically, you could use the Channel as a child of another channel as well, therefore, parent is more generic than instrument.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-07T09:38:49+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "I don't know, whether I mentioned it:\r\nUse the `truncated` validators with care!\r\n\r\nImagine, someone writes `voltage_range=200`, which will be effectively only `voltage_range=120`, but the user does not know, that the voltage range is different from his value of 200.\r\n\r\nA strict validator will raise an exception, which notifies the user of the wrong value.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-07T09:41:00+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Can you change the read_termination?\r\nIf not, you should not add it to the signature of the init, but hardcode it in the following way:\r\n```suggestion\r\n    def __init__(self, adapter, name=\"Keithley 2182 Nanovoltmeter\",\r\n                 **kwargs):\r\n        super().__init__(adapter, name, read_termination=\"\\r\",\r\n                         includeSCPI=True, **kwargs)\r\n```",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-07T09:42:33+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "Thanks for the suggestion. I looked through the properties and they all would benefit from raising an exception if out of range.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-07T20:05:14+00:00"
+    },
+    {
+      "author": "ConnorGCarr",
+      "body": "The terminator can be CR, LF, or a combination of both. The default isn't listed in the instrument documentation, but ours is set to CR, so I've made that the default here.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-08T12:32:04+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "In this case, it is good as you did it.\r\n\r\nA considerable amount of instruments have a fixed termination, where it useless, making it configurable. Therefore, I asked.",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-08T16:26:17+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "We recently changed the way, how to define the Scpi compliance, sorry for that:\r\nNow you have to import \"SCPIMixin\" from instruments and add that to the inheritance:\r\n\"class KeithleyXYZ(SCPIMixin, KeithleyBuffer, Instrument):\"\r\nWith that, you can remove the \"includeSCPI\" argument. ",
+      "path": "pymeasure/instruments/keithley/keithley2182.py",
+      "line": null,
+      "created_at": "2024-03-09T09:09:54+00:00"
+    }
+  ],
+  "changed_files": [
+    "AUTHORS.txt",
+    "docs/api/instruments/keithley/index.rst",
+    "docs/api/instruments/keithley/keithley2182.rst",
+    "pymeasure/instruments/keithley/__init__.py",
+    "pymeasure/instruments/keithley/buffer.py",
+    "pymeasure/instruments/keithley/keithley2182.py",
+    "tests/instruments/keithley/test_keithley2182.py"
+  ],
+  "diff": "diff --git a/AUTHORS.txt b/AUTHORS.txt\nindex 3d3c51f6ab..af14a2e339 100644\n--- a/AUTHORS.txt\n+++ b/AUTHORS.txt\n@@ -74,3 +74,4 @@ Karl Komierowski\n Alec Vercruysse\n Matthew Zenaldin\n Canyon Clark\n+Connor Carr\ndiff --git a/docs/api/instruments/keithley/index.rst b/docs/api/instruments/keithley/index.rst\nindex 08eaf1cf59..a88255fffb 100644\n--- a/docs/api/instruments/keithley/index.rst\n+++ b/docs/api/instruments/keithley/index.rst\n@@ -21,3 +21,4 @@ This section contains specific documentation on the Keithley instruments that ar\n    keithley2600\n    keithley2200\n    keithleyDMM6500\n+   keithley2182\ndiff --git a/docs/api/instruments/keithley/keithley2182.rst b/docs/api/instruments/keithley/keithley2182.rst\nnew file mode 100644\nindex 0000000000..522c2923d3\n--- /dev/null\n+++ b/docs/api/instruments/keithley/keithley2182.rst\n@@ -0,0 +1,12 @@\n+###########################\n+Keithley 2182 Nanovoltmeter\n+###########################\n+\n+.. autoclass:: pymeasure.instruments.keithley.Keithley2182\n+    :members:\n+    :show-inheritance:\n+    :inherited-members: CommonBase\n+\n+.. autoclass:: pymeasure.instruments.keithley.keithley2182.Keithley2182Channel\n+    :members:\n+    :show-inheritance:\n\\ No newline at end of file\ndiff --git a/pymeasure/instruments/keithley/__init__.py b/pymeasure/instruments/keithley/__init__.py\nindex 412e384a73..c41a651302 100644\n--- a/pymeasure/instruments/keithley/__init__.py\n+++ b/pymeasure/instruments/keithley/__init__.py\n@@ -34,3 +34,4 @@\n from .keithley6517b import Keithley6517B\n from .keithley2200 import Keithley2200\n from .keithleyDMM6500 import KeithleyDMM6500\n+from .keithley2182 import Keithley2182\ndiff --git a/pymeasure/instruments/keithley/buffer.py b/pymeasure/instruments/keithley/buffer.py\nindex d405c1e2b5..7cd7662808 100644\n--- a/pymeasure/instruments/keithley/buffer.py\n+++ b/pymeasure/instruments/keithley/buffer.py\n@@ -41,9 +41,8 @@ class KeithleyBuffer:\n \n     buffer_points = Instrument.control(\n         \":TRAC:POIN?\", \":TRAC:POIN %d\",\n-        \"\"\" An integer property that controls the number of buffer points. This\n-        does not represent actual points in the buffer, but the configuration\n-        value instead. \"\"\",\n+        \"\"\" Control the number of buffer points. This does not represent actual points\n+        in the buffer, but the configuration value instead. \"\"\",\n         validator=truncated_range,\n         values=[2, 1024],\n         cast=int\n@@ -68,8 +67,8 @@ def config_buffer(self, points=64, delay=0):\n \n     def is_buffer_full(self):\n         \"\"\" Returns True if the buffer is full of measurements. \"\"\"\n-        status_bit = int(self.ask(\"*STB?\"))\n-        return status_bit == 65\n+        status_byte = int(self.ask(\"*STB?\"))\n+        return (status_byte & 65) == 65\n \n     def wait_for_buffer(self, should_stop=lambda: False,\n                         timeout=60, interval=0.1):\n@@ -93,7 +92,7 @@ def wait_for_buffer(self, should_stop=lambda: False,\n \n     @property\n     def buffer_data(self):\n-        \"\"\" Returns a numpy array of values from the buffer. \"\"\"\n+        \"\"\" Get a numpy array of values from the buffer. \"\"\"\n         self.write(\":FORM:DATA ASCII\")\n         return np.array(self.values(\":TRAC:DATA?\"), dtype=np.float64)\n \ndiff --git a/pymeasure/instruments/keithley/keithley2182.py b/pymeasure/instruments/keithley/keithley2182.py\nnew file mode 100644\nindex 0000000000..28f2555309\n--- /dev/null\n+++ b/pymeasure/instruments/keithley/keithley2182.py\n@@ -0,0 +1,389 @@\n+#\n+# This file is part of the PyMeasure package.\n+#\n+# Copyright (c) 2013-2024 PyMeasure Developers\n+#\n+# Permission is hereby granted, free of charge, to any person obtaining a copy\n+# of this software and associated documentation files (the \"Software\"), to deal\n+# in the Software without restriction, including without limitation the rights\n+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n+# copies of the Software, and to permit persons to whom the Software is\n+# furnished to do so, subject to the following conditions:\n+#\n+# The above copyright notice and this permission notice shall be included in\n+# all copies or substantial portions of the Software.\n+#\n+# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n+# THE SOFTWARE.\n+#\n+\n+import logging\n+\n+from pymeasure.instruments import Instrument, Channel, SCPIMixin\n+from pymeasure.instruments.validators import strict_discrete_set, strict_range\n+\n+from .buffer import KeithleyBuffer\n+\n+\n+log = logging.getLogger(__name__)\n+log.addHandler(logging.NullHandler())\n+\n+\n+class Keithley2182Channel(Channel):\n+    \"\"\"Implementation of a Keithley 2182 channel.\n+\n+    Channel 1 is the fundamental measurement channel, while channel 2 provides\n+    sense measurements. Channel 2 inputs are referenced to Channel 1 LO.\n+    Possible configurations are\n+\n+    Voltage     (Channel 1)\n+    Temperature (Channel 1)\n+    Voltage     (Channel 1) and Voltage     (Channel 2)\n+    Voltage     (Channel 1) and Temperature (Channel 2)\n+    \"\"\"\n+\n+    def __init__(self, parent, id):\n+        \"\"\"Set max voltage depending on channel.\"\"\"\n+        if id == 1:\n+            self.voltage_range_values = (0, 120)\n+            self.voltage_offset_values = (-120, 120)\n+        else:\n+            self.voltage_range_values = (0, 12)\n+            self.voltage_offset_values = (-12, 12)\n+        super().__init__(parent, id)\n+\n+    voltage_range = Channel.control(\n+        \":SENS:VOLT:CHAN{ch}:RANG?\", \":SENS:VOLT:CHAN{ch}:RANG %g\",\n+        \"\"\"Control the positive full-scale measurement voltage range in Volts.\n+        The Keithley 2182 selects a measurement range based on the expected voltage.\n+        DCV1 has five ranges: 10 mV, 100 mV, 1 V, 10 V, and 100 V.\n+        DCV2 has three ranges: 100 mV, 1 V, and 10 V.\n+        Valid limits are from 0 to 120 V for Ch. 1, and 0 to 12 V for Ch. 2.\n+        Auto-range is automatically disabled when this property is set.\"\"\",\n+        validator=strict_range,\n+        values=(0, 120),\n+        dynamic=True,\n+    )\n+\n+    voltage_range_auto_enabled = Channel.control(\n+        \":SENS:VOLT:CHAN{ch}:RANG:AUTO?\", \":SENS:VOLT:CHAN{ch}:RANG:AUTO %d\",\n+        \"\"\"Control the auto voltage ranging option (bool).\"\"\",\n+        validator=strict_discrete_set,\n+        values={True: 1, False: 0},\n+        map_values=True,\n+    )\n+\n+    voltage_offset = Channel.control(\n+        \":SENS:VOLT:CHAN{ch}:REF?\", \":SENS:VOLT:CHAN{ch}:REF %g\",\n+        \"\"\"Control the relative offset for measuring voltage.\n+        Displayed value = actual value - offset value.\n+        Valid ranges are -120 V to +120 V for Ch. 1, and -12 V to +12 V for Ch. 2.\"\"\",\n+        validator=strict_range,\n+        values=(-120, 120),\n+        dynamic=True,\n+    )\n+\n+    temperature_offset = Channel.control(\n+        \":SENS:TEMP:CHAN{ch}:REF?\", \":SENS:TEMP:CHAN{ch}:REF %g\",\n+        \"\"\"Control the relative offset for measuring temperature.\n+        Displayed value = actual value - offset value.\n+        Valid values are -273 C to 1800 C.\"\"\",\n+        validator=strict_range,\n+        values=(-273, 1800),\n+    )\n+\n+    voltage_offset_enabled = Channel.control(\n+        \":SENS:VOLT:CHAN{ch}:REF:STAT?\", \":SENS:VOLT:CHAN{ch}:REF:STAT %s\",\n+        \"\"\"Control whether voltage is measured as a relative or absolute value (bool).\n+        Enabled by default for Ch. 2 voltage, which is measured relative to Ch. 1\n+        voltage.\"\"\",\n+        validator=strict_discrete_set,\n+        values={False: 0, True: 1},\n+        map_values=True\n+    )\n+\n+    temperature_offset_enabled = Channel.control(\n+        \":SENS:TEMP:CHAN{ch}:REF:STAT?\", \":SENS:TEMP:CHAN{ch}:REF:STAT %s\",\n+        \"\"\"Control whether temperature is measured as a relative or absolute value (bool).\n+        Disabled by default.\"\"\",\n+        validator=strict_discrete_set,\n+        values={False: 0, True: 1},\n+        map_values=True\n+    )\n+\n+    def setup_voltage(self, auto_range=True, nplc=5):\n+        \"\"\"Set active channel and configure channel for voltage measurement.\n+\n+        :param auto_range: Enables auto_range if True, else uses set voltage\n+            range\n+        :param nplc: Number of power line cycles (NPLC) from 0.01 to 50/60\n+        \"\"\"\n+        self.write(\":SENS:CHAN {ch};\"\n+                   \":SENS:FUNC 'VOLT';\"\n+                   f\":SENS:VOLT:NPLC {nplc};\")\n+        if auto_range:\n+            self.write(\":SENS:VOLT:RANG:AUTO 1\")\n+        self.check_errors()\n+\n+    def setup_temperature(self, nplc=5):\n+        \"\"\"Change active channel and configure channel for temperature measurement.\n+\n+        :param nplc: Number of power line cycles (NPLC) from 0.01 to 50/60\n+        \"\"\"\n+        self.write(\":SENS:CHAN {ch};\"\n+                   \":SENS:FUNC 'TEMP';\"\n+                   f\":SENS:TEMP:NPLC {nplc}\")\n+        self.check_errors()\n+\n+    def acquire_temperature_reference(self):\n+        \"\"\"Acquire a temperature measurement and store it as the relative offset value.\n+\n+        Only acquires reference if temperature offset is enabled.\n+        \"\"\"\n+        self.write(\":SENS:TEMP:CHAN{ch}:REF:ACQ\")\n+\n+    def acquire_voltage_reference(self):\n+        \"\"\"Acquire a voltage measurement and store it as the relative offset value.\n+\n+        Only acquires reference if voltage offset is enabled.\n+        \"\"\"\n+        self.write(\":SENS:VOLT:CHAN{ch}:REF:ACQ\")\n+\n+\n+class Keithley2182(SCPIMixin, KeithleyBuffer, Instrument):\n+    \"\"\"Represents the Keithley 2182 Nanovoltmeter and provides a\n+    high-level interface for interacting with the instrument.\n+\n+    .. code-block:: python\n+\n+        keithley = Keithley2182(\"GPIB::1\")\n+\n+        keithley.reset()                        # Return instrument settings to default\n+                                                  values\n+        keithley.thermocouple = 'S'             # Sets thermocouple type to S\n+        keithley.active_channel = 1             # Sets channel 1 for active measurement\n+        keithley.channel_function = 'voltage'   # Configures active channel for voltage\n+                                                  measurement\n+        print(keithley.voltage)                 # Prints the voltage in volts\n+\n+        keithley.ch_1.setup_voltage()           # Set channel 1 active and prepare\n+                                                  voltage measurement\n+        keithley.ch_2.setup_temperature()       # Set channel 2 active and prepare\n+                                                  temperature measurement\n+\n+    \"\"\"\n+\n+    def __init__(self, adapter, name=\"Keithley 2182 Nanovoltmeter\",\n+                 read_termination='\\r', **kwargs):\n+        super().__init__(adapter, name, read_termination=read_termination, **kwargs)\n+\n+    ch_1 = Instrument.ChannelCreator(Keithley2182Channel, 1)\n+    ch_2 = Instrument.ChannelCreator(Keithley2182Channel, 2)\n+\n+    #################\n+    # Configuration #\n+    #################\n+\n+    auto_zero_enabled = Instrument.control(\n+        \":SYST:AZER:STAT?\", \":SYST:AZER:STAT %d\",\n+        \"\"\"Control the auto zero option (bool).\"\"\",\n+        validator=strict_discrete_set,\n+        values={True: 1, False: 0},\n+        map_values=True,\n+    )\n+\n+    line_frequency = Instrument.measurement(\n+        \":SYST:LFR?\",\n+        \"\"\"Get the line frequency in Hertz. Values are 50 or 60.\n+        Cannot be set on 2182.\"\"\",\n+    )\n+\n+    display_enabled = Instrument.control(\n+        \":DISP:ENAB?\", \":DISP:ENAB %d\",\n+        \"\"\"Control whether the front display of the voltmeter is enabled.\n+        Valid values are True and False.\"\"\",\n+        validator=strict_discrete_set,\n+        values={True: 1, False: 0},\n+        map_values=True,\n+    )\n+\n+    active_channel = Instrument.control(\n+        \":SENS:CHAN?\", \":SENS:CHAN %d\",\n+        \"\"\"Control which channel is active for measurement.\n+        Valid values are 0 (internal temperature sensor), 1, and 2.\"\"\",\n+        validator=strict_discrete_set,\n+        values=(0, 1, 2),\n+        cast=int\n+    )\n+\n+    channel_function = Instrument.control(\n+        \":SENS:FUNC?\", \"SENS:FUNC %s\",\n+        \"\"\"Control the measurement mode of the active channel.\n+        Valid options are `voltage` and `temperature`.\"\"\",\n+        validator=strict_discrete_set,\n+        values={'voltage': '\"VOLT:DC\"', 'temperature': '\"TEMP\"'},\n+        map_values=True\n+    )\n+\n+    ###############\n+    # Voltage (V) #\n+    ###############\n+\n+    voltage = Instrument.measurement(\n+        \":READ?\",\n+        \"\"\"Measure the voltage in Volts, if active channel is configured for this\n+        reading.\"\"\"\n+    )\n+\n+    voltage_nplc = Instrument.control(\n+        \":SENS:VOLT:NPLC?\", \":SENS:VOLT:NPLC %g\",\n+        \"\"\"Control the number of power line cycles (NPLC) for voltage measurements,\n+        which sets the integration period and measurement speed.\n+        Valid values are from 0.01 to 50 or 60, depending on the line frequency.\n+        Default is 5.\"\"\",\n+        validator=strict_range,\n+        values=(0.01, 60),\n+        dynamic=True,\n+    )\n+\n+    ###################\n+    # Temperature (C) #\n+    ###################\n+\n+    temperature = Instrument.measurement(\n+        \":READ?\",\n+        \"\"\"Measure the temperature in Celsius, if active channel is configured for this\n+        reading.\"\"\"\n+    )\n+\n+    thermocouple = Instrument.control(\n+        \":SENS:TEMP:TC?\", \":SENS:TEMP:TC %s\",\n+        \"\"\"Control the thermocouple type for temperature measurements.\n+        Valid options are B, E, J, K, N, R, S, and T.\"\"\",\n+        validator=strict_discrete_set,\n+        values=('B', 'E', 'J', 'K', 'N', 'R', 'S', 'T')\n+    )\n+\n+    temperature_nplc = Instrument.control(\n+        \":SENS:TEMP:NPLC?\", \":SENS:TEMP:NPLC %g\",\n+        \"\"\"Control the number of power line cycles (NPLC) for temperature measurements,\n+        which sets the integration period and measurement speed.\n+        Valid values are from 0.01 to 50 or 60, depending on the line frequency.\n+        Default is 5.\"\"\",\n+        validator=strict_range,\n+        values=(0.01, 60),\n+        dynamic=True,\n+    )\n+\n+    temperature_reference_junction = Instrument.control(\n+        \":SENS:TEMP:RJUN:RSEL?\", \":SENS:TEMP:RJUN:RSEL %s\",\n+        \"\"\"Control whether the thermocouple reference junction is internal (INT) or\n+        simulated (SIM). Default is INT.\"\"\",\n+        validator=strict_discrete_set,\n+        values=('SIM', 'INT'),\n+    )\n+\n+    temperature_simulated_reference = Instrument.control(\n+        \":SENS:TEMP:RJUN:SIM?\", \":SENS:TEMP:RJUN:SIM %g\",\n+        \"\"\"Control the value of the simulated thermocouple reference junction in\n+        Celsius. Default is 23 C.\"\"\",\n+        validator=strict_range,\n+        values=(0, 60),\n+    )\n+\n+    internal_temperature = Instrument.measurement(\n+        \":SENS:TEMP:RTEM?\",\n+        \"\"\"Measure the internal temperature in Celsius.\"\"\"\n+    )\n+\n+    ##############\n+    # Statistics #\n+    ##############\n+\n+    mean = Instrument.measurement(\n+        \":CALC2:FORM MEAN;:CALC2:STAT ON;:CALC2:IMM?;\",\n+        \"\"\"Get the calculated mean (average) from the buffer data.\"\"\"\n+    )\n+\n+    maximum = Instrument.measurement(\n+        \":CALC2:FORM MAX;:CALC2:STAT ON;:CALC2:IMM?;\",\n+        \"\"\"Get the calculated maximum from the buffer data.\"\"\"\n+    )\n+\n+    minimum = Instrument.measurement(\n+        \":CALC2:FORM MIN;:CALC2:STAT ON;:CALC2:IMM?;\",\n+        \"\"\"Get the calculated minimum from the buffer data.\"\"\"\n+    )\n+\n+    standard_dev = Instrument.measurement(\n+        \":CALC2:FORM SDEV;:CALC2:STAT ON;:CALC2:IMM?;\",\n+        \"\"\"Get the calculated standard deviation from the buffer data.\"\"\"\n+    )\n+\n+    ###########\n+    # Trigger #\n+    ###########\n+\n+    trigger_count = Instrument.control(\n+        \":TRIG:COUN?\", \":TRIG:COUN %d\",\n+        \"\"\"Control the trigger count which can take values from 1 to 9,999.\n+        Default is 1.\"\"\",\n+        validator=strict_range,\n+        values=(1, 9999),\n+        cast=int\n+    )\n+\n+    trigger_delay = Instrument.control(\n+        \":TRIG:DEL?\", \":TRIG:DEL %g\",\n+        \"\"\"Control the trigger delay in seconds, which can take values from 0 to\n+        999999.999 s. Default is 0.\"\"\",\n+        validator=strict_range,\n+        values=(0, 999999.999)\n+    )\n+\n+    ###########\n+    # Methods #\n+    ###########\n+\n+    def auto_line_frequency(self):\n+        \"\"\"Set appropriate limits for NPLC voltage and temperature readings.\"\"\"\n+        if self.line_frequency == 50:\n+            self.temperature_nplc_values = (0.01, 50)\n+            self.voltage_nplc_values = (0.01, 50)\n+        else:\n+            self.temperature_nplc_values = (0.01, 60)\n+            self.voltage_nplc_values = (0.01, 60)\n+\n+    def reset(self):\n+        \"\"\"Reset the instrument and clear the queue.\"\"\"\n+        self.write(\"status:queue:clear;*RST;:stat:pres;:*CLS;\")\n+\n+    def trigger(self):\n+        \"\"\"Execute a bus trigger, which can be used when :meth:`~.trigger_on_bus`\n+        is configured.\n+        \"\"\"\n+        return self.write(\"*TRG\")\n+\n+    def trigger_immediately(self):\n+        \"\"\"Configure measurements to be taken with the internal trigger at the maximum\n+        sampling rate.\n+        \"\"\"\n+        self.write(\":TRIG:SOUR IMM;\")\n+\n+    def trigger_on_bus(self):\n+        \"\"\"Configure the trigger to detect events based on the bus trigger, which can be\n+        activated by :meth:`~.trigger`.\n+        \"\"\"\n+        self.write(\":TRIG:SOUR BUS\")\n+\n+    def sample_continuously(self):\n+        \"\"\"Configure the instrument to continuously read samples\n+        and turn off any buffer or output triggering.\n+        \"\"\"\n+        self.disable_buffer()\n+        self.trigger_immediately()\ndiff --git a/tests/instruments/keithley/test_keithley2182.py b/tests/instruments/keithley/test_keithley2182.py\nnew file mode 100644\nindex 0000000000..16d6ce72ee\n--- /dev/null\n+++ b/tests/instruments/keithley/test_keithley2182.py\n@@ -0,0 +1,104 @@\n+#\n+# This file is part of the PyMeasure package.\n+#\n+# Copyright (c) 2013-2024 PyMeasure Developers\n+#\n+# Permission is hereby granted, free of charge, to any person obtaining a copy\n+# of this software and associated documentation files (the \"Software\"), to deal\n+# in the Software without restriction, including without limitation the rights\n+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n+# copies of the Software, and to permit persons to whom the Software is\n+# furnished to do so, subject to the following conditions:\n+#\n+# The above copyright notice and this permission notice shall be included in\n+# all copies or substantial portions of the Software.\n+#\n+# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n+# THE SOFTWARE.\n+#\n+import pytest\n+\n+from pymeasure.test import expected_protocol\n+from pymeasure.instruments.keithley.keithley2182 import Keithley2182\n+\n+\n+def test_voltage_read():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":READ?\", \"3.1415\")],\n+    ) as inst:\n+        assert inst.voltage == pytest.approx(3.1415)\n+\n+\n+def test_voltage_range():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:VOLT:CHAN1:RANG?\", \"92\"),\n+         (\":SENS:VOLT:CHAN1:RANG 2\", None)\n+         ],\n+    ) as inst:\n+        assert inst.ch_1.voltage_range == 92\n+        inst.ch_1.voltage_range = 2\n+\n+\n+def test_voltage_range_trunc():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:VOLT:CHAN2:RANG 15\", None),\n+         (\":SENS:VOLT:CHAN2:RANG?\", \"12\"),\n+         ],\n+    ) as inst:\n+        inst.ch_2.voltage_range = 15  # too large, gets truncated\n+        assert inst.ch_2.voltage_range == 12\n+\n+\n+def test_active_channel():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:CHAN?\", \"1\"),\n+         (\":SENS:CHAN 2\", None),\n+         ],\n+    ) as inst:\n+        assert inst.active_channel == 1\n+        inst.active_channel = 2\n+\n+\n+def test_thermocouple():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:TEMP:TC?\", \"S\"),\n+         (\":SENS:TEMP:TC K\", None),\n+         ],\n+    ) as inst:\n+        assert inst.thermocouple == 'S'\n+        inst.thermocouple = 'K'\n+\n+\n+def test_setup_voltage():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:CHAN 1;\"\n+          \":SENS:FUNC 'VOLT';\"\n+          \":SENS:VOLT:NPLC 5;\", None),\n+         (\":SENS:VOLT:RANG:AUTO 1\", None),\n+         (\"SYST:ERR?\", '0,\"No error\"'),\n+         ],\n+    ) as inst:\n+        inst.ch_1.setup_voltage()\n+\n+\n+def test_setup_temperature():\n+    with expected_protocol(\n+        Keithley2182,\n+        [(\":SENS:CHAN 2;\"\n+          \":SENS:FUNC 'TEMP';\"\n+          \":SENS:TEMP:NPLC 5\", None),\n+         (\"SYST:ERR?\", '0,\"No error\"'),\n+         ],\n+    ) as inst:\n+        inst.ch_2.setup_temperature()\n",
+  "pre_commit": "97bd82ce56fb7b4d2a52488b888a48f1c1c3b96e",
+  "post_commit": "fb3eec188d59860872fcba50345edbd1fe162886",
+  "merge_type": "squash"
+}

@@ -1,0 +1,60 @@
+{
+  "pr_number": 20064,
+  "title": "Handled nested structures for TensorFlow backend for keras.ops.map. ",
+  "url": "https://github.com/keras-team/keras/pull/20064",
+  "description": "Handling nested structure for keras.ops.map in tensorflow backend. Fixes: [#20048](https://github.com/keras-team/keras/issues/20048)",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2024-08-11T22:24:09+00:00",
+  "additions": 62,
+  "deletions": 2,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "codecov-commenter",
+      "body": "## [Codecov](https://app.codecov.io/gh/keras-team/keras/pull/20064?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) Report\nAll modified and coverable lines are covered by tests :white_check_mark:\n> Project coverage is 74.34%. Comparing base [(`933579d`)](https://app.codecov.io/gh/keras-team/keras/commit/933579d3c4a585f236982d05d3a74921f9567415?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) to head [(`7e61d6b`)](https://app.codecov.io/gh/keras-team/keras/commit/7e61d6bc1b91f13f30df1202e3cd789df67783b7?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team).\n\n<details><summary>Additional details and impacted files</summary>\n\n\n```diff\n@@            Coverage Diff             @@\n##           master   #20064      +/-   ##\n==========================================\n- Coverage   79.32%   74.34%   -4.98%     \n==========================================\n  Files         501      501              \n  Lines       46984    46988       +4     \n  Branches     8659     8661       +2     \n==========================================\n- Hits        37269    34933    -2336     \n- Misses       7968    10378    +2410     \n+ Partials     1747     1677      -70     \n```\n\n| [Flag](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flags&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | Coverage Δ | |\n|---|---|---|\n| [keras](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | `74.22% <100.00%> (-4.96%)` | :arrow_down: |\n| [keras-jax](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | `?` | |\n| [keras-numpy](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | `57.56% <0.00%> (-0.01%)` | :arrow_down: |\n| [keras-tensorflow](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | `63.85% <100.00%> (+<0.01%)` | :arrow_up: |\n| [keras-torch](https://app.codecov.io/gh/keras-team/keras/pull/20064/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team) | `62.54% <0.00%> (-0.01%)` | :arrow_down: |\n\nFlags with carried forward coverage won't be shown. [Click here](https://docs.codecov.io/docs/carryforward-flags?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team#carryforward-flags-in-the-pull-request-comment) to find out more.\n\n</details>\n\n[:umbrella: View full report in Codecov by Sentry](https://app.codecov.io/gh/keras-team/keras/pull/20064?dropdown=coverage&src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team).   \n:loudspeaker: Have feedback on the report? [Share it here](https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=keras-team).\n",
+      "created_at": "2024-07-30T07:20:43+00:00"
+    },
+    {
+      "author": "fchollet",
+      "body": "It looks like the unit test is failing...?",
+      "created_at": "2024-08-02T17:31:37+00:00"
+    },
+    {
+      "author": "mehtamansi29",
+      "body": "> It looks like the unit test is failing...?\r\n\r\n@fchollet - Let me have a look on unit test and update with new commit. ",
+      "created_at": "2024-08-05T05:19:08+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "james77777778",
+      "body": "I believe this line could be replaced with `if tree.is_nested(xs)`.",
+      "path": "keras/src/backend/tensorflow/core.py",
+      "line": null,
+      "created_at": "2024-07-30T09:53:50+00:00"
+    },
+    {
+      "author": "mehtamansi29",
+      "body": "@james77777778 - Let me check with same and update here if it will works fine. ",
+      "path": "keras/src/backend/tensorflow/core.py",
+      "line": null,
+      "created_at": "2024-07-30T13:19:55+00:00"
+    },
+    {
+      "author": "fchollet",
+      "body": "You should use `ops.convert_to_numpy()` instead of `.numpy()`",
+      "path": "keras/src/backend/tensorflow/nestedstructure_test.py",
+      "line": null,
+      "created_at": "2024-08-08T16:20:41+00:00"
+    }
+  ],
+  "changed_files": [
+    "keras/src/backend/tensorflow/core.py",
+    "keras/src/backend/tensorflow/nestedstructure_test.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/keras/src/backend/tensorflow/core.py b/keras/src/backend/tensorflow/core.py\nindex 138a41ab8fc0..69f1dfa1da9a 100644\n--- a/keras/src/backend/tensorflow/core.py\n+++ b/keras/src/backend/tensorflow/core.py\n@@ -238,8 +238,13 @@ def get_fn_output_signature(x):\n         out = f(x)\n         return tree.map_structure(tf.TensorSpec.from_tensor, out)\n \n-    fn_output_signature = get_fn_output_signature(xs[0])\n-    return tf.map_fn(f, xs, fn_output_signature=fn_output_signature)\n+    if tree.is_nested(xs):\n+        input = tree.pack_sequence_as(xs, [x[0] for x in tree.flatten(xs)])\n+        fn_output_signature = get_fn_output_signature(input)\n+        return tf.map_fn(f, xs, fn_output_signature=fn_output_signature)\n+    else:\n+        fn_output_signature = get_fn_output_signature(xs[0])\n+        return tf.map_fn(f, xs, fn_output_signature=fn_output_signature)\n \n \n def scan(f, init, xs=None, length=None, reverse=False, unroll=1):\ndiff --git a/keras/src/backend/tensorflow/nestedstructure_test.py b/keras/src/backend/tensorflow/nestedstructure_test.py\nnew file mode 100644\nindex 000000000000..244e94f6b382\n--- /dev/null\n+++ b/keras/src/backend/tensorflow/nestedstructure_test.py\n@@ -0,0 +1,55 @@\n+import numpy as np\n+import pytest\n+import tensorflow as tf\n+\n+import keras\n+from keras.src import backend\n+from keras.src import testing\n+\n+\n+@pytest.mark.skipif(\n+    backend.backend() != \"tensorflow\",\n+    reason=\"The nestedstructure test can only run with TF backend.\",\n+)\n+def dict_input_fn(inputs):\n+    x = inputs[\"x\"][:, 0]\n+    y = inputs[\"y\"] + 1\n+    return {\"x\": x, \"y\": y}\n+\n+\n+def list_input_fn(inputs):\n+    return [x**2 for x in inputs]\n+\n+\n+class NestedTest(testing.TestCase):\n+    def setUp(self):\n+        self.xs = {\n+            \"x\": tf.convert_to_tensor(\n+                np.random.rand(4, 100, 3), dtype=tf.float32\n+            ),\n+            \"y\": tf.convert_to_tensor(\n+                np.random.randint(0, 10, size=(4, 1)), dtype=tf.int32\n+            ),\n+        }\n+        self.xs1 = [\n+            tf.convert_to_tensor(np.random.rand(4, 100, 3), dtype=tf.float32),\n+            tf.convert_to_tensor(\n+                np.random.randint(0, 10, size=(4, 1)), dtype=tf.int32\n+            ),\n+        ]\n+\n+    def test_dict_input_fn_outputs(self):\n+        ys = keras.ops.map(dict_input_fn, self.xs)\n+        self.assertEqual(ys[\"x\"].shape, (4, 100))\n+        self.assertEqual(\n+            keras.ops.convert_to_numpy(ys[\"y\"]).all(),\n+            keras.ops.convert_to_numpy(self.xs[\"y\"] + 1).all(),\n+        )\n+\n+    def test_list_input_fn_outputs(self):\n+        ys = keras.ops.map(list_input_fn, self.xs1)\n+        for i, (x, y) in enumerate(zip(self.xs1, ys)):\n+            self.assertEqual(\n+                (keras.ops.convert_to_numpy(y)).all(),\n+                (keras.ops.convert_to_numpy(x) ** 2).all(),\n+            )\n",
+  "pre_commit": "755d85f40ec77ce4f2f440e04fc8c21ec1ad99b2",
+  "post_commit": "01381abb4addf785b9329ad7b26aa68d541ddd0a"
+}

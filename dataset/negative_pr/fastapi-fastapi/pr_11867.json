@@ -1,0 +1,45 @@
+{
+  "pr_number": 11867,
+  "title": "🐛 Fix `allow_inf_nan` option for Param and Body classes",
+  "url": "https://github.com/fastapi/fastapi/pull/11867",
+  "description": "adjust typo causing allow_inf_nan to be ignored during paramter enforcing\r\n\r\nI added the test from the issue page https://github.com/tiangolo/fastapi/issues/11580 in a separate commit",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "51b625e127982f626886d467122ef85d5772d1db",
+  "merged_at": "2024-08-24T19:27:37+00:00",
+  "created_at": "2024-07-19T18:22:09+00:00",
+  "closed_at": "2024-08-24T19:27:37+00:00",
+  "user": "giunio-prc",
+  "additions": 85,
+  "deletions": 2,
+  "changed_files_count": 2,
+  "labels": [
+    "bug"
+  ],
+  "comments": [
+    {
+      "author": "YuriiMotov",
+      "body": "Duplicates existing PR: https://github.com/tiangolo/fastapi/pull/11579/files",
+      "created_at": "2024-07-19T20:15:09+00:00"
+    },
+    {
+      "author": "giunio-prc",
+      "body": "> Duplicates existing PR: https://github.com/tiangolo/fastapi/pull/11579/files\r\n\r\nI see, but that one is missing one occurence, the problem happens for Params and Body class",
+      "created_at": "2024-07-19T20:24:07+00:00"
+    },
+    {
+      "author": "tiangolo",
+      "body": "Thanks for your contribution @giunio-prc! :cake: \r\n\r\nThanks for the extra info @YuriiMotov :chocolate_bar: \r\n\r\nAnd thanks for the help and tweaks @svlandeg! :bow: \r\n\r\nThis will be available in FastAPI `0.112.2` released in the next hours. :tada: ",
+      "created_at": "2024-08-24T19:27:30+00:00"
+    }
+  ],
+  "review_comments": [],
+  "changed_files": [
+    "fastapi/params.py",
+    "tests/test_allow_inf_nan_in_enforcing.py"
+  ],
+  "diff": "diff --git a/fastapi/params.py b/fastapi/params.py\nindex 860146531ab23..cc2a5c13c0261 100644\n--- a/fastapi/params.py\n+++ b/fastapi/params.py\n@@ -91,7 +91,7 @@ def __init__(\n             max_length=max_length,\n             discriminator=discriminator,\n             multiple_of=multiple_of,\n-            allow_nan=allow_inf_nan,\n+            allow_inf_nan=allow_inf_nan,\n             max_digits=max_digits,\n             decimal_places=decimal_places,\n             **extra,\n@@ -547,7 +547,7 @@ def __init__(\n             max_length=max_length,\n             discriminator=discriminator,\n             multiple_of=multiple_of,\n-            allow_nan=allow_inf_nan,\n+            allow_inf_nan=allow_inf_nan,\n             max_digits=max_digits,\n             decimal_places=decimal_places,\n             **extra,\ndiff --git a/tests/test_allow_inf_nan_in_enforcing.py b/tests/test_allow_inf_nan_in_enforcing.py\nnew file mode 100644\nindex 0000000000000..9e855fdf81e34\n--- /dev/null\n+++ b/tests/test_allow_inf_nan_in_enforcing.py\n@@ -0,0 +1,83 @@\n+import pytest\n+from fastapi import Body, FastAPI, Query\n+from fastapi.testclient import TestClient\n+from typing_extensions import Annotated\n+\n+app = FastAPI()\n+\n+\n+@app.post(\"/\")\n+async def get(\n+    x: Annotated[float, Query(allow_inf_nan=True)] = 0,\n+    y: Annotated[float, Query(allow_inf_nan=False)] = 0,\n+    z: Annotated[float, Query()] = 0,\n+    b: Annotated[float, Body(allow_inf_nan=False)] = 0,\n+) -> str:\n+    return \"OK\"\n+\n+\n+client = TestClient(app)\n+\n+\n+@pytest.mark.parametrize(\n+    \"value,code\",\n+    [\n+        (\"-1\", 200),\n+        (\"inf\", 200),\n+        (\"-inf\", 200),\n+        (\"nan\", 200),\n+        (\"0\", 200),\n+        (\"342\", 200),\n+    ],\n+)\n+def test_allow_inf_nan_param_true(value: str, code: int):\n+    response = client.post(f\"/?x={value}\")\n+    assert response.status_code == code, response.text\n+\n+\n+@pytest.mark.parametrize(\n+    \"value,code\",\n+    [\n+        (\"-1\", 200),\n+        (\"inf\", 422),\n+        (\"-inf\", 422),\n+        (\"nan\", 422),\n+        (\"0\", 200),\n+        (\"342\", 200),\n+    ],\n+)\n+def test_allow_inf_nan_param_false(value: str, code: int):\n+    response = client.post(f\"/?y={value}\")\n+    assert response.status_code == code, response.text\n+\n+\n+@pytest.mark.parametrize(\n+    \"value,code\",\n+    [\n+        (\"-1\", 200),\n+        (\"inf\", 200),\n+        (\"-inf\", 200),\n+        (\"nan\", 200),\n+        (\"0\", 200),\n+        (\"342\", 200),\n+    ],\n+)\n+def test_allow_inf_nan_param_default(value: str, code: int):\n+    response = client.post(f\"/?z={value}\")\n+    assert response.status_code == code, response.text\n+\n+\n+@pytest.mark.parametrize(\n+    \"value,code\",\n+    [\n+        (\"-1\", 200),\n+        (\"inf\", 422),\n+        (\"-inf\", 422),\n+        (\"nan\", 422),\n+        (\"0\", 200),\n+        (\"342\", 200),\n+    ],\n+)\n+def test_allow_inf_nan_body(value: str, code: int):\n+    response = client.post(\"/\", json=value)\n+    assert response.status_code == code, response.text\n",
+  "pre_commit": "48b36f26d83d607a044866633068dbf46e723e0f",
+  "post_commit": "51b625e127982f626886d467122ef85d5772d1db",
+  "merge_type": "squash"
+}

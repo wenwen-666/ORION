@@ -1,0 +1,54 @@
+{
+  "pr_number": 6279,
+  "title": "Some improvemets in requirementslib for clarity",
+  "url": "https://github.com/pypa/pipenv/pull/6279",
+  "description": "### The issue\r\nThis PR addresses a couple of areas in the code where improvements in argument handling and path management were needed.\r\nThis PR does not fix a specific GitHub issue but addresses overall code quality.\r\n\r\n### The fix\r\n\r\nRemoved an extra space after -i, added some mini docstrings, improved the path handling logic.\r\n\r\n### The checklist\r\n\r\n* [x] Associated issue: No specific issue, general improvement.\r\n* [x] A news fragment in the `news/` directory to describe this fix with the extension `.bugfix.rst`, `.feature.rst`, `.behavior.rst`, `.doc.rst`. `.vendor.rst`. or `.trivial.rst` (this will appear in the release changelog). Use semantic line breaks and name the file after the issue number or the PR #.",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "0df373899d65dcf4ec14cfcf656c6b4dc4bbd9f8",
+  "merged_at": "2024-10-22T18:27:54+00:00",
+  "created_at": "2024-10-21T11:23:02+00:00",
+  "closed_at": "2024-10-22T18:27:54+00:00",
+  "user": "vshulcz",
+  "additions": 24,
+  "deletions": 40,
+  "changed_files_count": 1,
+  "labels": [
+    "hacktoberfest-accepted"
+  ],
+  "comments": [
+    {
+      "author": "oz123",
+      "body": "@vshulcz can you please add a news file?",
+      "created_at": "2024-10-22T17:37:19+00:00"
+    },
+    {
+      "author": "matteius",
+      "body": "I'd be fine merging this as-is considering the scope of the other changes and the comprehensive news fragment I added there.   Just to be able to cut a release sooner 😅 ",
+      "created_at": "2024-10-22T18:27:08+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "matteius",
+      "body": "While you are at it, can we update to use `VCS_SCHEMES` from constants?",
+      "path": "pipenv/utils/requirementslib.py",
+      "line": null,
+      "created_at": "2024-10-21T23:10:29+00:00"
+    },
+    {
+      "author": "vshulcz",
+      "body": "Of course! I've now updated the code. I thought the differences with constant might cause problems",
+      "path": "pipenv/utils/requirementslib.py",
+      "line": null,
+      "created_at": "2024-10-22T06:09:48+00:00"
+    }
+  ],
+  "changed_files": [
+    "pipenv/utils/requirementslib.py"
+  ],
+  "diff": "diff --git a/pipenv/utils/requirementslib.py b/pipenv/utils/requirementslib.py\nindex 298483ed90..b20ebc971c 100644\n--- a/pipenv/utils/requirementslib.py\n+++ b/pipenv/utils/requirementslib.py\n@@ -33,7 +33,7 @@\n SCHEME_LIST = (\"http://\", \"https://\", \"ftp://\", \"ftps://\", \"file://\")\n \n \n-VCS_SCHEMES = [\n+VCS_SCHEMES = {\n     \"git\",\n     \"git+http\",\n     \"git+https\",\n@@ -57,7 +57,7 @@\n     \"bzr+sftp\",\n     \"bzr+ftp\",\n     \"bzr+lp\",\n-]\n+}\n \n \n def strip_ssh_from_git_uri(uri):\n@@ -106,6 +106,7 @@ def is_vcs(pipfile_entry):\n \n def is_editable(pipfile_entry):\n     # type: (PipfileType) -> bool\n+    \"\"\"Check if a Pipfile entry is editable.\"\"\"\n     if isinstance(pipfile_entry, Mapping):\n         return pipfile_entry.get(\"editable\", False) is True\n     if isinstance(pipfile_entry, str):\n@@ -115,6 +116,7 @@ def is_editable(pipfile_entry):\n \n def is_star(val):\n     # type: (PipfileType) -> bool\n+    \"\"\"Check if a Pipfile entry has a version specified as '*'.\"\"\"\n     return (isinstance(val, str) and val == \"*\") or (\n         isinstance(val, Mapping) and val.get(\"version\", \"\") == \"*\"\n     )\n@@ -183,6 +185,7 @@ def is_installable_file(path):\n \n def get_setup_paths(base_path, subdirectory=None):\n     # type: (S, Optional[S]) -> Dict[S, Optional[S]]\n+    \"\"\"Get paths to setup.py, setup.cfg, and pyproject.toml in the given directory.\"\"\"\n     if base_path is None:\n         raise TypeError(\"must provide a path to derive setup paths from\")\n     setup_py = os.path.join(base_path, \"setup.py\")\n@@ -208,25 +211,22 @@ def get_setup_paths(base_path, subdirectory=None):\n \n def prepare_pip_source_args(sources, pip_args=None):\n     # type: (List[Dict[S, Union[S, bool]]], Optional[List[S]]) -> List[S]\n+    \"\"\"Prepare pip arguments for source indexes.\"\"\"\n     if pip_args is None:\n         pip_args = []\n     if sources:\n         # Add the source to pip9.\n-        pip_args.extend([\"-i \", sources[0][\"url\"]])  # type: ignore\n+        pip_args.extend([\"-i\", sources[0][\"url\"]])  # type: ignore\n         # Trust the host if it's not verified.\n-        if not sources[0].get(\"verify_ssl\", True):\n-            pip_args.extend(\n-                [\"--trusted-host\", urlparse(sources[0][\"url\"]).hostname]\n-            )  # type: ignore\n+        hostname = urlparse(sources[0][\"url\"]).hostname\n+        if not sources[0].get(\"verify_ssl\", True) and hostname:\n+            pip_args.extend([\"--trusted-host\", hostname])  # type: ignore\n         # Add additional sources as extra indexes.\n-        if len(sources) > 1:\n-            for source in sources[1:]:\n-                pip_args.extend([\"--extra-index-url\", source[\"url\"]])  # type: ignore\n-                # Trust the host if it's not verified.\n-                if not source.get(\"verify_ssl\", True):\n-                    pip_args.extend(\n-                        [\"--trusted-host\", urlparse(source[\"url\"]).hostname]\n-                    )  # type: ignore\n+        for source in sources[1:]:\n+            pip_args.extend([\"--extra-index-url\", source[\"url\"]])  # type: ignore\n+            hostname = urlparse(source[\"url\"]).hostname\n+            if not source.get(\"verify_ssl\", True) and hostname:\n+                pip_args.extend([\"--trusted-host\", hostname])  # type: ignore\n     return pip_args\n \n \n@@ -244,7 +244,7 @@ def get_package_finder(\n     py_version_info = None\n     if python_versions:\n         py_version_info_python = max(python_versions)\n-        py_version_info = tuple([int(part) for part in py_version_info_python])\n+        py_version_info = tuple(int(part) for part in py_version_info_python)\n     target_python = TargetPython(\n         platforms=[platform] if platform else None,\n         py_version_info=py_version_info,\n@@ -360,7 +360,7 @@ def get_path(root, path, default=_UNSET):\n                     seg = int(seg)\n                     cur = cur[seg]\n                 except (ValueError, KeyError, IndexError, TypeError):\n-                    if not getattr(cur, \"__iter__\", None):\n+                    if not hasattr(cur, \"__iter__\"):\n                         exc = TypeError(f\"{type(cur).__name__!r} object is not indexable\")\n                     raise PathAccessError(exc, seg, path)\n     except PathAccessError:\n@@ -429,7 +429,7 @@ def dict_path_exit(path, key, old_parent, new_parent, new_items):\n         except AttributeError:\n             ret = new_parent.__class__(vals)  # frozensets\n     else:\n-        raise RuntimeError(f\"unexpected iterable type: {type(new_parent)!r}\")\n+        raise RuntimeError(f\"Unexpected iterable type: {type(new_parent)!r}\")\n     return ret\n \n \n@@ -526,7 +526,7 @@ def remap(\n         raise TypeError(f\"exit expected callable, not: {exit!r}\")\n     reraise_visit = kwargs.pop(\"reraise_visit\", True)\n     if kwargs:\n-        raise TypeError(f\"unexpected keyword arguments: {kwargs.keys()!r}\")\n+        raise TypeError(f\"Unexpected keyword arguments: {kwargs.keys()!r}\")\n \n     path, registry, stack = (), {}, [(None, root)]\n     new_items_stack = []\n@@ -550,8 +550,7 @@ def remap(\n             except TypeError:\n                 # TODO: handle False?\n                 raise TypeError(\n-                    \"enter should return a tuple of (new_parent,\"\n-                    f\" items_iterator), not: {res!r}\"\n+                    f\"enter should return a tuple of (new_parent, items_iterator), not: {res!r}\"\n                 )\n             if new_items is not False:\n                 # traverse unless False is explicitly passed\n@@ -583,7 +582,7 @@ def remap(\n         try:\n             new_items_stack[-1][1].append(visited_item)\n         except IndexError:\n-            raise TypeError(f\"expected remappable root, not: {root!r}\")\n+            raise TypeError(f\"Expected remappable root, not: {root!r}\")\n     return value\n \n \n@@ -629,6 +628,7 @@ def remerge_visit(path, key, value):\n \n \n def get_pip_command() -> InstallCommand:\n+    \"\"\"Get pip's InstallCommand for configuration management and defaults.\"\"\"\n     # Use pip's parser for pip.conf management and defaults.\n     # General options (find_links, index_url, extra_index_url, trusted_host,\n     # and pre) are deferred to pip.\n@@ -654,24 +654,7 @@ def unpack_url(\n         would ordinarily raise HashUnsupported) are allowed.\n     \"\"\"\n     # non-editable vcs urls\n-    if link.scheme in [\n-        \"git+http\",\n-        \"git+https\",\n-        \"git+ssh\",\n-        \"git+git\",\n-        \"hg+http\",\n-        \"hg+https\",\n-        \"hg+ssh\",\n-        \"svn+http\",\n-        \"svn+https\",\n-        \"svn+svn\",\n-        \"bzr+http\",\n-        \"bzr+https\",\n-        \"bzr+ssh\",\n-        \"bzr+sftp\",\n-        \"bzr+ftp\",\n-        \"bzr+lp\",\n-    ]:\n+    if link.scheme in VCS_SCHEMES:\n         unpack_vcs_link(link, location, verbosity=verbosity)\n         return File(location, content_type=None)\n \n@@ -704,6 +687,7 @@ def get_http_url(\n     download_dir: Optional[str] = None,\n     hashes: Optional[Hashes] = None,\n ) -> File:\n+    \"\"\"Download a file from an HTTP URL.\"\"\"\n     temp_dir = TempDirectory(kind=\"unpack\", globally_managed=False)\n     # If a download dir is specified, is the file already downloaded there?\n     already_downloaded_path = None\n",
+  "pre_commit": "30930e0e6959bc37fa4d513cf6ea932ace7aa7c9",
+  "post_commit": "0df373899d65dcf4ec14cfcf656c6b4dc4bbd9f8",
+  "merge_type": "squash"
+}

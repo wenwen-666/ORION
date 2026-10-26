@@ -1,0 +1,247 @@
+{
+  "pr_number": 9146,
+  "title": "plots: return errors in json format",
+  "url": "https://github.com/treeverse/dvc/pull/9146",
+  "description": "This PR changes the schema to:\r\n```json\r\n{\r\n  \"errors\": [\r\n    {\r\n      \"name\": \"<plot_name>\",\r\n      \"rev\": \"<rev>\",\r\n      \"source\": \"<source_file>\",\r\n      \"type\": \"<Type>\",\r\n      \"msg\": \"<msg>\",\r\n    },\r\n ],\r\n \"data\": {}\r\n}\r\n```\r\n\r\nThe existing data is kept inside `\"data\"` and the new `\"errors\"` key is introduced where errors are a list of errors.\r\n\r\nCloses #9025. \r\nCloses #7692.",
+  "comments": [
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative) Report\nPatch coverage: **`100.00`**% and project coverage change: **`-0.23`** :warning:\n> Comparison is base [(`d41512c`)](https://codecov.io/gh/iterative/dvc/commit/d41512c85cbd7fa98fadb831514ccb73981a75d5?el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative) 92.85% compared to head [(`864b68d`)](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative) 92.62%.\n\n<details><summary>Additional details and impacted files</summary>\n\n\n```diff\n@@            Coverage Diff             @@\n##             main    #9146      +/-   ##\n==========================================\n- Coverage   92.85%   92.62%   -0.23%     \n==========================================\n  Files         458      458              \n  Lines       37051    37103      +52     \n  Branches     5344     5349       +5     \n==========================================\n- Hits        34404    34367      -37     \n- Misses       2119     2188      +69     \n- Partials      528      548      +20     \n```\n\n\n| [Impacted Files](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative) | Coverage Δ | |\n|---|---|---|\n| [dvc/commands/plots.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-ZHZjL2NvbW1hbmRzL3Bsb3RzLnB5) | `89.41% <100.00%> (+0.52%)` | :arrow_up: |\n| [dvc/render/match.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-ZHZjL3JlbmRlci9tYXRjaC5weQ==) | `96.34% <100.00%> (-2.19%)` | :arrow_down: |\n| [dvc/repo/plots/\\_\\_init\\_\\_.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-ZHZjL3JlcG8vcGxvdHMvX19pbml0X18ucHk=) | `91.84% <100.00%> (ø)` | |\n| [tests/func/plots/test\\_show.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-dGVzdHMvZnVuYy9wbG90cy90ZXN0X3Nob3cucHk=) | `100.00% <100.00%> (ø)` | |\n| [tests/integration/plots/test\\_plots.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-dGVzdHMvaW50ZWdyYXRpb24vcGxvdHMvdGVzdF9wbG90cy5weQ==) | `94.47% <100.00%> (+0.38%)` | :arrow_up: |\n| [tests/unit/command/test\\_plots.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-dGVzdHMvdW5pdC9jb21tYW5kL3Rlc3RfcGxvdHMucHk=) | `100.00% <100.00%> (ø)` | |\n| [tests/unit/render/test\\_match.py](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative#diff-dGVzdHMvdW5pdC9yZW5kZXIvdGVzdF9tYXRjaC5weQ==) | `100.00% <100.00%> (ø)` | |\n\n... and [22 files with indirect coverage changes](https://codecov.io/gh/iterative/dvc/pull/9146/indirect-changes?src=pr&el=tree-more&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative)\n\nHelp us with your feedback. Take ten seconds to tell us [how you rate us](https://about.codecov.io/nps?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative). Have a feature suggestion? [Share it here.](https://app.codecov.io/gh/feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative)\n\n</details>\n\n[:umbrella: View full report in Codecov by Sentry](https://codecov.io/gh/iterative/dvc/pull/9146?src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative).   \n:loudspeaker: Do you have feedback about the report comment? [Let us know in this issue](https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=iterative).\n",
+      "created_at": "2023-03-09T13:32:55Z"
+    },
+    {
+      "author": "dberenbaum",
+      "body": "@mattseddon PTAL if this gives you what you need to show errors in VS Code.",
+      "created_at": "2023-03-09T19:24:09Z"
+    },
+    {
+      "author": "shcheklein",
+      "body": "@skshetry please add the description (if you feel it's ready for Matt, me, and other folks to participate - asking only because Dave pinged us), examples, docs, etc. It's hard to review it this way from the product perspective.",
+      "created_at": "2023-03-09T20:59:42Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@shcheklein, I added a description above. Let me know if you need anything more. 🙂 ",
+      "created_at": "2023-03-10T03:22:14Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "For context/background: \r\n\r\nThese are the areas in the UI that we are planning to show errors\r\n\r\n<img width=\"1728\" alt=\"image\" src=\"https://user-images.githubusercontent.com/37993418/224853876-bda4f08f-5ffe-4fb2-b9cd-345109165e19.png\">\r\n\r\n- 1 will show any errors for the selected revisions within the plot. \r\n- 2 will contain any errors for the revision. \r\n- 3 will be specifically related to an image missing for a revision. This is a special case where it might not actually be an error depending on the type of project.\r\n\r\nBased on the above I think that in the extension we'll probably hold the list of errors in the following format:\r\n\r\n```\r\n{\r\n  path: string // i.e title, e.g dvc.yaml::Accuracy\r\n  revision: string\r\n  sourceFile: string\r\n  type: string\r\n  msg: string\r\n}[]\r\n```\r\n\r\nFrom the above structure, we'll be able to easily group/consolidate errors to fit them into each of the three places. The structure is also fairly extensible so we should avoid getting trapped further down the line. We will very likely end up displaying concatenated `msg`s (unless `msg` is blank and then we'll need to fill the gap). E.g in 1 find all of the entries in the list with `path == id` and concatenate `<revision>: <msg>` into a newline delimited string to display in a tooltip.\r\n\r\nIf you could provide a top-level error key that would work the best as it would involve the least amount of parsing on the extension side but as I'll be creating a list of dicts I'd propose at least changing the schema to:\r\n\r\n```\r\n{\"errors\": {\r\n    \"<revision>\": list({\r\n        \"type\": \"<exception_type>\",\r\n        \"msg\": \"<message>\"\r\n      })\r\n  }\r\n}\r\n```\r\n\r\nIf this doesn't work for other clients of `--json` then I'd be happy to continue parsing on the extension side.\r\n\r\nHope that helps. LMK what you think.",
+      "created_at": "2023-03-14T00:06:36Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "```\r\n{\"errors\": {\r\n    \"<revision>\": list({\r\n        \"type\": \"<exception_type>\",\r\n        \"msg\": \"<message>\"\r\n      })\r\n  }\r\n}\r\n```\r\n\r\nWith this format, how will you figure out which image and what revision failed? Or, are you going to consider lack of data as failed image plot?",
+      "created_at": "2023-03-14T00:47:38Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "> ```\r\n> {\"errors\": {\r\n>     \"<revision>\": list({\r\n>         \"type\": \"<exception_type>\",\r\n>         \"msg\": \"<message>\"\r\n>       })\r\n>   }\r\n> }\r\n> ```\r\n> \r\n> With this format, how will you figure out which image and what revision failed? Or, are you going to consider lack of data as failed image plot?\r\n\r\nSorry, I wasn't clear. That would only work if it is under the plot key e.g \r\n```\r\n{\r\n  \"dvc.yaml::not-existing\": [\r\n    {\r\n      \"errors\": {\r\n        \"<revision>\": list({\r\n          \"type\": \"<exception_type>\",\r\n          \"msg\": \"<message>\"\r\n        })\r\n      }\r\n      ...\r\n```\r\n\r\nA top-level error key would need to contain all of the information for each error. I.e \r\n```\r\n{\r\n  path: string // i.e title, e.g dvc.yaml::Accuracy\r\n  revision: string\r\n  sourceFile: string\r\n  type: string\r\n  msg: string\r\n}[]\r\n```\r\n\r\nThat would give enough to work out which images are missing or am I missing something?",
+      "created_at": "2023-03-14T01:11:25Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "> That would give enough to work out which images are missing or am I missing something?\r\n\r\nThat should work. Note that there may not always be `source_file`, as not all errors are related to sources. (Also let's rename `sourceFile` to just `source`?)",
+      "created_at": "2023-03-14T01:17:59Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@mattseddon, should we move the plots' data to \"plots\" or something? \r\n\r\nNote that json is only used by vscode (and is hidden for CLI users). So the format is more or less up to you.\r\n",
+      "created_at": "2023-03-14T01:34:57Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "I have changed the format for errors to be a top-level key, and the format is:\r\n```ts\r\n{\r\n  name: string // i.e title, e.g dvc.yaml::Accuracy\r\n  revision: string\r\n  source?: string\r\n  type: string\r\n  msg: string\r\n}[]\r\n```\r\n\r\nso instead of `path`, it's `name`, and `source` instead of `sourceFile`.\r\n\r\nI'll suggest moving plots data inside `plots` or `data` key too, as there could be plot with `\"errors\"` path.\r\n\r\n```console\r\ntouch errors\r\ndvc plots show --json errors\r\n{\r\n  \"errors\": [],\r\n}\r\n```",
+      "created_at": "2023-03-14T02:53:50Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "> I have changed the format for errors to be a top-level key, and the format is:\r\n> \r\n> ```ts\r\n> {\r\n>   name: string // i.e title, e.g dvc.yaml::Accuracy\r\n>   revision: string\r\n>   source?: string\r\n>   type: string\r\n>   msg: string\r\n> }[]\r\n> ```\r\n> \r\n> so instead of `path`, it's `name`, and `source` instead of `sourceFile`.\r\n> \r\n> I'll suggest moving plots data inside `plots` or `data` key too, as there could be plot with `\"errors\"` path.\r\n> \r\n> ```\r\n> touch errors\r\n> dvc plots show --json errors\r\n> {\r\n>   \"errors\": [],\r\n> }\r\n> ```\r\n\r\nYep, we can use `data` 👍🏻. ",
+      "created_at": "2023-03-14T04:00:35Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@mattseddon, please take a look at this PR. Should be ready then.\r\n\r\nIt introduces top-level `data` and `errors` key.",
+      "created_at": "2023-03-14T04:08:45Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "> Just give me a heads-up if this is going to get released.\r\n\r\nSince this is a breaking change for VSCode, I am fine with waiting.\r\n\r\n> Will it still be possible to make plots diff fail with an error or will it always return something? Asking for https://github.com/iterative/vscode-dvc/issues/3222 + https://github.com/iterative/dvc/issues/9025\r\n\r\n#9025 might get fixed with this PR (cc @dberenbaum).\r\nThis should cover a lot of cases, but at this time, we can't guarantee that it'll always return a JSON output, please do check for the exit code.\r\nI don't want to `try .. catch` everything, so I think it's better to handle errors when it fails on a case-by-case basis.\r\n\r\ndvc should handle expected failures well, but loudly fail in other cases.",
+      "created_at": "2023-03-15T03:14:49Z"
+    },
+    {
+      "author": "dberenbaum",
+      "body": "> > [](https://github.com/iterative/dvc/issues/9025)\r\n> \r\n> #9025 might get fixed with this PR (cc @dberenbaum). This should cover a lot of cases, but at this time, we can't guarantee that it'll always return a JSON output, please do check for the exit code.\r\n\r\nTried this out and noted an issue I found in https://github.com/iterative/dvc/issues/9188. However, it does look like it should close #9025 since that specific error is now handled by this PR.",
+      "created_at": "2023-03-15T13:24:15Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@dberenbaum, FYI we changed the format of JSON output from our last discussion to the one @mattseddon suggested in https://github.com/iterative/dvc/pull/9146#issuecomment-1467146228. ",
+      "created_at": "2023-03-15T13:29:46Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "@skshetry will the `errors` key be optional or will it always be provided (and empty if there are no errors)? If I get a choice can we make it optional?",
+      "created_at": "2023-03-16T00:59:05Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "It is optional. It’ll not be there if there are no errors.",
+      "created_at": "2023-03-16T01:00:20Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "Same with 'data’ key when there are no plots.",
+      "created_at": "2023-03-16T01:00:43Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "I am trying to add this branch into the virtual env for `vscode-dvc-demo`. Is there a \"simple\" way for me to resolve this:\r\n\r\n```console\r\nERROR: Cannot install -r requirements.txt (line 4), dvc 0.68.2.dev4532+gff11f9d7 (from git+https://github.com/skshetry/dvc.git@plots-errors-json) and dvclive==2.3.1 because these package versions have conflicting dependencies.\r\n\r\nThe conflict is caused by:\r\n    The user requested dvc 0.68.2.dev4532+gff11f9d7 (from git+https://github.com/skshetry/dvc.git@plots-errors-json)\r\n    dvclive 2.3.1 depends on dvc>2.45.1\r\n    The user requested dvc 0.68.2.dev4532+gff11f9d7 (from git+https://github.com/skshetry/dvc.git@plots-errors-json)\r\n    dvclive 2.3.1 depends on dvc>2.45.1\r\n\r\nTo fix this you could try to:\r\n1. loosen the range of package versions you've specified\r\n2. remove package versions to allow pip attempt to solve the dependency conflict\r\n\r\nERROR: ResolutionImpossible: for help visit https://pip.pypa.io/en/latest/topics/dependency-resolution/#dealing-with-dependency-conflicts\r\n```\r\n\r\nRequirements for the demo project are:\r\n```\r\ngit+https://github.com/skshetry/dvc.git@plots-errors-json\r\ntorch==1.13.1\r\ntorchvision==0.14.1\r\ndvclive==2.3.1\r\n```\r\n\r\nedit: I can just pip install the branch for now `pip install git+https://github.com/skshetry/dvc.git@plots-errors-json`",
+      "created_at": "2023-03-16T02:00:00Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "Can you try something like this:\r\n```\r\ngit+https://github.com/iterative/dvc.git@refs/pull/9146/head\r\n```",
+      "created_at": "2023-03-16T02:03:52Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "@skshetry can you confirm that for images `name` & `source` will have the same value for error entries? Will they both always be the path to the image or can they diverge? I don't want to make another bad assumption.\r\n \r\nPlease and thank you.",
+      "created_at": "2023-03-21T00:14:37Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "> can you confirm that for images name & source will have the same value for error entries? Will they both always be the path to the image or can they diverge?\r\n\r\nyes, they will always have same value. The `name` is a plot id which happens to be the same as a filename, `source` is `filename`.",
+      "created_at": "2023-03-21T05:52:10Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "@skshetry thanks for being patient. This change provides what is needed for the extension 🙏🏻.",
+      "created_at": "2023-03-23T00:38:39Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "@skshetry \r\n\r\nI did find one issue with this. If the `dvc.yaml` from a revision is completely broken (fails validation) then nothing will be returned for that revision in the output.\r\n\r\nExamples \r\n\r\n`workspace` `dvc.yaml` is broken:\r\n```\r\n❯ dvc plots diff workspace HEAD -o .dvc/tmp/plots --split --json > output.json\r\nDVC failed to load some plots for following revisions: 'workspace'.        \r\n```\r\n`output.json` contains no `errors` key.\r\n\r\n`HEAD` `dvc.yaml` is broken:\r\n```\r\n❯ dvc plots diff workspace HEAD -o .dvc/tmp/plots --split --json > output.json\r\nDVC failed to load some plots for following revisions: 'HEAD'.        \r\n```\r\n`output.json` contains no `errors` key.\r\n\r\n`HEAD` and `workspace` are both broken:\r\n```\r\n❯ dvc plots diff workspace HEAD -o .dvc/tmp/plots --split --json > output.json\r\nDVC failed to load some plots for following revisions: 'workspace, HEAD'.        \r\n```\r\n`output.json` is an empty dict.\r\n\r\nCan you provide an error for the failed revision stating that it's `dvc.yaml` failed validation?\r\n\r\nDo you want me to raise a follow-up issue/reopen one or is this enough?\r\n\r\nSorry for not finding this sooner.",
+      "created_at": "2023-03-28T04:40:06Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@mattseddon, that's expected. DVC tries to find definitions in older commits and tries to use that.\r\n\r\nAt the moment, we are only returning errors tied to specific plots. I should have noted this down somewhere, sorry.\r\n\r\nI worry that returning these errors may be noisy or false-positive. What do you think?\r\n",
+      "created_at": "2023-03-28T04:52:05Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "> @mattseddon, that's expected. DVC tries to find definitions in older commits and tries to use that.\r\n> \r\n> At the moment, we are only returning errors tied to specific plots. I should have noted this down somewhere, sorry.\r\n\r\n👍🏻 \r\n\r\n> I worry that returning these errors may be noisy or false-positive. What do you think?\r\n\r\nThe problem that I have is that when placed into the larger context this behaviour looks strange. When there is an error in the workspace:\r\n\r\n`dvc data status` => throws an error\r\n`dvc exp show` => shows error for workspace record\r\n`dvc plots diff` => loads the previous revision's definitions & templates\r\n\r\nI think if there is a failure while loading a `dvc.yaml` on the LHS then the command should fail loudly, not try to fall back.\r\n\r\nHere is a demo of what the extension looks like with a `dvc.yaml` validation error in the workspace:\r\n\r\nhttps://user-images.githubusercontent.com/37993418/228134566-aa2fbc77-5ffb-4f24-b316-8cc11642456e.mov\r\n\r\nSame thing with a definition error:\r\n\r\nhttps://user-images.githubusercontent.com/37993418/228134664-fcc43a82-8db0-456b-a336-80dca2f1fa07.mov\r\n\r\nDoes that make any sense to you?",
+      "created_at": "2023-03-28T05:14:25Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "> I think if there is a failure while loading a dvc.yaml on the LHS then the command should fail loudly, not try to fall back.\r\n\r\nThat's exactly the discussion in #9025.\r\n",
+      "created_at": "2023-03-28T05:40:18Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "@mattseddon, what would you prefer here? For the behaviour change, you'd have to wait for the discussions to get resolved and prioritized. For now, I think we can return all the errors from all revisions (or only from the workspace/lhs side).",
+      "created_at": "2023-03-28T06:21:09Z"
+    },
+    {
+      "author": "mattseddon",
+      "body": "> @mattseddon, what would you prefer here? For the behaviour change, you'd have to wait for the discussions to get resolved and prioritized. For now, I think we can return all the errors from all revisions (or only from the workspace/lhs side).\r\n\r\nI think providing all errors would be best but can you give me some example output for a simple project under the scenarios in https://github.com/iterative/dvc/pull/9146#issuecomment-1486205092? ",
+      "created_at": "2023-03-28T07:10:21Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "I think it'll look similar to above (without `name`):\r\n```json\r\n{\r\n  \"rev\": \"rev\"\r\n  \"type\": \"YAMLSyntaxError\",\r\n  \"msg\": \"unable to read: 'dvc.yaml', YAML file structure is corrupted\"\r\n}\r\n```",
+      "created_at": "2023-03-28T07:41:32Z"
+    }
+  ],
+  "diff": "diff --git a/dvc/commands/plots.py b/dvc/commands/plots.py\nindex b999759482..9382ce9c23 100644\n--- a/dvc/commands/plots.py\n+++ b/dvc/commands/plots.py\n@@ -1,8 +1,9 @@\n import argparse\n import logging\n import os\n+from typing import TYPE_CHECKING, Dict, List\n \n-from funcy import first\n+from funcy import compact, first\n \n from dvc.cli import completion\n from dvc.cli.command import CmdBase\n@@ -11,14 +12,43 @@\n from dvc.ui import ui\n from dvc.utils import format_link\n \n+if TYPE_CHECKING:\n+    from dvc.render.match import RendererWithErrors\n+\n+\n logger = logging.getLogger(__name__)\n \n \n-def _show_json(renderers, split=False):\n+def _show_json(renderers_with_errors: List[\"RendererWithErrors\"], split=False):\n     from dvc.render.convert import to_json\n+    from dvc.utils.serialize import encode_exception\n+\n+    errors: List[Dict] = []\n+    data = {}\n+\n+    for renderer, src_errors, def_errors in renderers_with_errors:\n+        name = renderer.name\n+        data[name] = to_json(renderer, split)\n+        errors.extend(\n+            {\n+                \"name\": name,\n+                \"rev\": rev,\n+                \"source\": source,\n+                **encode_exception(e),\n+            }\n+            for rev, per_rev_src_errors in src_errors.items()\n+            for source, e in per_rev_src_errors.items()\n+        )\n+        errors.extend(\n+            {\n+                \"name\": name,\n+                \"rev\": rev,\n+                **encode_exception(e),\n+            }\n+            for rev, e in def_errors.items()\n+        )\n \n-    result = {renderer.name: to_json(renderer, split) for renderer in renderers}\n-    ui.write_json(result, highlight=False)\n+    ui.write_json(compact({\"errors\": errors, \"data\": data}), highlight=False)\n \n \n def _adjust_vega_renderers(renderers):\n@@ -122,15 +152,16 @@ def run(self) -> int:  # noqa: C901, PLR0911, PLR0912\n \n             renderers_out = out if self.args.json else os.path.join(out, \"static\")\n \n-            renderers = match_defs_renderers(\n+            renderers_with_errors = match_defs_renderers(\n                 data=plots_data,\n                 out=renderers_out,\n                 templates_dir=self.repo.plots.templates_dir,\n             )\n             if self.args.json:\n-                _show_json(renderers, self.args.split)\n+                _show_json(renderers_with_errors, self.args.split)\n                 return 0\n \n+            renderers = [r.renderer for r in renderers_with_errors]\n             _adjust_vega_renderers(renderers)\n             if self.args.show_vega:\n                 renderer = first(filter(lambda r: r.TYPE == \"vega\", renderers))\ndiff --git a/dvc/render/match.py b/dvc/render/match.py\nindex 196f47f65e..3f36e9adc0 100644\n--- a/dvc/render/match.py\n+++ b/dvc/render/match.py\n@@ -1,10 +1,10 @@\n import os\n from collections import defaultdict\n-from typing import TYPE_CHECKING, Dict, List, Optional\n+from typing import TYPE_CHECKING, DefaultDict, Dict, List, NamedTuple, Optional\n \n import dpath\n import dpath.options\n-from funcy import last\n+from funcy import get_in, last\n \n from dvc.repo.plots import _normpath, infer_data_sources\n from dvc.utils.plots import get_plot_id\n@@ -13,6 +13,8 @@\n \n if TYPE_CHECKING:\n     from dvc.types import StrPath\n+    from dvc_render.base import Renderer\n+\n \n dpath.options.ALLOW_EMPTY_STRING_KEYS = True\n \n@@ -61,21 +63,31 @@ def get_definition_data(self, target_files, rev):\n         return result\n \n \n-def match_defs_renderers(\n+class RendererWithErrors(NamedTuple):\n+    renderer: \"Renderer\"\n+    source_errors: Dict[str, Dict[str, Exception]]\n+    definition_errors: Dict[str, Exception]\n+\n+\n+def match_defs_renderers(  # noqa: C901, PLR0912\n     data,\n     out=None,\n     templates_dir: Optional[\"StrPath\"] = None,\n-):\n+) -> List[RendererWithErrors]:\n     from dvc_render import ImageRenderer, VegaRenderer\n \n     plots_data = PlotsData(data)\n     renderers = []\n     renderer_cls = None\n+\n     for plot_id, group in plots_data.group_definitions().items():\n         plot_datapoints: List[Dict] = []\n         props = _squash_plots_properties(group)\n         final_props: Dict = {}\n \n+        def_errors: Dict[str, Exception] = {}\n+        src_errors: DefaultDict[str, Dict[str, Exception]] = defaultdict(dict)\n+\n         if out is not None:\n             props[\"out\"] = out\n         if templates_dir is not None:\n@@ -94,13 +106,24 @@ def match_defs_renderers(\n \n             converter = _get_converter(renderer_cls, inner_id, props, definitions_data)\n \n-            dps, rev_props = converter.flat_datapoints(rev)\n+            for src in plot_sources:\n+                if error := get_in(data, [rev, \"sources\", \"data\", src, \"error\"]):\n+                    src_errors[rev][src] = error\n+\n+            try:\n+                dps, rev_props = converter.flat_datapoints(rev)\n+            except Exception as e:  # noqa: BLE001, pylint: disable=broad-except\n+                def_errors[rev] = e\n+                continue\n+\n             if not final_props and rev_props:\n                 final_props = rev_props\n             plot_datapoints.extend(dps)\n \n         if \"title\" not in final_props:\n             final_props[\"title\"] = renderer_id\n+\n         if renderer_cls is not None:\n-            renderers.append(renderer_cls(plot_datapoints, renderer_id, **final_props))\n+            renderer = renderer_cls(plot_datapoints, renderer_id, **final_props)\n+            renderers.append(RendererWithErrors(renderer, dict(src_errors), def_errors))\n     return renderers\ndiff --git a/dvc/repo/plots/__init__.py b/dvc/repo/plots/__init__.py\nindex fd7a12303e..281a8e8b28 100644\n--- a/dvc/repo/plots/__init__.py\n+++ b/dvc/repo/plots/__init__.py\n@@ -20,7 +20,7 @@\n \n import dpath\n import dpath.options\n-from funcy import distinct, first, project, reraise\n+from funcy import first, ldistinct, project, reraise\n \n from dvc.exceptions import DvcException\n from dvc.utils import error_handler, errored_revisions, onerror_collect\n@@ -356,7 +356,7 @@ def infer_data_sources(plot_id, config=None):\n     if isinstance(x, dict):\n         sources.append(first(x.keys()))\n \n-    return distinct(source for source in sources)\n+    return ldistinct(source for source in sources)\n \n \n def _matches(targets, config_file, plot_id):\ndiff --git a/tests/func/plots/test_show.py b/tests/func/plots/test_show.py\nindex 0d49745abc..0a31c7fcf7 100644\n--- a/tests/func/plots/test_show.py\n+++ b/tests/func/plots/test_show.py\n@@ -418,5 +418,8 @@ def test_show_plots_defined_with_native_os_path(tmp_dir, dvc, scm, capsys):\n     assert main([\"plots\", \"show\", \"--json\"]) == 0\n     out, _ = capsys.readouterr()\n     json_out = json.loads(out)\n-    assert json_out[f\"dvc.yaml::{top_level_plot}\"]\n-    assert json_out[stage_plot]\n+    assert \"errors\" not in json_out\n+\n+    json_data = json_out[\"data\"]\n+    assert json_data[f\"dvc.yaml::{top_level_plot}\"]\n+    assert json_data[stage_plot]\ndiff --git a/tests/integration/plots/test_plots.py b/tests/integration/plots/test_plots.py\nindex c8db3923ec..4119f46918 100644\n--- a/tests/integration/plots/test_plots.py\n+++ b/tests/integration/plots/test_plots.py\n@@ -182,7 +182,13 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n     html_path, json_result, split_json_result = call(capsys)\n     html_result = extract_vega_specs(html_path, [\"linear.json\", \"confusion.json\"])\n \n-    assert json_result[\"linear.json\"][0][\"content\"][\"data\"][\n+    assert \"errors\" not in json_result\n+    assert \"errors\" not in split_json_result\n+\n+    json_data = json_result[\"data\"]\n+    split_json_data = split_json_result[\"data\"]\n+\n+    assert json_data[\"linear.json\"][0][\"content\"][\"data\"][\n         \"values\"\n     ] == _update_datapoints(\n         linear_v1,\n@@ -200,7 +206,7 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             REVISION_FIELD: \"workspace\",\n         },\n     )\n-    assert json_result[\"confusion.json\"][0][\"content\"][\"data\"][\n+    assert json_data[\"confusion.json\"][0][\"content\"][\"data\"][\n         \"values\"\n     ] == _update_datapoints(\n         confusion_v1,\n@@ -218,34 +224,40 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             REVISION_FIELD: \"workspace\",\n         },\n     )\n-    verify_image(tmp_dir, \"workspace\", \"image.png\", image_v1, html_path, json_result)\n+    verify_image(tmp_dir, \"workspace\", \"image.png\", image_v1, html_path, json_data)\n \n     for plot in [\"linear.json\", \"confusion.json\"]:\n         verify_vega(\n             \"workspace\",\n             html_result[plot],\n-            json_result[plot],\n-            split_json_result[plot],\n+            json_data[plot],\n+            split_json_data[plot],\n         )\n \n-    verify_vega_props(\"confusion.json\", json_result, **confusion_props)\n+    verify_vega_props(\"confusion.json\", json_data, **confusion_props)\n \n     image_v2, linear_v2, confusion_v2, confusion_props = next(repo_state)\n \n     html_path, json_result, split_json_result = call(capsys, subcommand=\"diff\")\n     html_result = extract_vega_specs(html_path, [\"linear.json\", \"confusion.json\"])\n \n-    verify_image(tmp_dir, \"workspace\", \"image.png\", image_v2, html_path, json_result)\n-    verify_image(tmp_dir, \"HEAD\", \"image.png\", image_v1, html_path, json_result)\n+    assert \"errors\" not in json_result\n+    assert \"errors\" not in split_json_result\n+\n+    json_data = json_result[\"data\"]\n+    split_json_data = split_json_result[\"data\"]\n+\n+    verify_image(tmp_dir, \"workspace\", \"image.png\", image_v2, html_path, json_data)\n+    verify_image(tmp_dir, \"HEAD\", \"image.png\", image_v1, html_path, json_data)\n \n     for plot in [\"linear.json\", \"confusion.json\"]:\n         verify_vega(\n             [\"HEAD\", \"workspace\"],\n             html_result[plot],\n-            json_result[plot],\n-            split_json_result[plot],\n+            json_data[plot],\n+            split_json_data[plot],\n         )\n-    verify_vega_props(\"confusion.json\", json_result, **confusion_props)\n+    verify_vega_props(\"confusion.json\", json_data, **confusion_props)\n     path = tmp_dir / \"subdir\"\n     path.mkdir()\n     with path.chdir():\n@@ -254,7 +266,13 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             html_path,\n             [\"../linear.json\", \"../confusion.json\"],\n         )\n-        assert json_result[\"../linear.json\"][0][\"content\"][\"data\"][\n+\n+        assert \"errors\" not in json_result\n+        assert \"errors\" not in split_json_result\n+\n+        json_data = json_result[\"data\"]\n+        split_json_data = split_json_result[\"data\"]\n+        assert json_data[\"../linear.json\"][0][\"content\"][\"data\"][\n             \"values\"\n         ] == _update_datapoints(\n             linear_v2,\n@@ -286,7 +304,7 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n                 REVISION_FIELD: \"HEAD\",\n             },\n         )\n-        assert json_result[\"../confusion.json\"][0][\"content\"][\"data\"][\n+        assert json_data[\"../confusion.json\"][0][\"content\"][\"data\"][\n             \"values\"\n         ] == _update_datapoints(\n             confusion_v2,\n@@ -326,8 +344,8 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             verify_vega(\n                 [\"HEAD\", \"workspace\"],\n                 html_result[plot],\n-                json_result[plot],\n-                split_json_result[plot],\n+                json_data[plot],\n+                split_json_data[plot],\n             )\n         verify_image(\n             path,\n@@ -335,7 +353,7 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             \"../image.png\",\n             image_v2,\n             html_path,\n-            json_result,\n+            json_data,\n         )\n         verify_image(\n             path,\n@@ -343,7 +361,7 @@ def test_repo_with_plots(tmp_dir, scm, dvc, capsys, run_copy_metrics, repo_with_\n             \"../image.png\",\n             image_v1,\n             html_path,\n-            json_result,\n+            json_data,\n         )\n \n \n@@ -361,13 +379,30 @@ def test_repo_with_removed_plots(tmp_dir, capsys, repo_with_plots):\n \n     for s in {\"show\", \"diff\"}:\n         _, json_result, split_json_result = call(capsys, subcommand=s)\n-        for p in {\n-            \"linear.json\",\n-            \"confusion.json\",\n-            \"image.png\",\n-        }:\n-            assert json_result[p] == []\n-            assert split_json_result[p] == []\n+        errors = [\n+            {\n+                \"name\": p,\n+                \"source\": p,\n+                \"rev\": \"workspace\",\n+                \"type\": \"FileNotFoundError\",\n+                \"msg\": \"\",\n+            }\n+            for p in [\n+                \"linear.json\",\n+                \"confusion.json\",\n+                \"image.png\",\n+            ]\n+        ]\n+        expected_result = {\n+            \"errors\": errors,\n+            \"data\": {\n+                \"image.png\": [],\n+                \"confusion.json\": [],\n+                \"linear.json\": [],\n+            },\n+        }\n+        assert json_result == expected_result\n+        assert split_json_result == expected_result\n \n \n def test_config_output_dir(tmp_dir, dvc, capsys):\ndiff --git a/tests/unit/command/test_plots.py b/tests/unit/command/test_plots.py\nindex bb2f67ce4d..1c9e5d4610 100644\n--- a/tests/unit/command/test_plots.py\n+++ b/tests/unit/command/test_plots.py\n@@ -7,6 +7,7 @@\n \n from dvc.cli import parse_args\n from dvc.commands.plots import CmdPlotsDiff, CmdPlotsShow, CmdPlotsTemplates\n+from dvc.render.match import RendererWithErrors\n \n \n @pytest.fixture\n@@ -268,8 +269,11 @@ def test_should_call_render(tmp_dir, mocker, capsys, plots_data, output):\n \n     output = output or \"dvc_plots\"\n     index_path = tmp_dir / output / \"index.html\"\n-    renderers = mocker.MagicMock()\n-    mocker.patch(\"dvc.render.match.match_defs_renderers\", return_value=renderers)\n+    renderer = mocker.MagicMock()\n+    mocker.patch(\n+        \"dvc.render.match.match_defs_renderers\",\n+        return_value=[RendererWithErrors(renderer, {}, {})],\n+    )\n     render_mock = mocker.patch(\"dvc_render.render_html\", return_value=index_path)\n \n     assert cmd.run() == 0\n@@ -278,7 +282,7 @@ def test_should_call_render(tmp_dir, mocker, capsys, plots_data, output):\n     assert index_path.as_uri() in out\n \n     render_mock.assert_called_once_with(\n-        renderers=renderers,\n+        renderers=[renderer],\n         output_file=Path(tmp_dir / output / \"index.html\"),\n         html_template=None,\n     )\n@@ -354,12 +358,13 @@ def test_show_json(split, mocker, capsys):\n     import dvc.commands.plots\n \n     renderer = mocker.MagicMock()\n+    renderer_obj = RendererWithErrors(renderer, {}, {})\n     renderer.name = \"rname\"\n     to_json_mock = mocker.patch(\n         \"dvc.render.convert.to_json\", return_value={\"renderer\": \"json\"}\n     )\n \n-    dvc.commands.plots._show_json([renderer], split)\n+    dvc.commands.plots._show_json([renderer_obj], split)\n \n     to_json_mock.assert_called_once_with(renderer, split)\n \ndiff --git a/tests/unit/render/test_match.py b/tests/unit/render/test_match.py\nindex 02316559ab..822d37283a 100644\n--- a/tests/unit/render/test_match.py\n+++ b/tests/unit/render/test_match.py\n@@ -1,4 +1,7 @@\n+from funcy import set_in\n+\n from dvc.render import VERSION_FIELD\n+from dvc.render.converter.vega import VegaConverter\n from dvc.render.match import PlotsData, _squash_plots_properties, match_defs_renderers\n \n \n@@ -35,7 +38,7 @@ def test_group_definitions():\n     }\n \n \n-def test_match_renderers(mocker):\n+def test_match_renderers(M):\n     data = {\n         \"v1\": {\n             \"definitions\": {\n@@ -77,9 +80,9 @@ def test_match_renderers(mocker):\n         },\n     }\n \n-    renderers = match_defs_renderers(data)\n-    assert len(renderers) == 1\n-    assert renderers[0].datapoints == [\n+    (renderer_with_errors,) = match_defs_renderers(data)\n+    renderer = renderer_with_errors[0]\n+    assert renderer.datapoints == [\n         {\n             VERSION_FIELD: {\n                 \"revision\": \"v1\",\n@@ -99,13 +102,31 @@ def test_match_renderers(mocker):\n             \"y\": 2,\n         },\n     ]\n-    assert renderers[0].properties == {\n+    assert renderer.properties == {\n         \"title\": \"config_file_1::plot_id_1\",\n         \"x\": \"x\",\n         \"y\": \"y\",\n         \"x_label\": \"x\",\n         \"y_label\": \"y\",\n     }\n+    assert renderer_with_errors.source_errors == {\n+        \"revision_with_no_data\": {\"file.json\": M.instance_of(FileNotFoundError)}\n+    }\n+    assert not renderer_with_errors.definition_errors\n+\n+\n+def test_flat_datapoints_errors_are_caught(M, mocker):\n+    d = {}\n+    d = set_in(\n+        d,\n+        [\"v1\", \"definitions\", \"data\", \"dvc.yaml\", \"data\", \"plot_id_1\"],\n+        {\"x\": \"x\", \"y\": {\"file.json\": \"y\"}},\n+    )\n+    d = set_in(d, [\"v1\", \"sources\", \"data\", \"file.json\", \"data\"], [{\"x\": 1, \"y\": 1}])\n+    mocker.patch.object(VegaConverter, \"flat_datapoints\", side_effect=ValueError)\n+    (renderer_with_errors,) = match_defs_renderers(d)\n+    assert not renderer_with_errors.source_errors\n+    assert renderer_with_errors.definition_errors == {\"v1\": M.instance_of(ValueError)}\n \n \n def test_squash_plots_properties():\n",
+  "changed_files": [
+    "dvc/commands/plots.py",
+    "dvc/render/match.py",
+    "dvc/repo/plots/__init__.py",
+    "tests/func/plots/test_show.py",
+    "tests/integration/plots/test_plots.py",
+    "tests/unit/command/test_plots.py",
+    "tests/unit/render/test_match.py"
+  ],
+  "changed_functions": [
+    "_show_json",
+    "match_defs_renderers",
+    "test_match_renderers",
+    "test_flat_datapoints_errors_are_caught"
+  ],
+  "pre_commit": "d41512c85cbd7fa98fadb831514ccb73981a75d5",
+  "post_commit": "43195a806d690b65f9429b82444e48992b7442d9",
+  "merged_at": "2023-03-27T07:08:44Z",
+  "review_comments": [
+    {
+      "author": "mattseddon",
+      "body": "should probably keep this consistent with the rest of the output/https://github.com/iterative/dvc/pull/9170 and name it `rev`.\r\n\r\n[Q] Will it be possible to get both `\"sources\"` and `\"definitions\"` errors for the same `name`/`revision`?",
+      "path": "dvc/commands/plots.py",
+      "line": null,
+      "created_at": "2023-03-15T02:35:33Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "plot's data uses `revision`, so I tried to be consistent with that. Could rename to `rev`.\r\n\r\n> [Q] Will it be possible to get both \"sources\" and \"definitions\" errors for the same name/revision?\r\n\r\nyes, there can be multiple errors for the same plot/revision. ",
+      "path": "dvc/commands/plots.py",
+      "line": null,
+      "created_at": "2023-03-15T03:00:43Z"
+    },
+    {
+      "author": "daavoo",
+      "body": "Why import here?",
+      "path": "dvc/render/match.py",
+      "line": null,
+      "created_at": "2023-03-17T17:51:53Z"
+    },
+    {
+      "author": "daavoo",
+      "body": "Does this need to be broad? \r\n`flat_datapoints` should only raise `DvcException`, right?",
+      "path": "dvc/render/match.py",
+      "line": 115,
+      "created_at": "2023-03-17T18:01:58Z"
+    },
+    {
+      "author": "daavoo",
+      "body": "It looks like there were no tests added to cover that we handle these `definition_errors`  ",
+      "path": "dvc/render/match.py",
+      "line": 116,
+      "created_at": "2023-03-17T18:05:41Z"
+    },
+    {
+      "author": "daavoo",
+      "body": "⸜(ᶿ᷇ധᶿ᷆)⸝\r\n\r\n(Thats supposed to be a walrus emoji 😅 )",
+      "path": "dvc/render/match.py",
+      "line": null,
+      "created_at": "2023-03-17T18:06:20Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "I am trying to match what we do on `error_handler`. I see `flat_datapoints()` reraising `DvcException` on some instances.\r\n\r\nThe question is, is there a potential to raise other errors like `OSError`, etc? And looking at the `image.flat_datapoints()`, it might raise other exceptions. So I don't want this to fail in any case.",
+      "path": "dvc/render/match.py",
+      "line": 115,
+      "created_at": "2023-03-18T04:01:48Z"
+    },
+    {
+      "author": "skshetry",
+      "body": "It's always hard to write a good test in these cases. What would be a good candidate to test for `flat_datapoints()`?",
+      "path": "dvc/render/match.py",
+      "line": 116,
+      "created_at": "2023-03-18T04:02:45Z"
+    },
+    {
+      "author": "daavoo",
+      "body": "Add a test in `tests/integrations` that checks that the `definition_errors` errors are included.\r\n\r\nThis unit test checks has example of what kind of input data raise the exceptions:\r\n\r\nhttps://github.com/iterative/dvc/blob/121d56b7391f5325e5eb6ff41448980f0ede00df/tests/unit/render/test_vega_converter.py#L468-L471",
+      "path": "dvc/render/match.py",
+      "line": 116,
+      "created_at": "2023-03-21T08:58:07Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 167,
+  "deletions": 49,
+  "changed_files_count": 7
+}

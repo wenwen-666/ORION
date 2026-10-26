@@ -1,0 +1,79 @@
+{
+  "pr_number": 1377,
+  "title": "Implement cache size for CachingFileSystem",
+  "url": "https://github.com/fsspec/filesystem_spec/pull/1377",
+  "description": "This PR implements retrieving the cache size of `CachingFileSystem`. The latest size is stored as a private attribute which is invalidated on any write to the cache and only recalculated if necessary when `cache_size()` is called. If multiple storage locations are specified it only considers the last one, i.e. the writable one.\r\n\r\nThis is a necessary precursor to providing a cache size limit (#510).",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-09-27T17:36:44+00:00",
+  "additions": 63,
+  "deletions": 0,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "ianthomas23",
+      "body": "I've temporarily removed one of the checks for `filecache` on Windows as when you delete a cached file the parent directory gets larger not smaller 🤷 \r\n\r\nThe remaining test that is failing on Windows is a `blockcache` one that does not allow deletion of a file that it claims is still in use. I don't yet know if this is something wrong with Windows or fsspec.",
+      "created_at": "2023-09-27T14:58:17+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "> does not allow deletion of a file that it claims is still in use. I don't yet know if this is something wrong with Windows or fsspec.\r\n\r\nWindows does like to keep locks on files... ",
+      "created_at": "2023-09-27T14:59:49+00:00"
+    },
+    {
+      "author": "ianthomas23",
+      "body": "If I remove the problematic asserts related to file locking for `blockcache` on Windows then there isn't really anything left worth testing, so I've just skipped that test on Windows. This isn't ideal, but I would rather have the functionality available on posix systems than not at all.",
+      "created_at": "2023-09-27T15:18:33+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "> This isn't ideal, but I would rather have the functionality available on posix systems than not at all.\r\n\r\nAgreed - but I expect it works fine in practice, and at most results in warnings when closing the interpreter. \"Sparse\" files are not a thing on windows anyway, so you only get part of the benefit of blockcache.",
+      "created_at": "2023-09-27T15:22:12+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "martindurant",
+      "body": "Should be 0 ?",
+      "path": "fsspec/implementations/cached.py",
+      "line": null,
+      "created_at": "2023-09-27T13:32:33+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Because of the size of the metadata file?",
+      "path": "fsspec/implementations/cached.py",
+      "line": null,
+      "created_at": "2023-09-27T13:34:58+00:00"
+    },
+    {
+      "author": "ianthomas23",
+      "body": "Unfortunately not, as the `self.load_cache()` call in the line above creates the cache directory which has OS-specific non-zero size.",
+      "path": "fsspec/implementations/cached.py",
+      "line": null,
+      "created_at": "2023-09-27T14:09:28+00:00"
+    },
+    {
+      "author": "ianthomas23",
+      "body": "Actually this isn't necessary, the tests pass without it.",
+      "path": "fsspec/implementations/cached.py",
+      "line": null,
+      "created_at": "2023-09-27T14:14:02+00:00"
+    },
+    {
+      "author": "ianthomas23",
+      "body": "I have removed this now.",
+      "path": "fsspec/implementations/cached.py",
+      "line": null,
+      "created_at": "2023-09-27T14:47:26+00:00"
+    }
+  ],
+  "changed_files": [
+    "fsspec/implementations/cached.py",
+    "fsspec/implementations/tests/test_cached.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/fsspec/implementations/cached.py b/fsspec/implementations/cached.py\nindex b679cce51..496bcb07a 100644\n--- a/fsspec/implementations/cached.py\n+++ b/fsspec/implementations/cached.py\n@@ -128,6 +128,11 @@ def __init__(\n         self.expiry = expiry_time\n         self.compression = compression\n \n+        # Size of cache in bytes. If None then the size is unknown and will be\n+        # recalculated the next time cache_size() is called. On writes to the\n+        # cache this is reset to None.\n+        self._cache_size = None\n+\n         if same_names is not None and cache_mapper is not None:\n             raise ValueError(\n                 \"Cannot specify both same_names and cache_mapper in \"\n@@ -165,6 +170,17 @@ def _remove_tempdir(tempdir):\n     def _mkcache(self):\n         os.makedirs(self.storage[-1], exist_ok=True)\n \n+    def cache_size(self):\n+        \"\"\"Return size of cache in bytes.\n+\n+        If more than one cache directory is in use, only the size of the last\n+        one (the writable cache directory) is returned.\n+        \"\"\"\n+        if self._cache_size is None:\n+            cache_dir = self.storage[-1]\n+            self._cache_size = filesystem(\"file\").du(cache_dir, withdirs=True)\n+        return self._cache_size\n+\n     def load_cache(self):\n         \"\"\"Read set of stored blocks from file\"\"\"\n         self._metadata.load()\n@@ -176,6 +192,7 @@ def save_cache(self):\n         self._mkcache()\n         self._metadata.save()\n         self.last_cache = time.time()\n+        self._cache_size = None\n \n     def _check_cache(self):\n         \"\"\"Reload caches if time elapsed or any disappeared\"\"\"\n@@ -202,6 +219,7 @@ def clear_cache(self):\n         \"\"\"\n         rmtree(self.storage[-1])\n         self.load_cache()\n+        self._cache_size = None\n \n     def clear_expired_cache(self, expiry_time=None):\n         \"\"\"Remove all expired files and metadata from the cache\n@@ -231,6 +249,8 @@ def clear_expired_cache(self, expiry_time=None):\n             rmtree(self.storage[-1])\n             self.load_cache()\n \n+        self._cache_size = None\n+\n     def pop_from_cache(self, path):\n         \"\"\"Remove cached version of given file\n \n@@ -242,6 +262,7 @@ def pop_from_cache(self, path):\n         fn = self._metadata.pop_file(path)\n         if fn is not None:\n             os.remove(fn)\n+        self._cache_size = None\n \n     def _open(\n         self,\n@@ -389,6 +410,7 @@ def __getattribute__(self, item):\n             \"__hash__\",\n             \"__eq__\",\n             \"to_json\",\n+            \"cache_size\",\n         ]:\n             # all the methods defined in this class. Note `open` here, since\n             # it calls `_open`, but is actually in superclass\n@@ -535,6 +557,7 @@ def commit_many(self, open_files):\n                 os.remove(f.name)\n             except FileNotFoundError:\n                 pass\n+        self._cache_size = None\n \n     def _make_local_details(self, path):\n         hash = self._mapper(path)\n@@ -704,6 +727,7 @@ def _open(self, path, mode=\"rb\", **kwargs):\n         kwargs[\"mode\"] = mode\n \n         self._mkcache()\n+        self._cache_size = None\n         if self.compression:\n             with self.fs._open(path, **kwargs) as f, open(fn, \"wb\") as f2:\n                 if isinstance(f, AbstractBufferedFile):\ndiff --git a/fsspec/implementations/tests/test_cached.py b/fsspec/implementations/tests/test_cached.py\nindex d4e05bdcf..2f7b35861 100644\n--- a/fsspec/implementations/tests/test_cached.py\n+++ b/fsspec/implementations/tests/test_cached.py\n@@ -16,6 +16,7 @@\n )\n from fsspec.implementations.cached import CachingFileSystem, LocalTempFile\n from fsspec.implementations.local import make_path_posix\n+from fsspec.tests.conftest import win\n \n from .test_ftp import FTPFileSystem\n \n@@ -1211,3 +1212,41 @@ def test_cache_dir_auto_deleted(temp_cache, tmpdir):\n         assert not local.exists(cache_dir)\n     else:\n         assert local.exists(cache_dir)\n+\n+\n+@pytest.mark.parametrize(\"protocol\", [\"filecache\", \"blockcache\", \"simplecache\"])\n+def test_cache_size(tmpdir, protocol):\n+    if win and protocol == \"blockcache\":\n+        pytest.skip(\"Windows file locking affects blockcache size tests\")\n+\n+    source = os.path.join(tmpdir, \"source\")\n+    afile = os.path.join(source, \"afile\")\n+    os.mkdir(source)\n+    open(afile, \"w\").write(\"test\")\n+\n+    fs = fsspec.filesystem(protocol, target_protocol=\"file\")\n+    empty_cache_size = fs.cache_size()\n+\n+    # Create cache\n+    with fs.open(afile, \"rb\") as f:\n+        assert f.read(5) == b\"test\"\n+    single_file_cache_size = fs.cache_size()\n+    assert single_file_cache_size > empty_cache_size\n+\n+    # Remove cached file but leave cache metadata file\n+    fs.pop_from_cache(afile)\n+    if win and protocol == \"filecache\":\n+        empty_cache_size < fs.cache_size()\n+    elif protocol != \"simplecache\":\n+        assert empty_cache_size < fs.cache_size() < single_file_cache_size\n+    else:\n+        # simplecache never stores metadata\n+        assert fs.cache_size() == single_file_cache_size\n+\n+    # Completely remove cache\n+    fs.clear_cache()\n+    if protocol != \"simplecache\":\n+        assert fs.cache_size() == empty_cache_size\n+    else:\n+        # Whole cache directory has been deleted\n+        assert fs.cache_size() == 0\n",
+  "pre_commit": "bb609834262b5470722cb8d09bf74df096e66c22",
+  "post_commit": "89626e89022dc9ed62aa7b0fb8dba9427fa892b3"
+}

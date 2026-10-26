@@ -1,0 +1,36 @@
+{
+  "pr_number": 59943,
+  "title": "Always honor state_type when compiling require_in",
+  "url": "https://github.com/saltstack/salt/pull/59943",
+  "description": "### What does this PR do?\r\n\r\nMake sure to always check `state_type`  while compiling `require_in`, even if the `name` being searched for already exists at top-level in highstate, because 2 ids can exist with same name.\r\n\r\n### What issues does this PR fix or reference?\r\nFixes:\r\n\r\nhttps://github.com/saltstack/salt/issues/59922\r\n\r\n### Previous Behavior\r\nRemove this section if not relevant\r\n\r\n### New Behavior\r\nRemove this section if not relevant\r\n\r\n### Merge requirements satisfied?\r\n**[NOTICE] Bug fixes or features added to Salt require tests.**\r\n<!-- Please review the [test documentation](https://docs.saltstack.com/en/master/topics/tutorials/writing_tests.html) for details on how to implement tests into Salt's test suite. -->\r\n- [x] Changelog - https://docs.saltstack.com/en/master/topics/development/changelog.html\r\n- [x] Tests written/updated\r\n\r\n### Commits signed with GPG?\r\nYes",
+  "comments": [
+    {
+      "author": "vin01",
+      "body": "Failing test seems unrelated ..\r\n\r\n```\r\n       {\r\nE           \"proxytest-B3NjIn\": \"Minion did not return. [Not connected]\"\r\nE           }\r\n```",
+      "created_at": "2021-04-01T15:08:15Z"
+    },
+    {
+      "author": "vin01",
+      "body": "I will appreciate input on this @dwoz @sagetherage ",
+      "created_at": "2021-04-12T10:04:47Z"
+    }
+  ],
+  "diff": "diff --git a/changelog/59922.fixed b/changelog/59922.fixed\nnew file mode 100644\nindex 000000000000..8afdc5f18ebc\n--- /dev/null\n+++ b/changelog/59922.fixed\n@@ -0,0 +1 @@\n+Fixed compilation of requisite_ins by also checking state type along with name/id\ndiff --git a/salt/state.py b/salt/state.py\nindex f999191e6d0d..7a2f55b69f0a 100644\n--- a/salt/state.py\n+++ b/salt/state.py\n@@ -233,7 +233,7 @@ def find_name(name, state, high):\n     Note: if `state` is sls, then we are looking for all IDs that match the given SLS\n     \"\"\"\n     ext_id = []\n-    if name in high:\n+    if name in high and state in high[name]:\n         ext_id.append((name, state))\n     # if we are requiring an entire SLS, then we need to add ourselves to everything in that SLS\n     elif state == \"sls\":\n@@ -1624,8 +1624,8 @@ def reconcile_extend(self, high):\n         ext = high.pop(\"__extend__\")\n         for ext_chunk in ext:\n             for name, body in ext_chunk.items():\n-                if name not in high:\n-                    state_type = next(x for x in body if not x.startswith(\"__\"))\n+                state_type = next(x for x in body if not x.startswith(\"__\"))\n+                if name not in high or state_type not in high[name]:\n                     # Check for a matching 'name' override in high data\n                     ids = find_name(name, state_type, high)\n                     if len(ids) != 1:\ndiff --git a/tests/pytests/functional/modules/state/requisites/test_require.py b/tests/pytests/functional/modules/state/requisites/test_require.py\nindex a7cbf1f10b68..7122d1b6722a 100644\n--- a/tests/pytests/functional/modules/state/requisites/test_require.py\n+++ b/tests/pytests/functional/modules/state/requisites/test_require.py\n@@ -609,3 +609,52 @@ def test_parallel_state_with_requires(state, state_tree):\n         # they'll run in parallel so we should be below 30 seconds\n         # confirm that the total runtime is below 30s\n         assert (end_time - start_time) < 30\n+\n+\n+def test_issue_59922_conflict_in_name_and_id_for_require_in(state, state_tree):\n+    \"\"\"\n+    Make sure that state_type is always honored while compiling down require_in to\n+\n+    corresponding require statement.\n+    \"\"\"\n+    sls_contents = \"\"\"\n+    X:\n+      test.succeed_without_changes:\n+        - name: A\n+\n+    A:\n+      cmd.run:\n+        - name: echo A\n+\n+    B:\n+      cmd.run:\n+        - name: echo B\n+        - require_in:\n+          - test: A\n+    \"\"\"\n+    expected_result = {\n+        \"cmd_|-A_|-echo A_|-run\": {\n+            \"__run_num__\": 2,\n+            \"comment\": 'Command \"echo A\" run',\n+            \"result\": True,\n+            \"changes\": True,\n+        },\n+        \"test_|-X_|-A_|-succeed_without_changes\": {\n+            \"__run_num__\": 1,\n+            \"comment\": \"Success!\",\n+            \"result\": True,\n+            \"changes\": False,\n+        },\n+        \"cmd_|-B_|-echo B_|-run\": {\n+            \"__run_num__\": 0,\n+            \"comment\": 'Command \"echo B\" run',\n+            \"result\": True,\n+            \"changes\": True,\n+        },\n+    }\n+    with pytest.helpers.temp_file(\"requisite.sls\", sls_contents, state_tree):\n+        ret = state.sls(\"requisite\")\n+        result = normalize_ret(ret)\n+        ret = pytest.helpers.state_return(ret)\n+        ret.assert_return_non_empty_state_type()\n+        assert result == expected_result\n",
+  "changed_files": [
+    "changelog/59922.fixed",
+    "salt/state.py",
+    "tests/pytests/functional/modules/state/requisites/test_require.py"
+  ],
+  "changed_functions": [
+    "test_issue_59922_conflict_in_name_and_id_for_require_in"
+  ],
+  "pre_commit": "ab78af12dab25ef33364d6eef30a8cfade276c29",
+  "post_commit": "c4bd7f6915e1438ba0cdb7452885153c1e2cc42c",
+  "merged_at": "2021-04-13T21:52:34Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 53,
+  "deletions": 3,
+  "changed_files_count": 3
+}

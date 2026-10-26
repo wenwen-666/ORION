@@ -1,0 +1,25 @@
+{
+  "pr_number": 9041,
+  "title": "Revert \"scm: use dulwich backend when fetching exps during clone/pull\"",
+  "url": "https://github.com/treeverse/dvc/pull/9041",
+  "description": "Reverts iterative/dvc#9023. Fixed upstream by https://github.com/iterative/scmrepo/pull/189 (that fallbacks to dulwich if users have credential helper set).\r\n\r\nAlso see #9039 where we bumped scmrepo with the above patch.",
+  "comments": [],
+  "diff": "diff --git a/dvc/external_repo.py b/dvc/external_repo.py\nindex 97c36ccbdd..e273209c99 100644\n--- a/dvc/external_repo.py\n+++ b/dvc/external_repo.py\n@@ -253,7 +253,7 @@ def _pull(git: \"Git\", unshallow: bool = False):\n \n     git.fetch(unshallow=unshallow)\n     _merge_upstream(git)\n-    fetch_all_exps(git, \"origin\", backends=[\"dulwich\"])\n+    fetch_all_exps(git, \"origin\")\n \n \n def _merge_upstream(git: \"Git\"):\ndiff --git a/dvc/repo/experiments/utils.py b/dvc/repo/experiments/utils.py\nindex 4bd0759dd1..e8ed3ba97a 100644\n--- a/dvc/repo/experiments/utils.py\n+++ b/dvc/repo/experiments/utils.py\n@@ -5,7 +5,6 @@\n from functools import wraps\n from typing import (\n     TYPE_CHECKING,\n-    Any,\n     Callable,\n     Dict,\n     Generator,\n@@ -280,15 +279,17 @@ def check_ref_format(scm: \"Git\", ref: ExpRefInfo):\n         )\n \n \n-def fetch_all_exps(\n-    scm: \"Git\", url: str, progress: Optional[Callable] = None, **kwargs: Any\n-):\n+def fetch_all_exps(scm: \"Git\", url: str, progress: Optional[Callable] = None):\n     refspecs = [\n         f\"{ref}:{ref}\"\n-        for ref in iter_remote_refs(scm, url, base=EXPS_NAMESPACE, **kwargs)\n+        for ref in iter_remote_refs(scm, url, base=EXPS_NAMESPACE)\n         if not (ref.startswith(EXEC_NAMESPACE) or ref in STASHES)\n     ]\n-    scm.fetch_refspecs(url, refspecs, progress=progress, **kwargs)\n+    scm.fetch_refspecs(\n+        url,\n+        refspecs,\n+        progress=progress,\n+    )\n \n \n def get_random_exp_name(scm, baseline_rev):\ndiff --git a/dvc/scm.py b/dvc/scm.py\nindex 04e93767be..0c0c9e838d 100644\n--- a/dvc/scm.py\n+++ b/dvc/scm.py\n@@ -179,7 +179,7 @@ def clone(url: str, to_path: str, **kwargs):\n         try:\n             git = Git.clone(url, to_path, progress=pbar.update_git, **kwargs)\n             if \"shallow_branch\" not in kwargs:\n-                fetch_all_exps(git, url, progress=pbar.update_git, backends=[\"dulwich\"])\n+                fetch_all_exps(git, url, progress=pbar.update_git)\n             return git\n         except InternalCloneError as exc:\n             raise CloneError(\"SCM error\") from exc\n",
+  "changed_files": [
+    "dvc/external_repo.py",
+    "dvc/repo/experiments/utils.py",
+    "dvc/scm.py"
+  ],
+  "changed_functions": [
+    "fetch_all_exps"
+  ],
+  "pre_commit": "3f0da8f6cce8708cd68705615cdafd3319b9b465",
+  "post_commit": "d7ea7c358da530df33c6d7a4371fec7497254f07",
+  "merged_at": "2023-02-16T12:22:46Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 9,
+  "deletions": 8,
+  "changed_files_count": 3
+}

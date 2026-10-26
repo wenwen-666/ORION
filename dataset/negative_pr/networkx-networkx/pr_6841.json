@@ -1,0 +1,44 @@
+{
+  "pr_number": 6841,
+  "title": "Modify `s_metric` `normalized` default so function doesn't raise",
+  "url": "https://github.com/networkx/networkx/pull/6841",
+  "description": "Currently, the `nx.s_metric` function raises a `NetworkXException` when called with the default keyword argument values because normalization is not implmented:\r\n\r\n```python\r\n>>> G = nx.cycle_graph(4)\r\n>>> nx.s_metric(G)\r\nTraceback (most recent call last)\r\n   ...\r\nNetworkXError: Normalization not implemented\r\n```\r\n\r\nI think it's safe to say this function is not frequently used :upside_down_face: Nevertheless, I propose to change the default to `normalization=False`. I don't think the deprecation/futurewarning policy really applies in this case since the default is broken; however, if there are other suggestions for how to handle this (e.g. remove the kwarg outright) LMK!\r\n\r\nfixes https://github.com/networkx/networkx/issues/5906",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-09-05T19:06:59+00:00",
+  "additions": 64,
+  "deletions": 20,
+  "changed_files_count": 5,
+  "comments": [
+    {
+      "author": "MridulS",
+      "body": "Hmm, it was commented out 12 years back https://github.com/networkx/networkx/commit/bccd58d70a985f6c25c6b32c209b6497a5f43828 😅\r\n\r\nI guess we can remove the kwarg outright.",
+      "created_at": "2023-08-08T11:43:47+00:00"
+    },
+    {
+      "author": "rossbar",
+      "body": "Okay, I've updated this to add a deprecation cycle for the complete removal of the kwarg. I wanted to make sure there was a way that users could adopt the future behavior immediately to get rid of the warning, so I ended up going with adding `**kwargs`. The main downside is this changes the signature which may affect e.g. static analysis packages. IMO though, the ability to silence the warning and adopt the future behavior now is worth the tradeoff!",
+      "created_at": "2023-08-20T05:34:35+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "MridulS",
+      "body": "```suggestion\r\n```\r\nWe don't need this right?",
+      "path": "networkx/algorithms/smetric.py",
+      "line": null,
+      "created_at": "2023-08-30T19:29:02+00:00"
+    }
+  ],
+  "changed_files": [
+    "doc/developer/deprecations.rst",
+    "doc/release/release_dev.rst",
+    "networkx/algorithms/smetric.py",
+    "networkx/algorithms/tests/test_smetric.py",
+    "networkx/conftest.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/doc/developer/deprecations.rst b/doc/developer/deprecations.rst\nindex a3a65832e60..7da13d5d4e1 100644\n--- a/doc/developer/deprecations.rst\n+++ b/doc/developer/deprecations.rst\n@@ -83,3 +83,4 @@ Version 3.4\n * Remove the ``sort_neighbors`` input parameter from ``generic_bfs_edges``.\n * Remove ``MultiDiGraph_EdgeKey`` class from ``algorithms/tree/branchings.py``. \n * Remove ``Edmonds`` class from ``algorithms/tree/branchings.py``.\n+* Remove ``normalized`` kwarg from ``algorithms.s_metric``\ndiff --git a/doc/release/release_dev.rst b/doc/release/release_dev.rst\nindex 6f0fafa0b2b..3c4236174f7 100644\n--- a/doc/release/release_dev.rst\n+++ b/doc/release/release_dev.rst\n@@ -48,7 +48,13 @@ Deprecations\n   and will be removed in v3.4.  Use ``neighbors`` to sort the nodes if desired.\n - [`#6785 <https://github.com/networkx/pull/6785>`_]\n   Deprecate ``MultiDiGraph_EdgeKey`` subclass used in ``Edmonds`` class.\n-  Deprecate ``Edmonds`` class for computing minimum and maximum branchings and arborescences (use ``minimum_branching``, ``minimal_branching``, ``maximum_branching``, ``minimum_arborescence`` and ``maximum_arborescence`` directly).\n+  Deprecate ``Edmonds`` class for computing minimum and maximum branchings and\n+  arborescences (use ``minimum_branching``, ``minimal_branching``,\n+  ``maximum_branching``, ``minimum_arborescence`` and ``maximum_arborescence``\n+  directly).\n+- [`#6841 <https://github.com/networkx/pull/6841>`_]\n+  Deprecate the ``normalized`` keyword of the ``s_metric`` function. Ignore\n+  value of ``normalized`` for future compatibility.\n \n Merged PRs\n ----------\ndiff --git a/networkx/algorithms/smetric.py b/networkx/algorithms/smetric.py\nindex 785b2da75cd..aa27b83f8cb 100644\n--- a/networkx/algorithms/smetric.py\n+++ b/networkx/algorithms/smetric.py\n@@ -4,20 +4,22 @@\n \n \n @nx._dispatch\n-def s_metric(G, normalized=True):\n-    \"\"\"Returns the s-metric of graph.\n+def s_metric(G, **kwargs):\n+    \"\"\"Returns the s-metric [1]_ of graph.\n \n-    The s-metric is defined as the sum of the products deg(u)*deg(v)\n-    for every edge (u,v) in G. If norm is provided construct the\n-    s-max graph and compute it's s_metric, and return the normalized\n-    s value\n+    The s-metric is defined as the sum of the products ``deg(u) * deg(v)``\n+    for every edge ``(u, v)`` in `G`.\n \n     Parameters\n     ----------\n-    G    : graph\n-           The graph used to compute the s-metric.\n+    G : graph\n+        The graph used to compute the s-metric.\n     normalized : bool (optional)\n-           Normalize the value.\n+        .. deprecated:: 3.2\n+\n+           The `normalized` keyword argument is deprecated and will be removed\n+           in the future\n+        Normalize the value.\n \n     Returns\n     -------\n@@ -31,9 +33,27 @@ def s_metric(G, normalized=True):\n            Definition, Properties, and  Implications (Extended Version), 2005.\n            https://arxiv.org/abs/cond-mat/0501169\n     \"\"\"\n-    if normalized:\n-        raise nx.NetworkXError(\"Normalization not implemented\")\n-    #        Gmax = li_smax_graph(list(G.degree().values()))\n-    #        return s_metric(G,normalized=False)/s_metric(Gmax,normalized=False)\n-    #    else:\n+    # NOTE: This entire code block + the **kwargs in the signature can all be\n+    # removed when the deprecation expires.\n+    # Normalized is always False, since all `normalized=True` did was raise\n+    # a NotImplementedError\n+    if kwargs:\n+        # Warn for `normalize`, raise for any other kwarg\n+        if \"normalized\" in kwargs:\n+            import warnings\n+\n+            warnings.warn(\n+                \"\\n\\nThe `normalized` keyword is deprecated and will be removed\\n\"\n+                \"in the future. To silence this warning, remove `normalized`\\n\"\n+                \"when calling `s_metric`.\\n\\n\"\n+                \"The value of `normalized` is ignored.\",\n+                DeprecationWarning,\n+                stacklevel=3,\n+            )\n+        else:\n+            # Typical raising behavior for Python when kwarg not recognized\n+            raise TypeError(\n+                f\"s_metric got an unexpected keyword argument '{list(kwargs.keys())[0]}'\"\n+            )\n+\n     return float(sum(G.degree(u) * G.degree(v) for (u, v) in G.edges()))\ndiff --git a/networkx/algorithms/tests/test_smetric.py b/networkx/algorithms/tests/test_smetric.py\nindex b6c4570dbbf..29389a75872 100644\n--- a/networkx/algorithms/tests/test_smetric.py\n+++ b/networkx/algorithms/tests/test_smetric.py\n@@ -1,3 +1,5 @@\n+import warnings\n+\n import pytest\n \n import networkx as nx\n@@ -13,10 +15,22 @@ def test_smetric():\n     assert sm == 19.0\n \n \n-#    smNorm = nx.s_metric(g,normalized=True)\n-#    assert_equal(smNorm, 0.95)\n+# NOTE: Tests below to be deleted when deprecation of `normalized` kwarg expires\n+\n+\n+def test_normalized_deprecation_warning():\n+    \"\"\"Test that a deprecation warning is raised when s_metric is called with\n+    a `normalized` kwarg.\"\"\"\n+    G = nx.cycle_graph(7)\n+    # No warning raised when called without kwargs (future behavior)\n+    with warnings.catch_warnings():\n+        warnings.simplefilter(\"error\")  # Fail the test if warning caught\n+        assert nx.s_metric(G) == 28\n \n+    # Deprecation warning\n+    with pytest.deprecated_call():\n+        nx.s_metric(G, normalized=True)\n \n-def test_normalized():\n-    with pytest.raises(nx.NetworkXError):\n-        sm = nx.s_metric(nx.Graph(), normalized=True)\n+    # Make sure you get standard Python behavior when unrecognized keyword provided\n+    with pytest.raises(TypeError):\n+        nx.s_metric(G, normalize=True)\ndiff --git a/networkx/conftest.py b/networkx/conftest.py\nindex 9ce889fe8af..7db7917d4f4 100644\n--- a/networkx/conftest.py\n+++ b/networkx/conftest.py\n@@ -89,6 +89,9 @@ def set_warnings():\n         category=DeprecationWarning,\n         message=\"MultiDiGraph_EdgeKey has been deprecated\",\n     )\n+    warnings.filterwarnings(\n+        \"ignore\", category=DeprecationWarning, message=\"\\n\\nThe `normalized`\"\n+    )\n \n \n @pytest.fixture(autouse=True)\n",
+  "pre_commit": "dee3e4e86c67c0afea6fbdf5c0694ac92145c6df",
+  "post_commit": "622726f3b7accef92750b3cd9da3d29c958daf29"
+}

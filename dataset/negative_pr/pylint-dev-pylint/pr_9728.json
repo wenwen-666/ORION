@@ -1,0 +1,138 @@
+{
+  "pr_number": 9728,
+  "title": "Add `tox.ini` to the default discovered config files (right after setup.cfg)",
+  "url": "https://github.com/pylint-dev/pylint/pull/9728",
+  "description": "<!--\r\nThank you for submitting a PR to pylint!\r\n\r\nTo ease the process of reviewing your PR, do make sure to complete the following boxes.\r\n\r\n- [ ] Document your change, if it is a non-trivial one.\r\n  - A maintainer might label the issue ``skip-news`` if the change does not need to be in the changelog.\r\n  - Otherwise, create a news fragment with ``towncrier create <IssueNumber>.<type>`` which will be\r\n    included in the changelog. ``<type>`` can be one of the types defined in `./towncrier.toml`.\r\n    If necessary you can write details or offer examples on how the new change is supposed to work.\r\n  - Generating the doc is done with ``tox -e docs``\r\n- [ ] Relate your change to an issue in the tracker if such an issue exists (Refs #1234, Closes #1234)\r\n- [ ] Write comprehensive commit messages and/or a good description of what the PR does.\r\n- [ ] Keep the change small, separate the consensual changes from the opinionated one.\r\n  Don't hesitate to open multiple PRs if the change requires it. If your review is so\r\n  big it requires to actually plan and allocate time to review, it's more likely\r\n  that it's going to go stale.\r\n- [ ] If you used multiple emails or multiple names when contributing, add your mails\r\n      and preferred name in ``script/.contributors_aliases.json``\r\n-->\r\n\r\n## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n|    | :sparkles: New feature |\r\n|    | :hammer: Refactoring   |\r\n|    | :scroll: Docs          |\r\n\r\n## Description\r\nFix a bug where a ``tox.ini`` file with pylint configuration was ignored and it exists in the current directory.\r\n\r\n<!-- If this PR references an issue without fixing it: -->\r\n\r\n\r\n<!-- If this PR fixes an issue, use the following to automatically close when we merge: -->\r\n\r\nCloses #9727\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "fc9bdeb657997081baf316d1703b120b3b0d683f",
+  "merged_at": "2024-06-18T07:00:32+00:00",
+  "created_at": "2024-06-12T14:04:03+00:00",
+  "closed_at": "2024-06-18T07:00:32+00:00",
+  "user": "mbyrnepr2",
+  "additions": 26,
+  "deletions": 11,
+  "changed_files_count": 3,
+  "labels": [
+    "Enhancement ✨"
+  ],
+  "comments": [
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) Report\nAll modified and coverable lines are covered by tests :white_check_mark:\n> Project coverage is 95.85%. Comparing base [(`2ba88b9`)](https://app.codecov.io/gh/pylint-dev/pylint/commit/2ba88b9317ff37a1e94007d00bbcad65ed515e18?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) to head [(`e0a456d`)](https://app.codecov.io/gh/pylint-dev/pylint/commit/e0a456d5e35ac3c0c67bf429c4448886d1307873?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev).\n> Report is 131 commits behind head on main.\n\n<details><summary>Additional details and impacted files</summary>\n\n\n[![Impacted file tree graph](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728/graphs/tree.svg?width=650&height=150&src=pr&token=ZETEzayrfk&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev)](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev)\n\n```diff\n@@           Coverage Diff           @@\n##             main    #9728   +/-   ##\n=======================================\n  Coverage   95.85%   95.85%           \n=======================================\n  Files         174      174           \n  Lines       18873    18873           \n=======================================\n  Hits        18090    18090           \n  Misses        783      783           \n```\n\n| [Files with missing lines](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728?dropdown=coverage&src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev) | Coverage Δ | |\n|---|---|---|\n| [pylint/config/find\\_default\\_config\\_files.py](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728?src=pr&el=tree&filepath=pylint%2Fconfig%2Ffind_default_config_files.py&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev#diff-cHlsaW50L2NvbmZpZy9maW5kX2RlZmF1bHRfY29uZmlnX2ZpbGVzLnB5) | `91.30% <100.00%> (ø)` | |\n\n... and [2 files with indirect coverage changes](https://app.codecov.io/gh/pylint-dev/pylint/pull/9728/indirect-changes?src=pr&el=tree-more&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pylint-dev)\n\n</details>",
+      "created_at": "2024-06-12T14:15:01+00:00"
+    },
+    {
+      "author": "rlalik",
+      "body": "Hi, original issue reporter here.\r\n\r\nUpon request of @mbyrnepr2  in https://github.com/pylint-dev/pylint/issues/9727 I tested the PR-version and it works fine for my case for both `tox.ini` and `setup.cfg` with proper config files autodetection.",
+      "created_at": "2024-06-13T09:55:39+00:00"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit e0a456d5e35ac3c0c67bf429c4448886d1307873*",
+      "created_at": "2024-06-17T14:26:51+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "DanielNoord",
+      "body": "Why make this a constant? Can't it be like `setup.cfg`?",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T14:59:08+00:00"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Thanks @DanielNoord. Agreed.\r\nWhile I have your attention, what's your opinion on [this logic](https://github.com/pylint-dev/pylint/blob/main/pylint/config/find_default_config_files.py#L64) and the associated comments around the inconsistencies mentioned on the issue? It does feel like we should allow `[pylint]` and not necessarily `[pylint.something]` but there could be some rationale for that.\r\n\r\nOur own [documentation](https://pylint.pycqa.org/en/latest/user_guide/usage/run.html#command-line-options) has this: _setup.cfg in the current working directory, providing it has at least one pylint. section_",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T16:00:40+00:00"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n    for file_name in (\"fake.cfg\", \"tox.ini\"):\r\n        fake_conf = tmp_path / file_name \r\n        with open(fake_conf, \"w\", encoding=\"utf8\") as f:\r\n            f.write(content)\r\n        assert _cfg_has_config(fake_conf) == expected\r\n```",
+      "path": "tests/config/test_find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T18:59:13+00:00"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n```",
+      "path": "tests/config/test_find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T18:59:23+00:00"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Yes, we previously only allowed `pylint.` because the way `optparse` worked required sections. I removed that when migrating to `argparse` and improving support for `toml`.\r\n\r\nI would support changing this to be 1. exactly \"pylint\" or 2. anything that starts with \"pylint.\". To make sure we are not starting to parse `\"pylint-internal-plugin\"` etc.",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T19:37:42+00:00"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "FYI @Pierre-Sassoulas and also may need to wait/further refactor before merging.",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T19:43:38+00:00"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Thanks for the ping :) I think anything starting with ``pylint.`` is closer to what's happening in pyproject.toml so I would favor that.",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T19:51:18+00:00"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "In `.toml` we support `[tool.pylint]`. I think making `.ini` in line with this makes sense.",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T19:53:44+00:00"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Should we make the ``tool`` mandatory ? As in ``[tool.pylint]``, or ``[tool.pylint.main]``, ``[tool.pylint.basic]`` (etc.). We don't in ini file currently, but the ini file is pylint specific so it doesn't need the \"pylint\" / \"tool.pylint\" part.\r\n\r\nhttps://github.com/pylint-dev/pylint/blob/2ba88b9317ff37a1e94007d00bbcad65ed515e18/examples/pylintrc#L119\r\n\r\nSo maybe  ``[pylint]``, or ``[pylint.main]``, ``[pylint.basic]``. for consistency in tox.ini (consistency with file of the same format above consistency with toml), and backward compatibility in ini ? ",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T20:20:18+00:00"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "`tool` is a thing because of the `pyproject.toml` spec I think.\r\n\r\nSeeing other `tox.ini` files I think nobody would be surprised that `[pylint]` would be parsed as the configuration for `pylint`. We currently require people to do`[pylint.some_section_that_isnt_even_validated]` which feels cumbersome and inconsistent. That's why I proposed changing it from only `[pylint\\..+]` to also allow `[pylint]`.",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T20:46:16+00:00"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Ok thanks folks! I've  tried to match Daniel's vision with the latest commit; accept `[pylint]` or `[pylint.<something_arbitrary>]`. Let me know if I've gotten anything wrong!",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-12T21:27:43+00:00"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "We should probably include the change about accepted sections here as well.",
+      "path": "doc/whatsnew/fragments/9727.bugfix",
+      "line": null,
+      "created_at": "2024-06-17T07:07:24+00:00"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n                if config_name.suffix in {\".cfg\", \".ini\"} and not _cfg_or_ini_has_config(\r\n```",
+      "path": "pylint/config/find_default_config_files.py",
+      "line": null,
+      "created_at": "2024-06-17T07:08:16+00:00"
+    }
+  ],
+  "changed_files": [
+    "doc/whatsnew/fragments/9727.bugfix",
+    "pylint/config/find_default_config_files.py",
+    "tests/config/test_find_default_config_files.py"
+  ],
+  "diff": "diff --git a/doc/whatsnew/fragments/9727.bugfix b/doc/whatsnew/fragments/9727.bugfix\nnew file mode 100644\nindex 0000000000..043541f75b\n--- /dev/null\n+++ b/doc/whatsnew/fragments/9727.bugfix\n@@ -0,0 +1,5 @@\n+Fix a bug where a ``tox.ini`` file with pylint configuration was ignored and it exists in the current directory.\n+\n+``.cfg`` and ``.ini`` files containing a ``Pylint`` configuration may now use a section named ``[pylint]``. This enhancement impacts the scenario where these file types are used as defaults when they are present and have not been explicitly referred to, using the ``--rcfile`` option.\n+\n+Closes #9727\ndiff --git a/pylint/config/find_default_config_files.py b/pylint/config/find_default_config_files.py\nindex 346393cf9a..7e53e77207 100644\n--- a/pylint/config/find_default_config_files.py\n+++ b/pylint/config/find_default_config_files.py\n@@ -22,7 +22,7 @@\n     Path(\".pylintrc.toml\"),\n )\n PYPROJECT_NAME = Path(\"pyproject.toml\")\n-CONFIG_NAMES = (*RC_NAMES, PYPROJECT_NAME, Path(\"setup.cfg\"))\n+CONFIG_NAMES = (*RC_NAMES, PYPROJECT_NAME, Path(\"setup.cfg\"), Path(\"tox.ini\"))\n \n \n def _find_pyproject() -> Path:\n@@ -55,13 +55,16 @@ def _toml_has_config(path: Path | str) -> bool:\n     return \"pylint\" in content.get(\"tool\", [])\n \n \n-def _cfg_has_config(path: Path | str) -> bool:\n+def _cfg_or_ini_has_config(path: Path | str) -> bool:\n     parser = configparser.ConfigParser()\n     try:\n         parser.read(path, encoding=\"utf-8\")\n     except configparser.Error:\n         return False\n-    return any(section.startswith(\"pylint.\") for section in parser.sections())\n+    return any(\n+        section == \"pylint\" or section.startswith(\"pylint.\")\n+        for section in parser.sections()\n+    )\n \n \n def _yield_default_files() -> Iterator[Path]:\n@@ -71,7 +74,10 @@ def _yield_default_files() -> Iterator[Path]:\n             if config_name.is_file():\n                 if config_name.suffix == \".toml\" and not _toml_has_config(config_name):\n                     continue\n-                if config_name.suffix == \".cfg\" and not _cfg_has_config(config_name):\n+                if config_name.suffix in {\n+                    \".cfg\",\n+                    \".ini\",\n+                } and not _cfg_or_ini_has_config(config_name):\n                     continue\n \n                 yield config_name.resolve()\ndiff --git a/tests/config/test_find_default_config_files.py b/tests/config/test_find_default_config_files.py\nindex ae879a10d0..2c50a55682 100644\n--- a/tests/config/test_find_default_config_files.py\n+++ b/tests/config/test_find_default_config_files.py\n@@ -18,7 +18,10 @@\n from pytest import CaptureFixture\n \n from pylint import config, testutils\n-from pylint.config.find_default_config_files import _cfg_has_config, _toml_has_config\n+from pylint.config.find_default_config_files import (\n+    _cfg_or_ini_has_config,\n+    _toml_has_config,\n+)\n from pylint.lint.run import Run\n \n \n@@ -307,12 +310,13 @@ def test_toml_has_config(content: str, expected: bool, tmp_path: Path) -> None:\n         ],\n     ],\n )\n-def test_cfg_has_config(content: str, expected: bool, tmp_path: Path) -> None:\n-    \"\"\"Test that a cfg file has a pylint config.\"\"\"\n-    fake_cfg = tmp_path / \"fake.cfg\"\n-    with open(fake_cfg, \"w\", encoding=\"utf8\") as f:\n-        f.write(content)\n-    assert _cfg_has_config(fake_cfg) == expected\n+def test_has_config(content: str, expected: bool, tmp_path: Path) -> None:\n+    \"\"\"Test that a .cfg file or .ini file has a pylint config.\"\"\"\n+    for file_name in (\"fake.cfg\", \"tox.ini\"):\n+        fake_conf = tmp_path / file_name\n+        with open(fake_conf, \"w\", encoding=\"utf8\") as f:\n+            f.write(content)\n+        assert _cfg_or_ini_has_config(fake_conf) == expected\n \n \n def test_non_existent_home() -> None:\n",
+  "pre_commit": "255ed0bcfe22ae351914f99c88993554ac096683",
+  "post_commit": "fc9bdeb657997081baf316d1703b120b3b0d683f",
+  "merge_type": "squash"
+}

@@ -1,0 +1,244 @@
+{
+  "pr_number": 6682,
+  "title": "Time dependent module",
+  "url": "https://github.com/networkx/networkx/pull/6682",
+  "description": "After our discussion #6629 me and @evgepab have implemented the cd index method. Although we were not very sure on how to handle the weight matrix as an argument.  ",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "30d5cde498a2c72fcaf9cf59586a201b50fa82f0",
+  "merged_at": "2023-07-27T01:59:50+00:00",
+  "created_at": "2023-05-05T08:41:06+00:00",
+  "closed_at": "2023-07-27T01:59:50+00:00",
+  "user": "eirinikafourou",
+  "additions": 557,
+  "deletions": 0,
+  "changed_files_count": 5,
+  "labels": [],
+  "comments": [
+    {
+      "author": "evgepab",
+      "body": "Thank you for your suggestions! We have added them and are waiting for any additional feedback! Also we were thinking of  adding weights on edges like that 'G.add_edge(1, 2, weight=0.5, time=datetime(2023, 5, 9))' instead of having an optional list as an argument.",
+      "created_at": "2023-05-09T08:30:32+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "The NetworkX standard way to include node attributes for weights is to use an optional keyword argument `weight=None`. Then if weight is None, we treat each node as having weight 1. If weight is a string we use the node attribute with the name held in the string:  e.g. `weight=\"distance\"` where the graph holds a node attribute called \"importance\".  This way, graphs with e.g. multiple different node attributes can compute the cd_index for different weighting without constructing a new graph.\r\n\r\nDoes this make sense?",
+      "created_at": "2023-05-21T22:08:13+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "https://github.com/eirinikafourou/networkx/blob/391ba5c12a52b3b24925d60232e35c18fe56740a/networkx/algorithms/time_dependent.py#L13\r\n\r\nhttps://github.com/eirinikafourou/networkx/blob/391ba5c12a52b3b24925d60232e35c18fe56740a/networkx/algorithms/time_dependent.py#L112-L119\r\n\r\nIs this what you meant for the weight handling ?\r\n",
+      "created_at": "2023-06-03T08:57:33+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "Also, we're a bit confused as to why some of the checks failed, if you could provide us more information regarding this.",
+      "created_at": "2023-06-03T09:07:01+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "> This looks good to me!\r\n> \r\n> Thanks! I'm approving it. we still need one more set of eyes.\r\n\r\n@dschult Thank you for the collaboration!! Should we request a review from another reviewer?  ",
+      "created_at": "2023-06-14T22:04:58+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Thanks @rossbar!  I think you are right -- it is worth looking at whether this needs to be a `datetime` attribute, or perhaps it could be more general.  For example, the node `time` attrs (and `time_delta`) could be integers... And indeed any set of comparable objects. The current code uses time units of years and uses the `datetime` attribute specifically by referring to the `timestamp` of that `datetime` value -- but I think it could just use the datetime objects themselves instead of converting to timestamp.  \r\n\r\nIn the interest of making this module a starting point for other time_dependent algorithms, can we pull the time handling into an optional argument that is a function which inputs the graph and outputs a dict keyed by node to a time value that could be any format you want (datetime instance, timestamp/float, integer). The type of the value would need to work (in this case) with the type of the input `time_delta` and support `<` and `+` operators.\r\n\r\nWhat do you think @evgepab @eirinikafourou ?...  I can push a draft for your review if you don't want to take this on.\r\n\r\nAlso, was there a reason you decided to use the `timestamp` attribute instead of comparing/adding `datetime` instances? I don't know the datetime class very well, so want a head's up if there is a quirk that timestamp gets around.\r\nThanks!",
+      "created_at": "2023-06-19T14:00:55+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "@dschult  @rossbar Thank you for your feedback! Regarding the optional function attribute, do you mean that something like:\r\n`time_dict = lambda G: {n: G.nodes[n].get(\"time\") for n in G}` could be given in order to find the node's predecessors? And, if it's not given, then we would use all the node's predecessors?\r\n\r\nAlso, there was no specific reason for the use of `timestamp`, only to get more precise comparisons.",
+      "created_at": "2023-06-20T12:17:03+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "I was thinking that the default time-function could provide exactly what you use now. But that it would allow the user to specify alternate ways to produce a time value if desired.\r\n\r\nAnd, right now, I'm not sure my idea for a function that returns all the node values is the best approach.  Maybe it should just be a node attribute that holds the value. Then the input function would not be needed. Let me play with that here for a minute: Right now the node attribute \"time\" is a `datetime` object. Can we use those objects along with the `time_delta` value to make all the comparisons that are needed? If so, is it possible for the user to put a float or integer in there (or the timestamp) and make it all work?\r\n\r\nMy quick look suggests that this could work and would be simpler than my suggestion. Removing the `.timestamp()` in two places and the `* 365 * 24 * 60 * 60` for the time_delta would make it work for arbitrary time-related numbers or datetime objects or timestamps. The scale of the time_delta can be left up to the user -- the default value can be scaled by the value for a \"year\", or the default value could be a `time_delta` object from the datetime module (maybe??).  You would then also be able to remove the check for all time objects being datetime.\r\n\r\nMaybe this is a better suggestion than an additional input argument. But maybe there another way to do that which I am just not seeing. What do you think would be a good way to make this work for the cases you show and also for an arbitrary time value? I think the goal is to not force people to use `datetime`, but to allow and maybe even encourage it through the examples used.",
+      "created_at": "2023-06-20T16:19:50+00:00"
+    },
+    {
+      "author": "eirinikafourou",
+      "body": "@dschult @rossbar Thank you for your suggestions! We removed the `.timestamp()` and now any set of compatible objects is allowed for `time_delta` and `time` attribute, although the default value for `time_delta` is now datetime.timedelta, in order to encourage the use of datetime. \r\n\r\nHowever, another idea we had was to allow the user to give as an input the name of the attribute that would be used in the calculations. We currently use the `time` attribute, although the user might have wanted e.g. to use the `date` attribute. Do you think this would be useful?",
+      "created_at": "2023-06-23T12:41:34+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Yes -- it would be better to have them able to provide any attribute that will be used to represent time.\r\nI can imagine, e.g. a graph with multiple time related attributes and people might want cdindex for each of these attributes.",
+      "created_at": "2023-06-23T13:36:54+00:00"
+    },
+    {
+      "author": "eirinikafourou",
+      "body": "> I just have two minor suggestions for styling the example to match `black` format and to decrease the line length for the ValueError message.\r\n> \r\n> Thanks @eirinikafourou and @evgepab for your patience with these requests. And thanks @rossbar for the suggestions. The function signature is much better and aligns with how we'd like it to be moving forward. :)\r\n> \r\n> I approve this PR.\r\n\r\nThank you for guidance! We hope this implementation will be useful!",
+      "created_at": "2023-06-25T07:00:43+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Thanks @eirinikafourou and @evgepab !!\r\n",
+      "created_at": "2023-07-27T02:01:09+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "We're glad we could help 😊 @dschult ",
+      "created_at": "2023-07-27T09:00:37+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "dschult",
+      "body": "You can use `G[node]` and `G.pred[node]` later instead of creating new lists here.",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T12:59:03+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Can you use language that doesn't rely on the setting of patents?  Or is this cd_index only used for patents?",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:04:16+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Nodes are not integers in general.  They can be any hashable. So, you can use `node : node`  just as you do with `G : graph`.",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:05:30+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Constructing a set instead of a list here saves the later set construction.\r\n```suggestion\r\n    pred = {i for i in G.pred[node] if G.nodes[i][\"time\"].timestamp() <= target_date}\r\n    if not pred:\r\n        raise ValueError(f\"The requested node {node} has no predecessors.\")\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:06:04+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Is the word accessor a typo, or does it mean successor?\r\nLater, the value of bi is 1 or -1, o maybe you should set that value here:\r\n```suggestion\r\n    # -1 if any edge between a focal node's predecessor and successor. Else 1\r\n    b = [(-1 if any(j in G[i] for j in G[node])) else 1) for i in pred]\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:09:12+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Simplify the expression using alternates:\r\n```suggestion\r\n        return round(sum(b) / n, 2)\r\n    else:\r\n        return round(sum(bi / wt for bi, wt in zip(b, weight)) / n, 2)\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:25:23+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "We only use the length of this set, so:\r\n```suggestion\r\n    # n is size of the union of the focal node's predecessors and its successors' predecessors\r\n    n = len(pred.union(*(G.pred[s].keys() - {node} for s in G[node])))\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-05T13:25:25+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "```suggestion\r\n       The CD index calculated for the node `node` within the graph `G`.\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-17T17:45:15+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "I might have the terminology mixed up for this, but is the CD index for the graph? or for the node of the graph?  It seems like the index would be different for each choice of node, so it could be described as\r\n```suggestion\r\n    r\"\"\"Compute the CD index for `node` within the graph `G`.\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-17T17:45:47+00:00"
+    },
+    {
+      "author": "eirinikafourou",
+      "body": "> I might have the terminology mixed up for this, but is the CD index for the graph? or for the node of the graph? It seems like the index would be different for each choice of node, so it could be described as\r\n\r\nYou are right! The CD index is calculated for the node of the graph. We have updated the doc_strings so as to be better explained. ",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-05-19T19:13:09+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "There is a nice dict function called `get` that does much of this lookup at the C-Python level:\r\n```suggestion\r\n        weights = [G.nodes[i].get(weight, 1) for i in pred]\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-03T12:56:03+00:00"
+    },
+    {
+      "author": "eirinikafourou",
+      "body": "Thank you, we've implemented your suggestion!",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-10T17:22:29+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "```suggestion\r\n    if not all(isinstance(G.nodes[n].get(\"time\"), datetime) for n in G):\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-13T13:34:42+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Should no successors of a node return a value of 0? or raise an exception?  When would CD index be zero?",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-13T13:34:46+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Similarly, should no predecessors give a result of 0?",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-13T13:35:23+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Maybe don't create all edges just to check if one is present?\r\n```suggestion\r\n    # -1 if any edge between node's predecessors and node's successors, else 1\r\n    b = [-1 if any(j in G[i] for j in G[node]) else 1 for i in pred]\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-13T13:48:11+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "```suggestion\r\n    1 if `i` cites any of the focal patents successors else 0, `n_{t}` is the number\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-13T13:48:59+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "@dschult SInce the paper was based on patents in the beginning we followed the same logic, so we considered it wrong when no successors were given because it's not possible for a patent to not have any references. Now since we're not talking only about patents and we're making it more inclusive, we could consider that if the main node has no successors the cd index is only based on the sum of the node's predecessors. ",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-14T07:53:00+00:00"
+    },
+    {
+      "author": "evgepab",
+      "body": "@dschult Yes, that should be possible.",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-14T07:54:07+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "```suggestion\r\n    >>> nodes = { \r\n    ...     1: {\"time\": datetime(2015, 1, 1)},\r\n    ...     2: {\"time\": datetime(2012, 1, 1), 'weight': 4},\r\n    ...     3: {\"time\": datetime(2010, 1, 1)},\r\n    ...     4: {\"time\": datetime(2008, 1, 1)},\r\n    ...     5: {\"time\": datetime(2014, 1, 1)}\r\n    ... }\r\n    >>> G.add_nodes_from([(n, nodes[n]) for n in nodes])\r\n    >>> edges = [(1, 3), (1, 4), (2, 3), (3, 4), (3, 5)]\r\n    >>> G.add_edges_from(edges)\r\n    >>> cd = nx.cd_index(G, 3, time=\"time\", weight=\"weight\")\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-24T21:07:59+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "```suggestion\r\n            \"Addition and comparison are not supported between 'time_delta' \"\r\n            \"and 'time' types, default time_delta = datetime.timedelta.\"\r\n```",
+      "path": "networkx/algorithms/time_dependent.py",
+      "line": null,
+      "created_at": "2023-06-24T21:09:56+00:00"
+    }
+  ],
+  "changed_files": [
+    "doc/reference/algorithms/index.rst",
+    "doc/reference/algorithms/time_dependent.rst",
+    "networkx/algorithms/__init__.py",
+    "networkx/algorithms/tests/test_time_dependent.py",
+    "networkx/algorithms/time_dependent.py"
+  ],
+  "diff": "diff --git a/doc/reference/algorithms/index.rst b/doc/reference/algorithms/index.rst\nindex a88ff5c2b24..f8c5aff485d 100644\n--- a/doc/reference/algorithms/index.rst\n+++ b/doc/reference/algorithms/index.rst\n@@ -70,6 +70,7 @@ Algorithms\n    summarization\n    swap\n    threshold\n+   time_dependent\n    tournament\n    traversal\n    tree\ndiff --git a/doc/reference/algorithms/time_dependent.rst b/doc/reference/algorithms/time_dependent.rst\nnew file mode 100644\nindex 00000000000..49dcae963e3\n--- /dev/null\n+++ b/doc/reference/algorithms/time_dependent.rst\n@@ -0,0 +1,9 @@\n+**************\n+Time dependent\n+**************\n+\n+.. automodule:: networkx.algorithms.time_dependent\n+.. autosummary::\n+   :toctree: generated/\n+\n+   cd_index\n\\ No newline at end of file\ndiff --git a/networkx/algorithms/__init__.py b/networkx/algorithms/__init__.py\nindex d292ef6eec1..db6d6cebb19 100644\n--- a/networkx/algorithms/__init__.py\n+++ b/networkx/algorithms/__init__.py\n@@ -50,6 +50,7 @@\n from networkx.algorithms.sparsifiers import *\n from networkx.algorithms.summarization import *\n from networkx.algorithms.swap import *\n+from networkx.algorithms.time_dependent import *\n from networkx.algorithms.traversal import *\n from networkx.algorithms.triads import *\n from networkx.algorithms.vitality import *\ndiff --git a/networkx/algorithms/tests/test_time_dependent.py b/networkx/algorithms/tests/test_time_dependent.py\nnew file mode 100644\nindex 00000000000..e4f8c8b0875\n--- /dev/null\n+++ b/networkx/algorithms/tests/test_time_dependent.py\n@@ -0,0 +1,427 @@\n+\"\"\"Unit testing for time dependent algorithms.\"\"\"\n+\n+from datetime import datetime\n+\n+import pytest\n+\n+import networkx as nx\n+\n+\n+class TestCdIndex:\n+    \"\"\"Unit testing for the cd index function.\"\"\"\n+\n+    def test_common_graph(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 1)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(1997, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1)},\n+            7: {\"time\": datetime(1999, 1, 1)},\n+            8: {\"time\": datetime(1999, 1, 1)},\n+            9: {\"time\": datetime(1998, 1, 1)},\n+            10: {\"time\": datetime(1997, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 4) == 0.17\n+\n+    def test_common_graph_with_given_attributes(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 1)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"date\": datetime(1992, 1, 1)},\n+            1: {\"date\": datetime(1992, 1, 1)},\n+            2: {\"date\": datetime(1993, 1, 1)},\n+            3: {\"date\": datetime(1993, 1, 1)},\n+            4: {\"date\": datetime(1995, 1, 1)},\n+            5: {\"date\": datetime(1997, 1, 1)},\n+            6: {\"date\": datetime(1998, 1, 1)},\n+            7: {\"date\": datetime(1999, 1, 1)},\n+            8: {\"date\": datetime(1999, 1, 1)},\n+            9: {\"date\": datetime(1998, 1, 1)},\n+            10: {\"date\": datetime(1997, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 4, time=\"date\") == 0.17\n+\n+    def test_common_graph_with_int_attributes(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 1)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": 20},\n+            1: {\"time\": 20},\n+            2: {\"time\": 30},\n+            3: {\"time\": 30},\n+            4: {\"time\": 50},\n+            5: {\"time\": 70},\n+            6: {\"time\": 80},\n+            7: {\"time\": 90},\n+            8: {\"time\": 90},\n+            9: {\"time\": 80},\n+            10: {\"time\": 74},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 4, time_delta=50) == 0.17\n+\n+    def test_common_graph_with_float_attributes(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 1)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": 20.2},\n+            1: {\"time\": 20.2},\n+            2: {\"time\": 30.7},\n+            3: {\"time\": 30.7},\n+            4: {\"time\": 50.9},\n+            5: {\"time\": 70.1},\n+            6: {\"time\": 80.6},\n+            7: {\"time\": 90.7},\n+            8: {\"time\": 90.7},\n+            9: {\"time\": 80.6},\n+            10: {\"time\": 74.2},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 4, time_delta=50) == 0.17\n+\n+    def test_common_graph_with_weights(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 1)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(1997, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1), \"weight\": 5},\n+            7: {\"time\": datetime(1999, 1, 1), \"weight\": 2},\n+            8: {\"time\": datetime(1999, 1, 1), \"weight\": 6},\n+            9: {\"time\": datetime(1998, 1, 1), \"weight\": 3},\n+            10: {\"time\": datetime(1997, 4, 1), \"weight\": 10},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+        assert nx.cd_index(G, 4, weight=\"weight\") == 0.04\n+\n+    def test_node_with_no_predecessors(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(2005, 1, 1)},\n+            6: {\"time\": datetime(2010, 1, 1)},\n+            7: {\"time\": datetime(2001, 1, 1)},\n+            8: {\"time\": datetime(2020, 1, 1)},\n+            9: {\"time\": datetime(2017, 1, 1)},\n+            10: {\"time\": datetime(2004, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+        assert nx.cd_index(G, 4) == 0.0\n+\n+    def test_node_with_no_successors(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(8, 2)\n+        G.add_edge(6, 0)\n+        G.add_edge(6, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(1997, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1)},\n+            7: {\"time\": datetime(1999, 1, 1)},\n+            8: {\"time\": datetime(1999, 1, 1)},\n+            9: {\"time\": datetime(1998, 1, 1)},\n+            10: {\"time\": datetime(1997, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+        assert nx.cd_index(G, 4) == 1.0\n+\n+    def test_n_equals_zero(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 3)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(2005, 1, 1)},\n+            6: {\"time\": datetime(2010, 1, 1)},\n+            7: {\"time\": datetime(2001, 1, 1)},\n+            8: {\"time\": datetime(2020, 1, 1)},\n+            9: {\"time\": datetime(2017, 1, 1)},\n+            10: {\"time\": datetime(2004, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        with pytest.raises(ValueError, match=\"The cd index cannot be defined.\") as ve:\n+            nx.cd_index(G, 4)\n+\n+    def test_time_timedelta_compatibility(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(4, 2)\n+        G.add_edge(4, 0)\n+        G.add_edge(4, 3)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": 20.2},\n+            1: {\"time\": 20.2},\n+            2: {\"time\": 30.7},\n+            3: {\"time\": 30.7},\n+            4: {\"time\": 50.9},\n+            5: {\"time\": 70.1},\n+            6: {\"time\": 80.6},\n+            7: {\"time\": 90.7},\n+            8: {\"time\": 90.7},\n+            9: {\"time\": 80.6},\n+            10: {\"time\": 74.2},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        with pytest.raises(\n+            ValueError,\n+            match=\"Addition and comparison are not supported between 'time_delta' and 'time' types, default time_delta = datetime.timedelta\",\n+        ) as ve:\n+            nx.cd_index(G, 4)\n+\n+    def test_node_with_no_time(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])\n+        G.add_edge(8, 2)\n+        G.add_edge(6, 0)\n+        G.add_edge(6, 3)\n+        G.add_edge(5, 2)\n+        G.add_edge(6, 2)\n+        G.add_edge(6, 4)\n+        G.add_edge(7, 4)\n+        G.add_edge(8, 4)\n+        G.add_edge(9, 4)\n+        G.add_edge(9, 1)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1)},\n+            7: {\"time\": datetime(1999, 1, 1)},\n+            8: {\"time\": datetime(1999, 1, 1)},\n+            9: {\"time\": datetime(1998, 1, 1)},\n+            10: {\"time\": datetime(1997, 4, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        with pytest.raises(\n+            ValueError, match=\"Not all nodes have a 'time' attribute.\"\n+        ) as ve:\n+            nx.cd_index(G, 4)\n+\n+    def test_maximally_consolidating(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])\n+        G.add_edge(5, 1)\n+        G.add_edge(5, 2)\n+        G.add_edge(5, 3)\n+        G.add_edge(5, 4)\n+        G.add_edge(6, 1)\n+        G.add_edge(6, 5)\n+        G.add_edge(7, 1)\n+        G.add_edge(7, 5)\n+        G.add_edge(8, 2)\n+        G.add_edge(8, 5)\n+        G.add_edge(9, 5)\n+        G.add_edge(9, 3)\n+        G.add_edge(10, 5)\n+        G.add_edge(10, 3)\n+        G.add_edge(10, 4)\n+        G.add_edge(11, 5)\n+        G.add_edge(11, 4)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(1997, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1)},\n+            7: {\"time\": datetime(1999, 1, 1)},\n+            8: {\"time\": datetime(1999, 1, 1)},\n+            9: {\"time\": datetime(1998, 1, 1)},\n+            10: {\"time\": datetime(1997, 4, 1)},\n+            11: {\"time\": datetime(1998, 5, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 5) == -1\n+\n+    def test_maximally_destabilizing(self):\n+        G = nx.DiGraph()\n+        G.add_nodes_from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])\n+        G.add_edge(5, 1)\n+        G.add_edge(5, 2)\n+        G.add_edge(5, 3)\n+        G.add_edge(5, 4)\n+        G.add_edge(6, 5)\n+        G.add_edge(7, 5)\n+        G.add_edge(8, 5)\n+        G.add_edge(9, 5)\n+        G.add_edge(10, 5)\n+        G.add_edge(11, 5)\n+\n+        node_attrs = {\n+            0: {\"time\": datetime(1992, 1, 1)},\n+            1: {\"time\": datetime(1992, 1, 1)},\n+            2: {\"time\": datetime(1993, 1, 1)},\n+            3: {\"time\": datetime(1993, 1, 1)},\n+            4: {\"time\": datetime(1995, 1, 1)},\n+            5: {\"time\": datetime(1997, 1, 1)},\n+            6: {\"time\": datetime(1998, 1, 1)},\n+            7: {\"time\": datetime(1999, 1, 1)},\n+            8: {\"time\": datetime(1999, 1, 1)},\n+            9: {\"time\": datetime(1998, 1, 1)},\n+            10: {\"time\": datetime(1997, 4, 1)},\n+            11: {\"time\": datetime(1998, 5, 1)},\n+        }\n+\n+        nx.set_node_attributes(G, node_attrs)\n+\n+        assert nx.cd_index(G, 5) == 1\ndiff --git a/networkx/algorithms/time_dependent.py b/networkx/algorithms/time_dependent.py\nnew file mode 100644\nindex 00000000000..f458e2ca82e\n--- /dev/null\n+++ b/networkx/algorithms/time_dependent.py\n@@ -0,0 +1,119 @@\n+\"\"\"Time dependent algorithms.\"\"\"\n+\n+from datetime import datetime, timedelta\n+\n+import networkx as nx\n+from networkx.utils import not_implemented_for\n+\n+__all__ = [\"cd_index\"]\n+\n+\n+@not_implemented_for(\"undirected\")\n+@not_implemented_for(\"multigraph\")\n+def cd_index(G, node, *, time_delta=timedelta(days=5 * 365), time=\"time\", weight=None):\n+    r\"\"\"Compute the CD index for `node` within the graph `G`.\n+\n+    Calculates the CD index for the given node of the graph,\n+    considering only its predecessors who have the `time` attribute\n+    smaller than or equal to the `time` attribute of the `node`\n+    plus `time_delta`.\n+\n+    Parameters\n+    ----------\n+    G : graph\n+       A directed networkx graph whose nodes have `time` attributes and optionally\n+       `weight` attributes (if a weight is not given, it is considered 1).\n+    node : node\n+       The node for which the CD index is calculated.\n+    time_delta : timedelta, integer or float (Optional, default is timedelta(days=5*365))\n+       Amount of time after the `time` attribute of the `node`.\n+    time : string (Optional, default is \"time\")\n+        The name of the node attribute that will be used for the calculations.\n+    weight : string (Optional, default is None)\n+        the name of the node attribute used as weight.\n+\n+    Returns\n+    -------\n+    float\n+       The CD index calculated for the node `node` within the graph `G`.\n+\n+    Raises\n+    ------\n+    ValueError\n+       If not all nodes have a `time` attribute or\n+       `time_delta` and `time` attribute types are not compatible or\n+       `n` equals 0.\n+\n+    NetworkXNotImplemented\n+        If `G` is a non-directed graph or a multigraph.\n+\n+    Examples\n+    --------\n+    >>> G = nx.DiGraph()\n+    >>> nodes = {\n+    ...     1: {\"time\": datetime(2015, 1, 1)},\n+    ...     2: {\"time\": datetime(2012, 1, 1), 'weight': 4},\n+    ...     3: {\"time\": datetime(2010, 1, 1)},\n+    ...     4: {\"time\": datetime(2008, 1, 1)},\n+    ...     5: {\"time\": datetime(2014, 1, 1)}\n+    ... }\n+    >>> G.add_nodes_from([(n, nodes[n]) for n in nodes])\n+    >>> edges = [(1, 3), (1, 4), (2, 3), (3, 4), (3, 5)]\n+    >>> G.add_edges_from(edges)\n+    >>> cd = nx.cd_index(G, 3, time=\"time\", weight=\"weight\")\n+\n+    Notes\n+    -----\n+    This method implements the algorithm for calculating the CD index,\n+    as described in the paper by Funk and Owen-Smith [1]_. The CD index\n+    is used in order to check how consolidating or destabilizing a patent\n+    is, hence the nodes of the graph represent patents and the edges show\n+    the citations between these patents. The mathematical model is given\n+    below:\n+\n+    .. math::\n+        CD_{t}=\\frac{1}{n_{t}}\\sum_{i=1}^{n}\\frac{-2f_{it}b_{it}+f_{it}}{w_{it}},\n+\n+    where `f_{it}` equals 1 if `i` cites the focal patent else 0, `b_{it}` equals\n+    1 if `i` cites any of the focal patents successors else 0, `n_{t}` is the number\n+    of forward citations in `i` and `w_{it}` is a matrix of weight for patent `i`\n+    at time `t`.\n+\n+    References\n+    ----------\n+    .. [1] Funk, Russell J., and Jason Owen-Smith.\n+           \"A dynamic network measure of technological change.\"\n+           Management science 63, no. 3 (2017): 791-817.\n+           http://russellfunk.org/cdindex/static/papers/funk_ms_2017.pdf\n+\n+    \"\"\"\n+    if not all(time in G.nodes[n] for n in G):\n+        raise ValueError(\"Not all nodes have a 'time' attribute.\")\n+\n+    try:\n+        # get target_date\n+        target_date = G.nodes[node][time] + time_delta\n+        # keep the predecessors that existed before the target date\n+        pred = {i for i in G.pred[node] if G.nodes[i][time] <= target_date}\n+    except:\n+        raise ValueError(\n+            \"Addition and comparison are not supported between 'time_delta' \"\n+            \"and 'time' types, default time_delta = datetime.timedelta.\"\n+        )\n+\n+    # -1 if any edge between node's predecessors and node's successors, else 1\n+    b = [-1 if any(j in G[i] for j in G[node]) else 1 for i in pred]\n+\n+    # n is size of the union of the focal node's predecessors and its successors' predecessors\n+    n = len(pred.union(*(G.pred[s].keys() - {node} for s in G[node])))\n+    if n == 0:\n+        raise ValueError(\"The cd index cannot be defined.\")\n+\n+    # calculate cd index\n+    if weight is None:\n+        return round(sum(bi for bi in b) / n, 2)\n+    else:\n+        # If a node has the specified weight attribute, its weight is used in the calculation\n+        # otherwise, a weight of 1 is assumed for that node\n+        weights = [G.nodes[i].get(weight, 1) for i in pred]\n+        return round(sum(bi / wt for bi, wt in zip(b, weights)) / n, 2)\n",
+  "pre_commit": "9da9a2706400e46798e28a23af5cf70801d07818",
+  "post_commit": "30d5cde498a2c72fcaf9cf59586a201b50fa82f0",
+  "merge_type": "squash"
+}

@@ -1,0 +1,65 @@
+{
+  "pr_number": 5662,
+  "title": "Fix #5569: Fix a crash in `unused-private-member` when `type(self)` used in bound methods",
+  "url": "https://github.com/pylint-dev/pylint/pull/5662",
+  "description": "## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n\r\n## Description\r\n\r\nCloses #5569\r\n",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 1682905954](https://coveralls.io/builds/45532073)\n\n* **13** of **13**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* No unchanged relevant lines lost coverage.\n* Overall coverage increased (+**0.02%**) to **93.765%**\n\n---\n\n\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/45532073/badge)](https://coveralls.io/builds/45532073) |\n| :-- | --: |\n| Change from base [Build 1679862235](https://coveralls.io/builds/45510535): |  0.02% |\n| Covered Lines: | 14481 |\n| Relevant Lines: | 15444 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-01-11T00:06:39Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex 37523bbe33..68d3b29cb4 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -35,6 +35,11 @@ Release date: TBA\n   Closes #4798\n   Closes #5081\n \n+* Fix a crash in ``unused-private-member`` checker when analyzing code using\n+  ``type(self)`` in bound methods.\n+\n+  Closes #5569\n+\n * Pyreverse - add output in mermaidjs format\n \n * ``used-before-assignment`` now considers that assignments in a try block\ndiff --git a/doc/whatsnew/2.13.rst b/doc/whatsnew/2.13.rst\nindex 0d38432568..959ded73b8 100644\n--- a/doc/whatsnew/2.13.rst\n+++ b/doc/whatsnew/2.13.rst\n@@ -74,6 +74,11 @@ Other Changes\n \n   Closes #4716\n \n+* Fix a crash in ``unused-private-member`` checker when analyzing code using\n+  ``type(self)`` in bound methods.\n+\n+  Closes #5569\n+\n * Fix crash in ``unnecessary-dict-index-lookup`` checker if the output of\n   ``items()`` is assigned to a 1-tuple.\n \ndiff --git a/pylint/checkers/classes/class_checker.py b/pylint/checkers/classes/class_checker.py\nindex aaa5de0cb2..f64e7addc5 100644\n--- a/pylint/checkers/classes/class_checker.py\n+++ b/pylint/checkers/classes/class_checker.py\n@@ -970,6 +970,9 @@ def _check_unused_private_attributes(self, node: nodes.ClassDef) -> None:\n                 if attribute.attrname != assign_attr.attrname:\n                     continue\n \n+                if self._is_type_self_call(attribute.expr):\n+                    continue\n+\n                 if (\n                     assign_attr.expr.name\n                     in {\n@@ -1666,7 +1669,7 @@ def _is_called_inside_special_method(node: nodes.NodeNG) -> bool:\n             return False\n         return frame_name and frame_name in PYMETHODS\n \n-    def _is_type_self_call(self, expr):\n+    def _is_type_self_call(self, expr: nodes.NodeNG) -> bool:\n         return (\n             isinstance(expr, nodes.Call)\n             and isinstance(expr.func, nodes.Name)\n@@ -2029,16 +2032,24 @@ def _uses_mandatory_method_param(self, node):\n         \"\"\"\n         return self._is_mandatory_method_param(node.expr)\n \n-    def _is_mandatory_method_param(self, node):\n+    def _is_mandatory_method_param(self, node: nodes.NodeNG) -> bool:\n         \"\"\"Check if nodes.Name corresponds to first attribute variable name\n \n         Name is `self` for method, `cls` for classmethod and `mcs` for metaclass.\n         \"\"\"\n-        return (\n-            self._first_attrs\n-            and isinstance(node, nodes.Name)\n-            and node.name == self._first_attrs[-1]\n-        )\n+        if self._first_attrs:\n+            first_attr = self._first_attrs[-1]\n+        else:\n+            # It's possible the function was already unregistered.\n+            closest_func = utils.get_node_first_ancestor_of_type(\n+                node, nodes.FunctionDef\n+            )\n+            if closest_func is None:\n+                return False\n+            if not closest_func.args.args:\n+                return False\n+            first_attr = closest_func.args.args[0].name\n+        return isinstance(node, nodes.Name) and node.name == first_attr\n \n \n def _ancestors_to_call(klass_node, method=\"__init__\"):\ndiff --git a/tests/functional/u/unused/unused_private_member.py b/tests/functional/u/unused/unused_private_member.py\nindex fc42ea8fb8..1b81d738b8 100644\n--- a/tests/functional/u/unused/unused_private_member.py\n+++ b/tests/functional/u/unused/unused_private_member.py\n@@ -309,3 +309,13 @@ class Foo:\n \n     def method(self):\n         print(self.__class__.__ham)\n+\n+\n+class TypeSelfCallInMethod:\n+    \"\"\"Regression test for issue 5569\"\"\"\n+    @classmethod\n+    def b(cls) -> None:\n+        cls.__a = ''  # [unused-private-member]\n+\n+    def a(self):\n+        return type(self).__a\ndiff --git a/tests/functional/u/unused/unused_private_member.txt b/tests/functional/u/unused/unused_private_member.txt\nindex 8d69dd02c3..99f34b7f53 100644\n--- a/tests/functional/u/unused/unused_private_member.txt\n+++ b/tests/functional/u/unused/unused_private_member.txt\n@@ -17,3 +17,4 @@ unused-private-member:243:12:243:50:FalsePositive4681.__init__:Unused private me\n unused-private-member:274:4:275:26:FalsePositive4849.__unused_private_method:Unused private member `FalsePositive4849.__unused_private_method()`:UNDEFINED\n unused-private-member:291:4:294:44:Pony.__init_defaults:Unused private member `Pony.__init_defaults(self)`:UNDEFINED\n unused-private-member:296:4:298:20:Pony.__get_fur_color:Unused private member `Pony.__get_fur_color(self)`:UNDEFINED\n+unused-private-member:318:8:318:15:TypeSelfCallInMethod.b:Unused private member `TypeSelfCallInMethod.__a`:UNDEFINED\n",
+  "changed_files": [
+    "ChangeLog",
+    "doc/whatsnew/2.13.rst",
+    "pylint/checkers/classes/class_checker.py",
+    "tests/functional/u/unused/unused_private_member.py",
+    "tests/functional/u/unused/unused_private_member.txt"
+  ],
+  "changed_functions": [
+    "_is_type_self_call",
+    "_is_mandatory_method_param",
+    "b",
+    "a"
+  ],
+  "pre_commit": "2631583577a3b2228af66214a364e4e284ba55dd",
+  "post_commit": "642268f636241e733409cb6cdf59f0eb87a03ae1",
+  "merged_at": "2022-01-11T15:50:30Z",
+  "review_comments": [
+    {
+      "author": "DanielNoord",
+      "body": "Unrelated but shouldn't this raise `attribute-defined-outside-init`?",
+      "path": "tests/functional/u/unused/unused_private_member.py",
+      "line": 318,
+      "created_at": "2022-01-11T08:14:44Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Could you add typing to this function signature? You probably know what this accepts and does after changing it a bit :)\r\nShould be:\r\n`_is_mandatory_method_param(self, node: nodes.NodeNG) -> bool`\r\n\r\nWhile we're at it, we can also add typing to `_is_type_self_call`?\r\nShould be:\r\n`def _is_type_self_call(self, expr: nodes.NodeNG) -> bool`\r\nIf `mypy` starts to complain about `attribute.expr` possible being `None` on L973 we can add a `type: ignore` for it. That should be fixed by `astroid` typing.",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": 2040,
+      "created_at": "2022-01-11T08:22:33Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Ah, but `__init__()` is for instance attributes, not class attributes, no?",
+      "path": "tests/functional/u/unused/unused_private_member.py",
+      "line": 318,
+      "created_at": "2022-01-11T14:23:10Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Ah, of course! Although I think patterns such as this might equally create trouble with uninitialised attributes down the line 😄 ",
+      "path": "tests/functional/u/unused/unused_private_member.py",
+      "line": 318,
+      "created_at": "2022-01-11T14:35:53Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 39,
+  "deletions": 7,
+  "changed_files_count": 5
+}

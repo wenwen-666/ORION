@@ -1,0 +1,4 @@
+# Python packages used by ORION itself.
+# External tools such as conda and git must be installed separately.
+openai
+pytest

@@ -1,0 +1,148 @@
+{
+  "pr_number": 7036,
+  "title": "Emit `unhashable-member` when creating sets or dicts",
+  "url": "https://github.com/pylint-dev/pylint/pull/7036",
+  "description": "## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :sparkles: New feature |\r\n\r\n## Description\r\nEmit `unhashable-member` when creating sets or dicts, not just when accessing dicts.\r\nCloses #7034\r\nCloses #7055\r\n",
+  "comments": [
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [astroid](https://github.com/PyCQA/astroid):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5356\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5358\n3) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5359\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L168\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L170\n\n</details>\n\n*This comment was generated for commit 75d9fb728363c9ca19b7e08c9bf75dbfa9a023ad*",
+      "created_at": "2022-06-24T23:58:09Z"
+    },
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 2583363591](https://coveralls.io/builds/50463350)\n\n* **25** of **25**   **(100.0%)**  changed or added relevant lines in **2** files are covered.\n* **16** unchanged lines in **4** files lost coverage.\n* Overall coverage increased (+**0.03%**) to **95.358%**\n\n---\n\n\n|  Files with Coverage Reduction | New Missed Lines | % |\n| :-----|--------------|--: |\n| [pylint/lint/expand_modules.py](https://coveralls.io/builds/50463350/source?filename=pylint%2Flint%2Fexpand_modules.py#L105) | 1 | 97.33% |\n| [pylint/testutils/_primer/primer_command.py](https://coveralls.io/builds/50463350/source?filename=pylint%2Ftestutils%2F_primer%2Fprimer_command.py#L33) | 1 | 93.75% |\n| [pylint/checkers/modified_iterating_checker.py](https://coveralls.io/builds/50463350/source?filename=pylint%2Fcheckers%2Fmodified_iterating_checker.py#L179) | 2 | 97.62% |\n| [pylint/testutils/_primer/primer_run_command.py](https://coveralls.io/builds/50463350/source?filename=pylint%2Ftestutils%2F_primer%2Fprimer_run_command.py#L25) | 12 | 39.02% |\n<!-- | **Total:** | **16** |  | -->\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/50463350/badge)](https://coveralls.io/builds/50463350) |\n| :-- | --: |\n| Change from base [Build 2560695451](https://coveralls.io/builds/50356774): |  0.03% |\n| Covered Lines: | 16701 |\n| Relevant Lines: | 17514 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-06-25T00:16:15Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [astroid](https://github.com/PyCQA/astroid):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5356\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5358\n3) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5359\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L168\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L170\n\n</details>\n\n*This comment was generated for commit 88fcf1e348d6112d05d11d6d62965fffab6dd1ac*",
+      "created_at": "2022-06-25T00:31:06Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [astroid](https://github.com/PyCQA/astroid):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5364\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5366\n3) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/PyCQA/astroid/blob/main/astroid/nodes/node_classes.py#L5367\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L168\n2) unhashable-dict-key:\n*Dict key is unhashable*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/types.py#L170\n\n</details>\n\n*This comment was generated for commit 292bcb1be49977b9d77cbaf5d66e1c9fb4ffb7a3*",
+      "created_at": "2022-06-25T12:27:32Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit b916534d314bbbc9229f13c2f11581a54d61b5a2*",
+      "created_at": "2022-06-25T13:59:18Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [pytest](https://github.com/pytest-dev/pytest):**\nThe following messages are now emitted:\n\n<details>\n\n1) redefined-variable-type:\n*Redefinition of importhook type from _distutils_hack.DistutilsMetaFinder to _pytest.assertion.DummyRewriteHook*\nhttps://github.com/pytest-dev/pytest/blob/main/src/_pytest/assertion/__init__.py#L69\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) no-member:\n*Instance of 'module' has no '__file__' member*\nhttps://github.com/getsentry/sentry/blob/master/src/sentry/utils/distutils/commands/base.py#L37\n\n</details>\n\n*This comment was generated for commit f0ef3c893411e0d6348a18d64697f0f0d5b5d201*",
+      "created_at": "2022-06-25T16:28:59Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 8aa22e04bca86684872deb2c535d73093bc4bf52*",
+      "created_at": "2022-06-26T13:25:01Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 11e987c36b8a7e40e083506e16788d446317b705*",
+      "created_at": "2022-06-27T13:43:55Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 12bd09a07baea22ce535ae739bcc4ff30b4673ea*",
+      "created_at": "2022-06-29T13:45:26Z"
+    }
+  ],
+  "diff": "diff --git a/doc/data/messages/u/unhashable-dict-key/bad.py b/doc/data/messages/u/unhashable-dict-key/bad.py\ndeleted file mode 100644\nindex 6652917abe..0000000000\n--- a/doc/data/messages/u/unhashable-dict-key/bad.py\n+++ /dev/null\n@@ -1,2 +0,0 @@\n-# Print the number of apples:\n-print({\"apple\": 42}[[\"apple\"]])  # [unhashable-dict-key]\ndiff --git a/doc/data/messages/u/unhashable-member/bad.py b/doc/data/messages/u/unhashable-member/bad.py\nnew file mode 100644\nindex 0000000000..30c47dad38\n--- /dev/null\n+++ b/doc/data/messages/u/unhashable-member/bad.py\n@@ -0,0 +1,2 @@\n+# Print the number of apples:\n+print({\"apple\": 42}[[\"apple\"]])  # [unhashable-member]\ndiff --git a/doc/data/messages/u/unhashable-dict-key/good.py b/doc/data/messages/u/unhashable-member/good.py\nsimilarity index 100%\nrename from doc/data/messages/u/unhashable-dict-key/good.py\nrename to doc/data/messages/u/unhashable-member/good.py\ndiff --git a/doc/user_guide/checkers/features.rst b/doc/user_guide/checkers/features.rst\nindex 0daf6466f2..ca130b0f6c 100644\n--- a/doc/user_guide/checkers/features.rst\n+++ b/doc/user_guide/checkers/features.rst\n@@ -1100,8 +1100,8 @@ Typecheck checker Messages\n :not-context-manager (E1129): *Context manager '%s' doesn't implement __enter__ and __exit__.*\n   Used when an instance in a with statement doesn't implement the context\n   manager protocol(__enter__/__exit__).\n-:unhashable-dict-key (E1140): *Dict key is unhashable*\n-  Emitted when a dict key is not hashable (i.e. doesn't define __hash__\n+:unhashable-member (E1140): *Member is unhashable*\n+  Emitted when a dict key or set member is not hashable (i.e. doesn't define __hash__\n   method).\n :repeated-keyword (E1132): *Got multiple values for keyword argument %r in function call*\n   Emitted when a function call got multiple values for a keyword.\ndiff --git a/doc/user_guide/messages/messages_overview.rst b/doc/user_guide/messages/messages_overview.rst\nindex b5ae469def..796863c17e 100644\n--- a/doc/user_guide/messages/messages_overview.rst\n+++ b/doc/user_guide/messages/messages_overview.rst\n@@ -156,7 +156,7 @@ All messages in the error category:\n    error/undefined-variable\n    error/unexpected-keyword-arg\n    error/unexpected-special-method-signature\n-   error/unhashable-dict-key\n+   error/unhashable-member\n    error/unpacking-non-sequence\n    error/unrecognized-inline-option\n    error/unrecognized-option\ndiff --git a/doc/whatsnew/2/2.15/index.rst b/doc/whatsnew/2/2.15/index.rst\nindex e8ce187909..c9c0f95c98 100644\n--- a/doc/whatsnew/2/2.15/index.rst\n+++ b/doc/whatsnew/2/2.15/index.rst\n@@ -69,6 +69,11 @@ False negatives fixed\n \n   Closes #6643\n \n+* Rename ``unhashable-dict-key`` to ``unhashable-member`` and emit when creating sets and dicts,\n+  not just when accessing dicts.\n+\n+  Closes #7034, Closes #7055\n+\n \n Other bug fixes\n ===============\ndiff --git a/pylint/checkers/typecheck.py b/pylint/checkers/typecheck.py\nindex dd289bfbea..9732ede783 100644\n--- a/pylint/checkers/typecheck.py\n+++ b/pylint/checkers/typecheck.py\n@@ -32,6 +32,7 @@\n     has_known_bases,\n     is_builtin_object,\n     is_comprehension,\n+    is_hashable,\n     is_inside_abstract_class,\n     is_iterable,\n     is_mapping,\n@@ -363,12 +364,6 @@ def _missing_member_hint(owner, attrname, distance_threshold, max_choices):\n         \"as a metaclass, something which might be invalid for using as \"\n         \"a metaclass.\",\n     ),\n-    \"E1140\": (\n-        \"Dict key is unhashable\",\n-        \"unhashable-dict-key\",\n-        \"Emitted when a dict key is not hashable \"\n-        \"(i.e. doesn't define __hash__ method).\",\n-    ),\n     \"E1141\": (\n         \"Unpacking a dictionary in iteration without calling .items()\",\n         \"dict-iter-missing-items\",\n@@ -379,6 +374,13 @@ def _missing_member_hint(owner, attrname, distance_threshold, max_choices):\n         \"await-outside-async\",\n         \"Emitted when await is used outside an async function.\",\n     ),\n+    \"E1143\": (\n+        \"'%s' is unhashable and can't be used as a %s in a %s\",\n+        \"unhashable-member\",\n+        \"Emitted when a dict key or set member is not hashable \"\n+        \"(i.e. doesn't define __hash__ method).\",\n+        {\"old_names\": [(\"E1140\", \"unhashable-dict-key\")]},\n+    ),\n     \"W1113\": (\n         \"Keyword argument before variable positional arguments list \"\n         \"in the definition of %s function\",\n@@ -2015,11 +2017,33 @@ def visit_compare(self, node: nodes.Compare) -> None:\n         if op in {\"in\", \"not in\"}:\n             self._check_membership_test(right)\n \n+    @only_required_for_messages(\"unhashable-member\")\n+    def visit_dict(self, node: nodes.Dict) -> None:\n+        for k, _ in node.items:\n+            if not is_hashable(k):\n+                self.add_message(\n+                    \"unhashable-member\",\n+                    node=k,\n+                    args=(k.as_string(), \"key\", \"dict\"),\n+                    confidence=INFERENCE,\n+                )\n+\n+    @only_required_for_messages(\"unhashable-member\")\n+    def visit_set(self, node: nodes.Set) -> None:\n+        for element in node.elts:\n+            if not is_hashable(element):\n+                self.add_message(\n+                    \"unhashable-member\",\n+                    node=element,\n+                    args=(element.as_string(), \"member\", \"set\"),\n+                    confidence=INFERENCE,\n+                )\n+\n     @only_required_for_messages(\n         \"unsubscriptable-object\",\n         \"unsupported-assignment-operation\",\n         \"unsupported-delete-operation\",\n-        \"unhashable-dict-key\",\n+        \"unhashable-member\",\n         \"invalid-sequence-index\",\n         \"invalid-slice-index\",\n     )\n@@ -2032,15 +2056,13 @@ def visit_subscript(self, node: nodes.Subscript) -> None:\n \n         if isinstance(node.value, nodes.Dict):\n             # Assert dict key is hashable\n-            inferred = safe_infer(node.slice)\n-            if inferred and inferred != astroid.Uninferable:\n-                try:\n-                    hash_fn = next(inferred.igetattr(\"__hash__\"))\n-                except astroid.InferenceError:\n-                    pass\n-                else:\n-                    if getattr(hash_fn, \"value\", True) is None:\n-                        self.add_message(\"unhashable-dict-key\", node=node.value)\n+            if not is_hashable(node.slice):\n+                self.add_message(\n+                    \"unhashable-member\",\n+                    node=node.value,\n+                    args=(node.slice.as_string(), \"key\", \"dict\"),\n+                    confidence=INFERENCE,\n+                )\n \n         if node.ctx == astroid.Load:\n             supported_protocol = supports_getitem\ndiff --git a/pylint/checkers/utils.py b/pylint/checkers/utils.py\nindex 647b4e70a4..317cd91f2b 100644\n--- a/pylint/checkers/utils.py\n+++ b/pylint/checkers/utils.py\n@@ -1854,3 +1854,22 @@ def find_assigned_names_recursive(\n     elif isinstance(target, nodes.BaseContainer):\n         for elt in target.elts:\n             yield from find_assigned_names_recursive(elt)\n+\n+\n+def is_hashable(node: nodes.NodeNG) -> bool:\n+    \"\"\"Return whether any inferred value of `node` is hashable.\n+\n+    When finding ambiguity, return True.\n+    \"\"\"\n+    try:\n+        for inferred in node.infer():\n+            if inferred is astroid.Uninferable:\n+                return True\n+            hash_fn = next(inferred.igetattr(\"__hash__\"))\n+            if hash_fn.parent is inferred:\n+                return True\n+            if getattr(hash_fn, \"value\", True) is not None:\n+                return True\n+        return False\n+    except astroid.InferenceError:\n+        return True\ndiff --git a/tests/functional/d/dataclass_typecheck.py b/tests/functional/d/dataclass_typecheck.py\nindex 0de6e43b35..f15bfead43 100644\n--- a/tests/functional/d/dataclass_typecheck.py\n+++ b/tests/functional/d/dataclass_typecheck.py\n@@ -102,7 +102,7 @@ class Test2(metaclass=obj.attr1):  # [invalid-metaclass]\n \n {}[obj.attr0] = 1\n {}[obj.attr1] = 1\n-{}[obj.attr5] = 1  # [unhashable-dict-key]\n+{}[obj.attr5] = 1  # [unhashable-member]\n \n for k, v in obj.attr5:  # TODO: Should be a dict-iter-missing-items error\n     print(k, v)\ndiff --git a/tests/functional/d/dataclass_typecheck.txt b/tests/functional/d/dataclass_typecheck.txt\nindex 97f5860bb6..fad9a5ef33 100644\n--- a/tests/functional/d/dataclass_typecheck.txt\n+++ b/tests/functional/d/dataclass_typecheck.txt\n@@ -8,5 +8,5 @@ unsupported-assignment-operation:61:0:61:9::'obj.attr1' does not support item as\n unsupported-delete-operation:66:4:66:13::'obj.attr1' does not support item deletion:UNDEFINED\n not-context-manager:91:0:92:8::Context manager 'str' doesn't implement __enter__ and __exit__.:UNDEFINED\n invalid-metaclass:99:0:99:11:Test2:Invalid metaclass 'Instance of builtins.int' used:UNDEFINED\n-unhashable-dict-key:105:0:105:2::Dict key is unhashable:UNDEFINED\n+unhashable-member:105:0:105:2::'obj.attr5' is unhashable and can't be used as a key in a dict:INFERENCE\n isinstance-second-argument-not-valid-type:115:6:115:30::Second argument of isinstance is not a type:UNDEFINED\ndiff --git a/tests/functional/u/unhashable_dict_key.py b/tests/functional/u/unhashable_dict_key.py\ndeleted file mode 100644\nindex fe6142ff44..0000000000\n--- a/tests/functional/u/unhashable_dict_key.py\n+++ /dev/null\n@@ -1,12 +0,0 @@\n-# pylint: disable=missing-docstring,expression-not-assigned,too-few-public-methods,pointless-statement, useless-object-inheritance\n-\n-\n-class Unhashable(object):\n-    __hash__ = list.__hash__\n-\n-{}[[1, 2, 3]] # [unhashable-dict-key]\n-{}[{}] # [unhashable-dict-key]\n-{}[Unhashable()] # [unhashable-dict-key]\n-{}[1:2]  # [unhashable-dict-key]\n-{'foo': 'bar'}['foo']\n-{'foo': 'bar'}[42]\ndiff --git a/tests/functional/u/unhashable_dict_key.txt b/tests/functional/u/unhashable_dict_key.txt\ndeleted file mode 100644\nindex 87c74ab57a..0000000000\n--- a/tests/functional/u/unhashable_dict_key.txt\n+++ /dev/null\n@@ -1,4 +0,0 @@\n-unhashable-dict-key:7:0:7:2::Dict key is unhashable:UNDEFINED\n-unhashable-dict-key:8:0:8:2::Dict key is unhashable:UNDEFINED\n-unhashable-dict-key:9:0:9:2::Dict key is unhashable:UNDEFINED\n-unhashable-dict-key:10:0:10:2::Dict key is unhashable:UNDEFINED\ndiff --git a/tests/functional/u/unhashable_member.py b/tests/functional/u/unhashable_member.py\nnew file mode 100644\nindex 0000000000..779aef743c\n--- /dev/null\n+++ b/tests/functional/u/unhashable_member.py\n@@ -0,0 +1,23 @@\n+# pylint: disable=missing-docstring,expression-not-assigned,too-few-public-methods,pointless-statement, useless-object-inheritance\n+\n+\n+class Unhashable(object):\n+    __hash__ = list.__hash__\n+\n+# Subscripts\n+{}[[1, 2, 3]] # [unhashable-member]\n+{}[{}] # [unhashable-member]\n+{}[Unhashable()] # [unhashable-member]\n+{}[1:2]  # [unhashable-member]\n+{'foo': 'bar'}['foo']\n+{'foo': 'bar'}[42]\n+\n+# Keys\n+{[1, 2, 3]: \"tomato\"}  # [unhashable-member]\n+{\n+    [1, 2, 3]: \"tomato\",  # [unhashable-member]\n+    [4, 5, 6]: \"celeriac\",  # [unhashable-member]\n+}\n+{[1, 2, 3]}  # [unhashable-member]\n+{\"tomato\": \"tomahto\"}\n+{dict: {}}\ndiff --git a/tests/functional/u/unhashable_member.txt b/tests/functional/u/unhashable_member.txt\nnew file mode 100644\nindex 0000000000..cbde3f8d67\n--- /dev/null\n+++ b/tests/functional/u/unhashable_member.txt\n@@ -0,0 +1,8 @@\n+unhashable-member:8:0:8:2::'[1, 2, 3]' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:9:0:9:2::'{}' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:10:0:10:2::'Unhashable()' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:11:0:11:2::\"'1:2' is unhashable and can't be used as a key in a dict\":INFERENCE\n+unhashable-member:16:1:16:10::'[1, 2, 3]' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:18:4:18:13::'[1, 2, 3]' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:19:4:19:13::'[4, 5, 6]' is unhashable and can't be used as a key in a dict:INFERENCE\n+unhashable-member:21:1:21:10::'[1, 2, 3]' is unhashable and can't be used as a member in a set:INFERENCE\n",
+  "changed_files": [
+    "doc/data/messages/u/unhashable-dict-key/bad.py",
+    "doc/data/messages/u/unhashable-member/bad.py",
+    "doc/data/messages/u/unhashable-member/good.py",
+    "doc/user_guide/checkers/features.rst",
+    "doc/user_guide/messages/messages_overview.rst",
+    "doc/whatsnew/2/2.15/index.rst",
+    "pylint/checkers/typecheck.py",
+    "pylint/checkers/utils.py",
+    "tests/functional/d/dataclass_typecheck.py",
+    "tests/functional/d/dataclass_typecheck.txt",
+    "tests/functional/u/unhashable_dict_key.py",
+    "tests/functional/u/unhashable_dict_key.txt",
+    "tests/functional/u/unhashable_member.py",
+    "tests/functional/u/unhashable_member.txt"
+  ],
+  "changed_functions": [
+    "visit_dict",
+    "visit_set",
+    "is_hashable"
+  ],
+  "pre_commit": "63f7c091bef4eca520de9977270e4ff99fd76f9e",
+  "post_commit": "1e2094d1e9192befedef7984b0b59d9234c6a7dd",
+  "merged_at": "2022-06-29T13:48:07Z",
+  "review_comments": [
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Nitpick:\r\n```suggestion\r\n                return True\r\n        return False\r\n    except astroid.InferenceError:\r\n        return True\r\n```",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-06-25T07:04:35Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Do you think it could deserve its own message; for example `unhashable-set-member`?",
+      "path": "pylint/checkers/typecheck.py",
+      "line": null,
+      "created_at": "2022-06-25T19:08:52Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Or maybe we could rename to `unhashable-member` in a backwards-compatible way?",
+      "path": "pylint/checkers/typecheck.py",
+      "line": null,
+      "created_at": "2022-06-25T19:34:58Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "That also sounds good. ",
+      "path": "pylint/checkers/typecheck.py",
+      "line": null,
+      "created_at": "2022-06-25T19:47:29Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "```suggestion\r\n  Emitted when a dict key or set member is not hashable (i.e. doesn't define __hash__\r\n```",
+      "path": "doc/user_guide/checkers/features.rst",
+      "line": null,
+      "created_at": "2022-06-27T08:54:41Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "```suggestion\r\n    \"\"\"Return whether any inferred value of `node` is hashable. When finding ambiguity, return True.\"\"\"\r\n```",
+      "path": "pylint/checkers/utils.py",
+      "line": null,
+      "created_at": "2022-06-27T12:59:34Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n        \"'%s' is unhashable and can't be used as a %s in a %s\",\r\n```",
+      "path": "pylint/checkers/typecheck.py",
+      "line": null,
+      "created_at": "2022-06-29T08:00:33Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\nunhashable-member:8:0:8:2::'[1, 2, 3]' is unhashable and can't be used as a key in a dict:INFERENCE\r\n```",
+      "path": "tests/functional/u/unhashable_member.txt",
+      "line": null,
+      "created_at": "2022-06-29T08:03:31Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n                self.add_message(\"unhashable-member\", node=k, args=(k.as_string(), \"key\", \"dict\"), confidence=INFERENCE)\r\n```",
+      "path": "pylint/checkers/typecheck.py",
+      "line": null,
+      "created_at": "2022-06-29T08:03:59Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 100,
+  "deletions": 39,
+  "changed_files_count": 14
+}

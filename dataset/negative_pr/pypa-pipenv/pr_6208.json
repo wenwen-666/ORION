@@ -1,0 +1,28 @@
+{
+  "pr_number": 6208,
+  "title": "Solve issue with quiet lock not writing the lock file.",
+  "url": "https://github.com/pypa/pipenv/pull/6208",
+  "description": "### The issue\r\n\r\nMore work needs to be done to respect the quiet state across utilities, which may mean studying up on how we track command state -- I don't want to just extend all the utilities to have a quiet parameter for example.   Anyway, this should fix the issue reported where quiet does not write the lock file changes.\r\n\r\nFixes #6207\r\n\r\n### The checklist\r\n\r\n* [X] Associated issue\r\n* [ ] A news fragment in the `news/` directory to describe this fix with the extension `.bugfix.rst`, `.feature.rst`, `.behavior.rst`, `.doc.rst`. `.vendor.rst`. or `.trivial.rst` (this will appear in the release changelog). Use semantic line breaks and name the file after the issue number or the PR #.\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "b9ef7adc8c9aa9031cb2a400189d5854823f5e3b",
+  "merged_at": "2024-08-19T19:42:00+00:00",
+  "created_at": "2024-07-26T22:38:01+00:00",
+  "closed_at": "2024-08-19T19:42:00+00:00",
+  "user": "matteius",
+  "additions": 23,
+  "deletions": 19,
+  "changed_files_count": 3,
+  "labels": [],
+  "comments": [],
+  "review_comments": [],
+  "changed_files": [
+    "news/6207.bugfix.rst",
+    "pipenv/cli/command.py",
+    "pipenv/routines/lock.py"
+  ],
+  "diff": "diff --git a/news/6207.bugfix.rst b/news/6207.bugfix.rst\nnew file mode 100644\nindex 0000000000..5e251d99ca\n--- /dev/null\n+++ b/news/6207.bugfix.rst\n@@ -0,0 +1 @@\n+Solve issue with quiet lock not writing the lock file #6207.\ndiff --git a/pipenv/cli/command.py b/pipenv/cli/command.py\nindex 9924e541d3..247672d811 100644\n--- a/pipenv/cli/command.py\n+++ b/pipenv/cli/command.py\n@@ -344,7 +344,8 @@ def lock(ctx, state, **kwargs):\n         clear=state.clear,\n         pre=pre,\n         pypi_mirror=state.pypi_mirror,\n-        write=not state.quiet,\n+        write=True,\n+        quiet=state.quiet,\n         categories=state.installstate.categories,\n     )\n \ndiff --git a/pipenv/routines/lock.py b/pipenv/routines/lock.py\nindex 78893b3077..ec12370cab 100644\n--- a/pipenv/routines/lock.py\n+++ b/pipenv/routines/lock.py\n@@ -12,6 +12,7 @@ def do_lock(\n     clear=False,\n     pre=False,\n     write=True,\n+    quiet=False,\n     pypi_mirror=None,\n     categories=None,\n     extra_pip_args=None,\n@@ -46,15 +47,15 @@ def do_lock(\n             packages = project.get_pipfile_section(pipfile_category)\n \n         if write:\n-            # Alert the user of progress.\n-            click.echo(\n-                \"{} {} {}\".format(\n-                    click.style(\"Locking\"),\n-                    click.style(f\"[{pipfile_category}]\", fg=\"yellow\"),\n-                    click.style(\"dependencies...\"),\n-                ),\n-                err=True,\n-            )\n+            if not quiet:  # Alert the user of progress.\n+                click.echo(\n+                    \"{} {} {}\".format(\n+                        click.style(\"Locking\"),\n+                        click.style(f\"[{pipfile_category}]\", fg=\"yellow\"),\n+                        click.style(\"dependencies...\"),\n+                    ),\n+                    err=True,\n+                )\n \n         # Prune old lockfile category as new one will be created.\n         with contextlib.suppress(KeyError):\n@@ -89,15 +90,16 @@ def do_lock(\n     if write:\n         lockfile.update({\"_meta\": project.get_lockfile_meta()})\n         project.write_lockfile(lockfile)\n-        click.echo(\n-            \"{}\".format(\n-                click.style(\n-                    f\"Updated Pipfile.lock ({project.get_lockfile_hash()})!\",\n-                    bold=True,\n-                )\n-            ),\n-            err=True,\n-        )\n+        if not quiet:\n+            click.echo(\n+                \"{}\".format(\n+                    click.style(\n+                        f\"Updated Pipfile.lock ({project.get_lockfile_hash()})!\",\n+                        bold=True,\n+                    )\n+                ),\n+                err=True,\n+            )\n     else:\n         return lockfile\n \n",
+  "pre_commit": "9cddf58267028ebab47d27e4c87e397c028336af",
+  "post_commit": "b9ef7adc8c9aa9031cb2a400189d5854823f5e3b",
+  "merge_type": "squash"
+}

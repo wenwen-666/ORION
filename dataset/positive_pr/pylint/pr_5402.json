@@ -1,0 +1,280 @@
+{
+  "pr_number": 5402,
+  "title": "Fix #4761: Emit `used-before-assignment` where single assignment only made in except blocks",
+  "url": "https://github.com/pylint-dev/pylint/pull/5402",
+  "description": "## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n\r\n## Description\r\n\r\n**Before**\r\nIf an assignment only took place in an except block, later use of the name outside the except did not raise `used-before-assignment`.\r\n\r\n**Now**\r\nAs long as only one assignment for the name is in the except block, the message is raised.\r\n\r\nCloses #4761 \r\n\r\nRelates to #5384 (we may want to cherry-pick the first commit and rewrite slightly)\r\n",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 1547071143](https://coveralls.io/builds/44801934)\n\n* **15** of **15**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* No unchanged relevant lines lost coverage.\n* Overall coverage increased (+**0.005%**) to **93.701%**\n\n---\n\n\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/44801934/badge)](https://coveralls.io/builds/44801934) |\n| :-- | --: |\n| Change from base [Build 1541896281](https://coveralls.io/builds/44767180): |  0.005% |\n| Covered Lines: | 14177 |\n| Relevant Lines: | 15130 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2021-11-26T03:18:55Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Hmm yes let me review #5241, I think I messed up with not doing it for 2.12 because this will pretty much change the whole implementation for this once we merge.",
+      "created_at": "2021-11-26T08:52:15Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "@jacobtylerwalls  as someone who used the previous code, your input would be valuable for #5241. If you have the time to review it too I'd appreciate that.",
+      "created_at": "2021-11-26T08:53:50Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "> Small comment, rest looks good.\r\n\r\nNo problem. I'm having trouble finding the comment, though. Can you post it?\r\n",
+      "created_at": "2021-11-26T13:33:20Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "This need to be reviewed and merged before #5384",
+      "created_at": "2021-12-03T19:35:16Z"
+    },
+    {
+      "author": "cdce8p",
+      "body": "Came across a regression case during testing -> #5500",
+      "created_at": "2021-12-11T11:39:25Z"
+    },
+    {
+      "author": "martimlobao",
+      "body": "@jacobtylerwalls @DanielNoord Not sure if I should open a ticket, but was testing the latest version of `main` and came across a new false positive which I've tracked down to this PR. Here's a MWE:\r\n\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        1 / 0\r\n    except ZeroDivisionError as e:\r\n        error = e  # keep error for final raise\r\n    else:\r\n        break\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\nThis function works fine, but pylint now complains about a false positive `Using variable 'error' before assignment (used-before-assignment)` in the last line.",
+      "created_at": "2022-01-14T03:43:40Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Hi @martimlobao, thanks for reporting and for providing a concrete example. I've constructed a couple more examples that I think we'd have to reason about to decide on a way forward.\r\n\r\n**1.**\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        [][0]\r\n    except ZeroDivisionError as e:\r\n        error = e  # keep error for final raise\r\n    except:\r\n        pass\r\n    else:\r\n        break\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\nWhen executed, gives:\r\n```python\r\nTraceback (most recent call last):\r\n  File \"a.py\", line 12, in <module>\r\n    raise error\r\nNameError: name 'error' is not defined\r\n```\r\n\r\n**2.**\r\n```python\r\nfor i in range(3):\r\n    if 'some runtime condition':\r\n        continue\r\n    try:\r\n        1 / 0\r\n    except ZeroDivisionError as e:\r\n        error = e  # keep error for final raise\r\n    else:\r\n        break\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\nWhen executed, gives:\r\n```python\r\n  File \"b.py\", line 12, in <module>\r\n    raise error\r\nNameError: name 'error' is not defined\r\n```\r\n***\r\n\r\nOf course, 1 and 2 are very similar: all that's required is some other means of finishing the inner loop than hitting the except handler you contemplated. These are runtime control flow things that I don't think Pylint is in a position to speculate about. I _think_ it's a virtue that as things stand, you either have to define `error` before your loop and then check `is not None` before raising it, or just disable the check if you feel very confident about the design of the code. That's a judgment call: verbosity vs. how likely it is someone someone later turns the code into more like **1** or **2** and causes problems.\r\n\r\nHow does that strike you?",
+      "created_at": "2022-01-14T04:41:02Z"
+    },
+    {
+      "author": "martimlobao",
+      "body": "> Of course, 1 and 2 are very similar: all that's required is some other means of finishing the inner loop than hitting the except handler you contemplated. These are runtime control flow things that I don't think Pylint is in a position to speculate about. I _think_ it's a virtue that as things stand, you either have to define `error` before your loop and then check `is not None` before raising it, or just disable the check if you feel very confident about the design of the code. That's a judgment call: verbosity vs. how likely it is someone someone later turns the code into more like **1** or **2** and causes problems.\r\n> \r\n> How does that strike you?\r\n\r\nThanks for the detailed response @jacobtylerwalls! The issue you're trying to fix here isn't an easy one to solve, even conceptually, so I can definitely appreciate the difficulty in balancing false positives and false negatives.\r\n\r\nI will say though that from a user's perspective, a false positive error is probably more annoying than a false negative, especially in this case where Pylint classifies this as an actual error and not merely a convention or recommendation. Making a change because of an actual bug is fine, but making it to appease a linter that thinks there's a bug that doesn't exist may feel slightly frustrating.\r\n\r\nYour examples illustrate well how hard it is to consider every different edge case. I'm not sure how feasible this is as a solution, but would it be possible to check _every_ \"exit branch\" for a potentially undefined variable? If at least one exit path does not define the variable, then Pylint should raise the error since there's the possibility for a valid `used-before-assignment` error.\r\n\r\nLet me try to illustrate what I mean with a few examples:\r\n\r\n```python\r\ndef undefined_variable():\r\n    \"\"\"used-before-assignment (E0601)\"\"\"\r\n    try:\r\n        pass  # < exit branch where some_message is *not* defined\r\n    except ValueError:\r\n        some_message = 'some message'  # < exit branch where some_message is defined\r\n\r\n    if not some_message:\r\n        return 1\r\n\r\n    return some_message\r\n```\r\n\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        do_something()  # < exit branch where error is *not* defined, should flag\r\n    except ZeroDivisionError as e:\r\n        error = e  # < exit branch where error is defined\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        do_something()  # not an exit branch because of `else` below (will only exit here with an exception)\r\n    except ZeroDivisionError as e:\r\n        error = e  # < exit branch where error is defined\r\n    else:\r\n        break  # < exit condition where error is *not* defined, but will skip `raise error` below\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        do_something()  # not an exit branch because of `else` below (will only exit here with an exception)\r\n    except ZeroDivisionError as e:\r\n        error = e  # < exit branch where error is defined\r\n    except:\r\n        pass  # < exit branch where error is *not* defined, should flag\r\n    else:\r\n        break  # < exit condition where error is *not* defined, but will skip `raise error` below\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\n```python\r\nfor i in range(3):\r\n    if 'some runtime condition':\r\n        continue  # < exit branch where error is *not* defined, should flag\r\n    try:  # < other exit branch, needs to check below if error is defined\r\n        1 / 0\r\n    except ZeroDivisionError as e:\r\n        error = e  # keep error for final raise\r\n    else:\r\n        break\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\nI have to admit I have no understanding of how feasible it would be to implement this, but I believe this approach should be able to distinguish between (all? most?) scenarios where an unassigned variable exists and those where it does not.",
+      "created_at": "2022-01-14T05:39:20Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Thanks for the well-constructed examples. I'm sure in a moment we'll move this discussion to a new issue.\r\n\r\nOf your last examples, this is the one false positive:\r\n\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        do_something()  # not an exit branch because of `else` below (will only exit here with an exception)\r\n    except ZeroDivisionError as e:\r\n        error = e  # < exit branch where error is defined\r\n    else:\r\n        break  # < exit condition where error is *not* defined, but will skip `raise error` below\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\nBut I can easily turn it into a true positive with:\r\n```python\r\nfor _ in range(3):\r\n    try:\r\n        do_something()  # not an exit branch because of `else` below (will only exit here with an exception)\r\n    except ZeroDivisionError as e:\r\n        error = e  # < exit branch where error is defined\r\n    else:\r\n        if 'runtime condition':\r\n            continue  # < exit condition where error is *not* defined, should flag\r\n        break  # < exit condition where error is *not* defined, but will skip `raise error` below\r\n    print(\"retrying...\")\r\nelse:\r\n    raise error\r\n```\r\n\r\nSo maybe this is the constraint to check for:\r\n\r\n- if the use of `error` being tested is guarded by `else` in `for/else` (i.e. the last line of these examples)\r\n- if the definition of `error` in an except block is a descendant of the same `for`\r\n- if that _inner_ `else` breaks\r\n- if there is no `continue` anywhere at all underneath the `for` loop and before the `break` (_other_ than inside another for loop, but _including_ nested conditions and try/excepts)\r\n\r\n@martimlobao, could you open an issue to track this? I think this specific scenario might be feasible to implement.",
+      "created_at": "2022-01-14T15:09:56Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex 8ddac4258f..22c918048b 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -11,6 +11,13 @@ Release date: TBA\n ..\n   Put new features here and also in 'doc/whatsnew/2.13.rst'\n \n+* ``used-before-assignment`` now assumes that assignments in except blocks\n+  may not have occurred and warns accordingly.\n+\n+  Closes #4761\n+\n+* ``used-before-assignment`` now checks names in try blocks.\n+\n * Some files in ``pylint.testutils`` were deprecated. In the future imports should be done from the\n   ``pylint.testutils.functional`` namespace directly.\n \n@@ -18,6 +25,9 @@ Release date: TBA\n \n   Closes #4716\n \n+* The ``PyLinter`` class will now be initialiazed with a ``TextReporter``\n+  as its reporter if none is provided.\n+\n * Fix false positive - Allow unpacking of ``self`` in a subclass of ``typing.NamedTuple``.\n \n   Closes #5312\n@@ -36,9 +46,6 @@ Release date: TBA\n   Insert your changelog randomly, it will reduce merge conflicts\n   (Ie. not necessarily at the end)\n \n-* The ``PyLinter`` class will now be initialiazed with a ``TextReporter``\n-  as its reporter if none is provided.\n-\n \n What's New in Pylint 2.12.2?\n ============================\ndiff --git a/doc/whatsnew/2.13.rst b/doc/whatsnew/2.13.rst\nindex 0713e343ae..55535638ec 100644\n--- a/doc/whatsnew/2.13.rst\n+++ b/doc/whatsnew/2.13.rst\n@@ -31,6 +31,13 @@ Other Changes\n \n   Closes #5323\n \n+* ``used-before-assignment`` now assumes that assignments in except blocks\n+  may not have occurred and warns accordingly.\n+\n+  Closes #4761\n+\n+* ``used-before-assignment`` now checks names in try blocks.\n+\n * Require Python ``3.6.2`` to run pylint.\n \n   Closes #5065\ndiff --git a/pylint/checkers/variables.py b/pylint/checkers/variables.py\nindex f2bba355c8..13b8589afb 100644\n--- a/pylint/checkers/variables.py\n+++ b/pylint/checkers/variables.py\n@@ -534,7 +534,7 @@ def _has_locals_call_after_node(stmt, scope):\n \n \n ScopeConsumer = collections.namedtuple(\n-    \"ScopeConsumer\", \"to_consume consumed scope_type\"\n+    \"ScopeConsumer\", \"to_consume consumed consumed_uncertain scope_type\"\n )\n \n \n@@ -544,17 +544,24 @@ class NamesConsumer:\n     \"\"\"\n \n     def __init__(self, node, scope_type):\n-        self._atomic = ScopeConsumer(copy.copy(node.locals), {}, scope_type)\n+        self._atomic = ScopeConsumer(\n+            copy.copy(node.locals), {}, collections.defaultdict(list), scope_type\n+        )\n         self.node = node\n \n     def __repr__(self):\n         to_consumes = [f\"{k}->{v}\" for k, v in self._atomic.to_consume.items()]\n         consumed = [f\"{k}->{v}\" for k, v in self._atomic.consumed.items()]\n+        consumed_uncertain = [\n+            f\"{k}->{v}\" for k, v in self._atomic.consumed_uncertain.items()\n+        ]\n         to_consumes = \", \".join(to_consumes)\n         consumed = \", \".join(consumed)\n+        consumed_uncertain = \", \".join(consumed_uncertain)\n         return f\"\"\"\n to_consume : {to_consumes}\n consumed : {consumed}\n+consumed_uncertain: {consumed_uncertain}\n scope_type : {self._atomic.scope_type}\n \"\"\"\n \n@@ -569,6 +576,19 @@ def to_consume(self):\n     def consumed(self):\n         return self._atomic.consumed\n \n+    @property\n+    def consumed_uncertain(self) -> DefaultDict[str, List[nodes.NodeNG]]:\n+        \"\"\"\n+        Retrieves nodes filtered out by get_next_to_consume() that may not\n+        have executed, such as statements in except blocks. Checkers that\n+        want to treat the statements as executed (e.g. for unused-variable)\n+        may need to add them back.\n+\n+        TODO: A pending PR will extend this to nodes in try blocks when\n+        evaluating their corresponding except and finally blocks.\n+        \"\"\"\n+        return self._atomic.consumed_uncertain\n+\n     @property\n     def scope_type(self):\n         return self._atomic.scope_type\n@@ -589,7 +609,9 @@ def mark_as_consumed(self, name, consumed_nodes):\n \n     def get_next_to_consume(self, node):\n         \"\"\"\n-        Return a list of the nodes that define `node` from this scope.\n+        Return a list of the nodes that define `node` from this scope. If it is\n+        uncertain whether a node will be consumed, such as for statements in\n+        except blocks, add it to self.consumed_uncertain instead of returning it.\n         Return None to indicate a special case that needs to be handled by the caller.\n         \"\"\"\n         name = node.name\n@@ -617,9 +639,28 @@ def get_next_to_consume(self, node):\n             found_nodes = [\n                 n\n                 for n in found_nodes\n-                if not isinstance(n.statement(), nodes.ExceptHandler)\n-                or n.statement().parent_of(node)\n+                if not isinstance(n.statement(future=True), nodes.ExceptHandler)\n+                or n.statement(future=True).parent_of(node)\n+            ]\n+\n+        # Filter out assignments in an Except clause that the node is not\n+        # contained in, assuming they may fail\n+        if found_nodes:\n+            filtered_nodes = [\n+                n\n+                for n in found_nodes\n+                if not (\n+                    isinstance(n.statement(future=True).parent, nodes.ExceptHandler)\n+                    and isinstance(\n+                        n.statement(future=True).parent.parent, nodes.TryExcept\n+                    )\n+                )\n+                or n.statement(future=True).parent.parent_of(node)\n             ]\n+            filtered_nodes_set = set(filtered_nodes)\n+            difference = [n for n in found_nodes if n not in filtered_nodes_set]\n+            self.consumed_uncertain[node.name] += difference\n+            found_nodes = filtered_nodes\n \n         return found_nodes\n \n@@ -1042,6 +1083,14 @@ def _undefined_and_used_before_checker(\n             if action is VariableVisitConsumerAction.CONTINUE:\n                 continue\n             if action is VariableVisitConsumerAction.CONSUME:\n+                # pylint: disable-next=fixme\n+                # TODO: remove assert after _check_consumer return value better typed\n+                assert found_nodes is not None, \"Cannot consume an empty list of nodes.\"\n+                # Any nodes added to consumed_uncertain by get_next_to_consume()\n+                # should be added back so that they are marked as used.\n+                # They will have already had a chance to emit used-before-assignment.\n+                # We check here instead of before every single return in _check_consumer()\n+                found_nodes += current_consumer.consumed_uncertain[node.name]\n                 current_consumer.mark_as_consumed(node.name, found_nodes)\n             if action in {\n                 VariableVisitConsumerAction.RETURN,\n@@ -1135,6 +1184,12 @@ def _check_consumer(\n             return (VariableVisitConsumerAction.CONTINUE, None)\n         if not found_nodes:\n             self.add_message(\"used-before-assignment\", args=node.name, node=node)\n+            if current_consumer.consumed_uncertain[node.name]:\n+                # If there are nodes added to consumed_uncertain by\n+                # get_next_to_consume() because they might not have executed,\n+                # return a CONSUME action so that _undefined_and_used_before_checker()\n+                # will mark them as used\n+                return (VariableVisitConsumerAction.CONSUME, found_nodes)\n             return (VariableVisitConsumerAction.RETURN, found_nodes)\n \n         self._check_late_binding_closure(node)\n@@ -2370,7 +2425,7 @@ def _check_classdef_metaclasses(self, klass, parent_node):\n         name = METACLASS_NAME_TRANSFORMS.get(name, name)\n         if name:\n             # check enclosing scopes starting from most local\n-            for scope_locals, _, _ in self._to_consume[::-1]:\n+            for scope_locals, _, _, _ in self._to_consume[::-1]:\n                 found_nodes = scope_locals.get(name, [])\n                 for found_node in found_nodes:\n                     if found_node.lineno <= klass.lineno:\ndiff --git a/pylintrc b/pylintrc\nindex a38a35aedf..7e983510e2 100644\n--- a/pylintrc\n+++ b/pylintrc\n@@ -332,7 +332,7 @@ max-locals=25\n max-returns=11\n \n # Maximum number of branch for function / method body\n-max-branches=26\n+max-branches=27\n \n # Maximum number of statements in function / method body\n max-statements=100\ndiff --git a/tests/functional/u/undefined/undefined_variable.py b/tests/functional/u/undefined/undefined_variable.py\nindex f4f22e5238..6ce9aaa6ec 100644\n--- a/tests/functional/u/undefined/undefined_variable.py\n+++ b/tests/functional/u/undefined/undefined_variable.py\n@@ -35,7 +35,7 @@ def bad_default(var, default=unknown2):  # [undefined-variable]\n LMBD2 = lambda x, y: x+z  # [undefined-variable]\n \n try:\n-    POUET # don't catch me\n+    POUET # [used-before-assignment]\n except NameError:\n     POUET = 'something'\n \n@@ -45,7 +45,7 @@ def bad_default(var, default=unknown2):  # [undefined-variable]\n     POUETT = 'something'\n \n try:\n-    POUETTT # don't catch me\n+    POUETTT # [used-before-assignment]\n except: # pylint:disable = bare-except\n     POUETTT = 'something'\n \ndiff --git a/tests/functional/u/undefined/undefined_variable.txt b/tests/functional/u/undefined/undefined_variable.txt\nindex c5a70f7a76..bee5ab475a 100644\n--- a/tests/functional/u/undefined/undefined_variable.txt\n+++ b/tests/functional/u/undefined/undefined_variable.txt\n@@ -8,7 +8,9 @@ undefined-variable:31:4:31:10:bad_default:Undefined variable 'augvar':UNDEFINED\n undefined-variable:32:8:32:14:bad_default:Undefined variable 'vardel':UNDEFINED\n undefined-variable:34:19:34:31:<lambda>:Undefined variable 'doesnotexist':UNDEFINED\n undefined-variable:35:23:35:24:<lambda>:Undefined variable 'z':UNDEFINED\n+used-before-assignment:38:4:38:9::Using variable 'POUET' before assignment:UNDEFINED\n used-before-assignment:43:4:43:10::Using variable 'POUETT' before assignment:UNDEFINED\n+used-before-assignment:48:4:48:11::Using variable 'POUETTT' before assignment:UNDEFINED\n used-before-assignment:56:4:56:9::Using variable 'PLOUF' before assignment:UNDEFINED\n used-before-assignment:65:11:65:14:if_branch_test:Using variable 'xxx' before assignment:UNDEFINED\n used-before-assignment:91:23:91:32:test_arguments:Using variable 'TestClass' before assignment:UNDEFINED\ndiff --git a/tests/functional/u/use/used_before_assignment_issue4761.py b/tests/functional/u/use/used_before_assignment_issue4761.py\nnew file mode 100644\nindex 0000000000..ab6fc765b4\n--- /dev/null\n+++ b/tests/functional/u/use/used_before_assignment_issue4761.py\n@@ -0,0 +1,12 @@\n+\"\"\"used-before-assignment (E0601)\"\"\"\n+def function():\n+    \"\"\"Consider that except blocks may not execute.\"\"\"\n+    try:\n+        pass\n+    except ValueError:\n+        some_message = 'some message'\n+\n+    if not some_message:  # [used-before-assignment]\n+        return 1\n+\n+    return some_message\ndiff --git a/tests/functional/u/use/used_before_assignment_issue4761.txt b/tests/functional/u/use/used_before_assignment_issue4761.txt\nnew file mode 100644\nindex 0000000000..cf8fd209a8\n--- /dev/null\n+++ b/tests/functional/u/use/used_before_assignment_issue4761.txt\n@@ -0,0 +1 @@\n+used-before-assignment:9:11:9:23:function:Using variable 'some_message' before assignment:UNDEFINED\ndiff --git a/tests/lint/test_utils.py b/tests/lint/test_utils.py\nindex f7294f353c..44703982e1 100644\n--- a/tests/lint/test_utils.py\n+++ b/tests/lint/test_utils.py\n@@ -15,7 +15,7 @@ def test_prepare_crash_report(tmp_path: PosixPath) -> None:\n         template_path = prepare_crash_report(\n             ex, str(python_file), str(tmp_path / \"pylint-crash-%Y.txt\")\n         )\n-    assert str(tmp_path) in str(template_path)\n+    assert str(tmp_path) in str(template_path)  # pylint: disable=used-before-assignment\n     with open(template_path, encoding=\"utf8\") as f:\n         template_content = f.read()\n     assert python_content in template_content\n",
+  "changed_files": [
+    "ChangeLog",
+    "doc/whatsnew/2.13.rst",
+    "pylint/checkers/variables.py",
+    "pylintrc",
+    "tests/functional/u/undefined/undefined_variable.py",
+    "tests/functional/u/undefined/undefined_variable.txt",
+    "tests/functional/u/use/used_before_assignment_issue4761.py",
+    "tests/functional/u/use/used_before_assignment_issue4761.txt",
+    "tests/lint/test_utils.py"
+  ],
+  "changed_functions": [
+    "consumed_uncertain",
+    "function"
+  ],
+  "pre_commit": "a51a5486ebff7543ae4fb6943fac2558947fa974",
+  "post_commit": "bd55b27d41542e3ca1f031f986b6151f6cac457f",
+  "merged_at": "2021-12-11T08:10:28Z",
+  "review_comments": [
+    {
+      "author": "jacobtylerwalls",
+      "body": "From the blame it looks like this was tolerated just because of generic uncertainty about the control flow, but I think assuming try blocks _never_ execute is bad style.",
+      "path": "tests/functional/u/undefined/undefined_variable.py",
+      "line": 38,
+      "created_at": "2021-11-26T03:14:49Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "@jacobtylerwalls Sorry about that. Seems like I forgot to actually publish my review..\r\n\r\nComment:\r\nCould you use `statement(future=True)` here and on the other lines? The current behaviour of `statement()` is being deprecated and the `future` keyword can be used to trigger the future behaviour. ",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-11-26T13:46:06Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n* ``used-before-assignment`` now assumes that assignments in except blocks\r\n  may not have occurred and warns accordingly.\r\n```",
+      "path": "ChangeLog",
+      "line": null,
+      "created_at": "2021-12-02T17:10:41Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n* ``used-before-assignment`` now assumes that assignments in except blocks\r\n  may not have occurred and warns accordingly.\r\n```",
+      "path": "doc/whatsnew/2.13.rst",
+      "line": null,
+      "created_at": "2021-12-02T17:10:56Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Does this warrant an additional entry in the changelog? I know #5384 also deals with this, but this is a change in this PR that is not covered by the changelog. I think we should add something about it.",
+      "path": "tests/functional/u/undefined/undefined_variable.py",
+      "line": 38,
+      "created_at": "2021-12-02T17:15:13Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Does a `defaultdict` make sense here? I know we're not using it in the other attributes, but that shouldn't hold us back from using better practices in new code.",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T17:18:39Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n            if node.name in current_consumer.consumed_uncertain:\r\n                found_nodes  += current_consumer.consumed_uncertain[node.name]\r\n            current_consumer.mark_as_consumed(node.name, found_nodes)\r\n```\r\n\r\nLittle bit more concise and smaller diff.",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T17:21:43Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I don't particularly like how this works, as any new contributor needs to read about this to understand this. It is not as self-explanatory as `to_consume` and `consumed`. However, I don't know of a better way to do this. Perhaps we could improve on the name? I'm not sure.. I'll think about this some more.",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T17:24:11Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I'm not sure if `mypy` complains about this, but it would be helpful if you could add typing here. I believe it should be `DefaultDict[str, List[nodes.NodeNG]]`? We should add typing to `ScopeConsumer` but that's outside of the scope of this PR. Having this typed already would help though!",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T22:54:48Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        # Filter out assignments in an Except clause that the node is not\r\n```",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T22:56:37Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "A docstring explaining why we need this would be helpful as well. You can copy the explanation you had in your previous version in `_check_consumer`.",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-02T22:57:37Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "This number is quite arbitrary but I'm not sure if we should change it. I'll leave this decision to others though.",
+      "path": "pylintrc",
+      "line": 335,
+      "created_at": "2021-12-02T23:00:07Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Can't this be done in `_check_consumer`?",
+      "path": "pylint/checkers/variables.py",
+      "line": 1093,
+      "created_at": "2021-12-02T23:01:44Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "👍 ",
+      "path": "pylint/checkers/variables.py",
+      "line": 548,
+      "created_at": "2021-12-02T23:01:55Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "I checked the blame; it was just number of the \"branchiest\" method at the time.",
+      "path": "pylintrc",
+      "line": 335,
+      "created_at": "2021-12-03T04:11:21Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "There are so many early returns in `_check_consumer` that I would need to write test cases for each of the branches to see if they all need this statement. I was reluctant to possibly introduce subtle bugs. If you have an idea, please let me know!",
+      "path": "pylint/checkers/variables.py",
+      "line": 1093,
+      "created_at": "2021-12-03T04:24:51Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Ah I misunderstood the changes on L1168-1170. I think this might indeed be the best approach. However, perhaps only add a comment to this.\r\nI know I'm asking for a lot of documentation and comments but it is so helpful to be easily understand the code when you're trying to fix a false positive here. As you said, these methods rely heavily on early returns etc. so it can be hard to figure out what is going on.",
+      "path": "pylint/checkers/variables.py",
+      "line": 1093,
+      "created_at": "2021-12-03T08:28:46Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "No problem, I agree that some more comments are the way to go here.",
+      "path": "pylint/checkers/variables.py",
+      "line": 1093,
+      "created_at": "2021-12-03T13:10:03Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "How about `consumed_conditionally`?",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-03T20:00:05Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Either works for me. @Pierre-Sassoulas do you have an opinion?",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-04T09:01:08Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "This and the docstring of `consumed_uncertain` are very clear. This part of the codebase will never be fully self explanatory but this really helps! Thanks a lot for all the iterations and working with me 😄 Much appreciated!",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-04T09:02:12Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Is this necessary? As in, doesn't the code break anyway `if not isinstance(found_nodes, list)` because of L1090? This assert doesn't seem to \"add\" much. Or is this because of `mypy` complaining?\r\nIf the latter, could you add a `TODO` which says to remove this after this has been typed correctly? If `_check_consumer` is typed this shouldn't be a problem anymore.",
+      "path": "pylint/checkers/variables.py",
+      "line": 1088,
+      "created_at": "2021-12-04T09:07:50Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Yes, it's the latter, mypy complains that if `found_nodes` is None, then the `+=` operation will fail. I'll add a TODO.",
+      "path": "pylint/checkers/variables.py",
+      "line": 1088,
+      "created_at": "2021-12-04T12:21:38Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "'maybe_consumed' ? I don't have en opinion either :) ",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-04T13:17:40Z"
+    },
+    {
+      "author": "cdce8p",
+      "body": "This is quite inefficient, a list contains check for each node.\r\nI would suggest to create a temporary set from `filtered_nodes` to do the check with.",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-05T23:47:01Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Something like this?\r\n```diff\r\ndiff --git a/pylint/checkers/variables.py b/pylint/checkers/variables.py\r\nindex 6559d07f..0e5a0fd1 100644\r\n--- a/pylint/checkers/variables.py\r\n+++ b/pylint/checkers/variables.py\r\n@@ -657,8 +657,8 @@ scope_type : {self._atomic.scope_type}\r\n                 )\r\n                 or n.statement(future=True).parent.parent_of(node)\r\n             ]\r\n-            difference = [n for n in found_nodes if n not in filtered_nodes]\r\n-            self.consumed_uncertain[node.name] += difference\r\n+            difference = set(found_nodes) - set(filtered_nodes)\r\n+            self.consumed_uncertain[node.name] += list(difference)\r\n             found_nodes = filtered_nodes\r\n \r\n         return found_nodes\r\n```",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-06T01:49:37Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "The most performant solution would be to build two arrays while the condition above is being checked, but that didn't rhyme with the neighboring patterns, so I didn't pursue it initially. What do you think?",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-06T01:51:14Z"
+    },
+    {
+      "author": "cdce8p",
+      "body": "I'm not sure if the order in difference is important. If so, it's lost with your suggestion. I was thinking more along these lines here. It's also not the optimal solution but should be good enough.\r\n```py\r\n            filtered_nodes_set = set(filtered_nodes)\r\n            difference = [n for n in found_nodes if n not in filtered_nodes_set]\r\n            self.consumed_uncertain[node.name] += difference\r\n```\r\n",
+      "path": "pylint/checkers/variables.py",
+      "line": null,
+      "created_at": "2021-12-06T21:18:51Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 97,
+  "deletions": 13,
+  "changed_files_count": 9
+}

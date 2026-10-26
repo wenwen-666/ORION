@@ -1,0 +1,79 @@
+{
+  "pr_number": 1631,
+  "title": "http file system directed to stream by an \"Accept-Ranges\": \"none\" response",
+  "url": "https://github.com/fsspec/filesystem_spec/pull/1631",
+  "description": "## Background\r\n\r\n`HTTPFileSystem._open` chooses between `HTTPFile` or `HTTPStreamFile`, and only the former allows random access, by using the `\"Range\"` header in subsequent HTTP GET requests. Servers do not always respond predictably to partial content requests, but they have the option of explicitly discouraging the use of `\"Range\"` by including `\"Accept-Ranges\": \"none\"` in response headers. It's rarely done, but the lack of a `\"Accept-Ranges\"` response does not (in practice) indicate the lack of support for the `\"Range\"` header.\r\n\r\n## Changes\r\n\r\nPreviously, `HTTPFileSystem._open` only used `HTTPStreamFile` when NOT block caching (which is not the default) or when the content size could not be determined in advance (i.e. rarely). This PR makes a response header with `\"Accept-Range\": \"none\"` into another rare cause for the switch to streaming.\r\n\r\n- `HTTPFileSystem._open` ~~now always makes a `self.info` call (even given `size`) 🤨~~ may see a \"partial\" key in `self.info` results\r\n- `http._file_info` checks for the `\"Accept-Ranges\"` header in the response\r\n- The return value of `HTTPFileSystem._info` may include `\"partial\": False`\r\n- Tested with `test_no_range_support`\r\n  - in its first parameterization of `header`, the `ignore_range` value was irrelevant and removed\r\n  - a new parameterization was added with `accept_range` with `conftest` updated to implement\r\n\r\n## Alternative\r\n\r\nIt seems like an alternative approach is to stick with `HTTPFile` but force `_fetch_all` for read. Please comment if that is preferred ... I haven't figured out what does and doesn't use caching.\r\n\r\n~~## Draft~~\r\n\r\n~~I'm in the process of working with a NASA DAAC that does not provide partial content to test the approach, and will remove the \"Draft\" status when successful. Reviews in the meantime are very welcome.~~ ~~Ugh, I give up waiting for them. Please review when able!~~",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2024-09-24T14:19:44+00:00",
+  "additions": 31,
+  "deletions": 25,
+  "changed_files_count": 3,
+  "comments": [
+    {
+      "author": "itcarroll",
+      "body": "Testing with the DAAC providing `\"Accept-Range\": \"none\"` and `earthaccess` jumped through one hoop (getting `HTTPStreamFile` rather than `HTTPFile`, but revealed another. When I get an `HTTPStreamFile` through `earthaccess.open`, there's an error in `fsspec.caching.BaseCache._fetch` because `self.size` is not set. First step to resolving is making a test to cover it, but I'm currently not sure how to trigger this use of caching directloy (i.e. without `earthaccess.open`). Investigating.",
+      "created_at": "2024-06-21T14:16:21+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "You seem to have the same situation as https://github.com/fsspec/filesystem_spec/issues/1626 - there are some suggestions in that thread of what might be done.",
+      "created_at": "2024-06-21T14:21:10+00:00"
+    },
+    {
+      "author": "itcarroll",
+      "body": "I think I'm actually running into nsidc/earthaccess#610. If I understand correctly what you say about the cache type being hard coded to \"none\" (i.e. BaseCache), then there should not have been a call to the cache (and no problem with the lack of `self.size`) if not for the `earthaccess` bug.\r\n\r\nIf they agree, I will mark this ready for review. Caching on `HTTPStreamFile` would be great, but a separate (harder!) contribution.",
+      "created_at": "2024-06-25T03:38:31+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Is there any update here?",
+      "created_at": "2024-07-02T14:23:24+00:00"
+    },
+    {
+      "author": "itcarroll",
+      "body": "Waiting for a review of nsidc/earthaccess#620, and I won't forget to pick this up after.",
+      "created_at": "2024-07-02T14:30:40+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "OK thanks :)",
+      "created_at": "2024-07-02T14:37:26+00:00"
+    },
+    {
+      "author": "itcarroll",
+      "body": "@martindurant The downstream issue has resolved as I'd hoped. I've sync'd this branch and ran tests locally. Ready for workflow approval and review. Thanks for your patience!",
+      "created_at": "2024-09-24T01:42:36+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Perfect, thank you.",
+      "created_at": "2024-09-24T14:19:34+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "martindurant",
+      "body": "We really don't want to do this unless necessary. I think that, in the case that `size` is provided, we can ssume that ranges should work and we can do random access. This moves the responsibility to the calling code.",
+      "path": "fsspec/implementations/http.py",
+      "line": null,
+      "created_at": "2024-06-20T14:07:07+00:00"
+    },
+    {
+      "author": "itcarroll",
+      "body": "Will change to:\r\n\r\n```suggestion\r\n        info = {}\r\n        size = size or (info.update(self.info(path, **kwargs)) or info[\"size\"])\r\n```",
+      "path": "fsspec/implementations/http.py",
+      "line": null,
+      "created_at": "2024-06-20T14:43:00+00:00"
+    }
+  ],
+  "changed_files": [
+    "fsspec/implementations/http.py",
+    "fsspec/implementations/tests/test_http.py",
+    "fsspec/tests/conftest.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/fsspec/implementations/http.py b/fsspec/implementations/http.py\nindex 7b5a38bb3..47dfb88f9 100644\n--- a/fsspec/implementations/http.py\n+++ b/fsspec/implementations/http.py\n@@ -358,9 +358,10 @@ def _open(\n         kw = self.kwargs.copy()\n         kw[\"asynchronous\"] = self.asynchronous\n         kw.update(kwargs)\n-        size = size or self.info(path, **kwargs)[\"size\"]\n+        info = {}\n+        size = size or info.update(self.info(path, **kwargs)) or info[\"size\"]\n         session = sync(self.loop, self.set_session)\n-        if block_size and size:\n+        if block_size and size and info.get(\"partial\", True):\n             return HTTPFile(\n                 self,\n                 path,\n@@ -520,9 +521,9 @@ async def _isdir(self, path):\n \n class HTTPFile(AbstractBufferedFile):\n     \"\"\"\n-    A file-like object pointing to a remove HTTP(S) resource\n+    A file-like object pointing to a remote HTTP(S) resource\n \n-    Supports only reading, with read-ahead of a predermined block-size.\n+    Supports only reading, with read-ahead of a predetermined block-size.\n \n     In the case that the server does not supply the filesize, only reading of\n     the complete file in one go is supported.\n@@ -835,10 +836,6 @@ async def _file_info(url, session, size_policy=\"head\", **kwargs):\n     async with r:\n         r.raise_for_status()\n \n-        # TODO:\n-        #  recognise lack of 'Accept-Ranges',\n-        #                 or 'Accept-Ranges': 'none' (not 'bytes')\n-        #  to mean streaming only, no random access => return None\n         if \"Content-Length\" in r.headers:\n             # Some servers may choose to ignore Accept-Encoding and return\n             # compressed content, in which case the returned size is unreliable.\n@@ -853,6 +850,11 @@ async def _file_info(url, session, size_policy=\"head\", **kwargs):\n         if \"Content-Type\" in r.headers:\n             info[\"mimetype\"] = r.headers[\"Content-Type\"].partition(\";\")[0]\n \n+        if r.headers.get(\"Accept-Ranges\") == \"none\":\n+            # Some servers may explicitly discourage partial content requests, but\n+            # the lack of \"Accept-Ranges\" does not always indicate they would fail\n+            info[\"partial\"] = False\n+\n         info[\"url\"] = str(r.url)\n \n         for checksum_field in [\"ETag\", \"Content-MD5\", \"Digest\"]:\ndiff --git a/fsspec/implementations/tests/test_http.py b/fsspec/implementations/tests/test_http.py\nindex 81e438a81..568284e22 100644\n--- a/fsspec/implementations/tests/test_http.py\n+++ b/fsspec/implementations/tests/test_http.py\n@@ -237,9 +237,13 @@ def test_random_access(server, headers):\n @pytest.mark.parametrize(\n     \"headers\",\n     [\n-        {\"ignore_range\": \"true\", \"head_ok\": \"true\", \"head_give_length\": \"true\"},\n+        # HTTPFile seeks, response headers lack size, assumed no range support\n+        {\"head_ok\": \"true\", \"head_give_length\": \"true\"},\n+        # HTTPFile seeks, response is not a range\n         {\"ignore_range\": \"true\", \"give_length\": \"true\"},\n         {\"ignore_range\": \"true\", \"give_range\": \"true\"},\n+        # HTTPStreamFile does not seek (past 0)\n+        {\"accept_range\": \"none\", \"head_ok\": \"true\", \"give_length\": \"true\"},\n     ],\n )\n def test_no_range_support(server, headers):\n@@ -247,8 +251,8 @@ def test_no_range_support(server, headers):\n     url = server + \"/index/realfile\"\n     with h.open(url, \"rb\") as f:\n         # Random access is not possible if the server doesn't respect Range\n-        f.seek(5)\n         with pytest.raises(ValueError):\n+            f.seek(5)\n             f.read(10)\n \n         # Reading from the beginning should still work\ndiff --git a/fsspec/tests/conftest.py b/fsspec/tests/conftest.py\nindex fb1efb041..413ed717b 100644\n--- a/fsspec/tests/conftest.py\n+++ b/fsspec/tests/conftest.py\n@@ -135,10 +135,10 @@ def read_chunks(self):\n             self.rfile.readline()\n \n     def do_HEAD(self):\n+        r_headers = {}\n         if \"head_not_auth\" in self.headers:\n-            return self._respond(\n-                403, {\"Content-Length\": 123}, b\"not authorized for HEAD request\"\n-            )\n+            r_headers[\"Content-Length\"] = 123\n+            return self._respond(403, r_headers, b\"not authorized for HEAD request\")\n         elif \"head_ok\" not in self.headers:\n             return self._respond(405)\n \n@@ -148,23 +148,23 @@ def do_HEAD(self):\n             return self._respond(404)\n \n         if (\"give_length\" in self.headers) or (\"head_give_length\" in self.headers):\n-            response_headers = {\"Content-Length\": len(file_data)}\n             if \"zero_length\" in self.headers:\n-                response_headers[\"Content-Length\"] = 0\n+                r_headers[\"Content-Length\"] = 0\n             elif \"gzip_encoding\" in self.headers:\n                 file_data = gzip.compress(file_data)\n-                response_headers[\"Content-Encoding\"] = \"gzip\"\n-                response_headers[\"Content-Length\"] = len(file_data)\n-\n-            self._respond(200, response_headers)\n+                r_headers[\"Content-Encoding\"] = \"gzip\"\n+                r_headers[\"Content-Length\"] = len(file_data)\n+            else:\n+                r_headers[\"Content-Length\"] = len(file_data)\n         elif \"give_range\" in self.headers:\n-            self._respond(\n-                200, {\"Content-Range\": f\"0-{len(file_data) - 1}/{len(file_data)}\"}\n-            )\n+            r_headers[\"Content-Range\"] = f\"0-{len(file_data) - 1}/{len(file_data)}\"\n         elif \"give_etag\" in self.headers:\n-            self._respond(200, {\"ETag\": \"xxx\"})\n-        else:\n-            self._respond(200)  # OK response, but no useful info\n+            r_headers[\"ETag\"] = \"xxx\"\n+\n+        if self.headers.get(\"accept_range\") == \"none\":\n+            r_headers[\"Accept-Ranges\"] = \"none\"\n+\n+        self._respond(200, r_headers)\n \n \n @contextlib.contextmanager\n",
+  "pre_commit": "1f6151250e8586ba8af3b7cd910dc4f0e1715596",
+  "post_commit": "b842cf4cc7e4e22caa3110157cec9b4959582993"
+}

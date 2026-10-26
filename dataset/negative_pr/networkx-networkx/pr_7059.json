@@ -1,0 +1,33 @@
+{
+  "pr_number": 7059,
+  "title": "Minor touchups to the beamsearch module",
+  "url": "https://github.com/networkx/networkx/pull/7059",
+  "description": "A few minor changes to the beamsearch module and test suite. The biggest change is the addition of the note to the docstring which attempts to explain the difference between `bfs_beam_edges` and `bfs_edges`.",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2023-10-31T21:57:34+00:00",
+  "additions": 31,
+  "deletions": 56,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "rossbar",
+      "body": "> I notice that you removed the test of the input width=None. \r\n\r\nI didn't actually remove it, just moved it up into a parametrization (since the behavior is expected to be the same).",
+      "created_at": "2023-10-25T17:42:08+00:00"
+    },
+    {
+      "author": "dschult",
+      "body": "Ahh... got it.  I missed that. :) Thanks!",
+      "created_at": "2023-10-26T01:42:26+00:00"
+    }
+  ],
+  "review_comments": [],
+  "changed_files": [
+    "networkx/algorithms/traversal/beamsearch.py",
+    "networkx/algorithms/traversal/tests/test_beamsearch.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/networkx/algorithms/traversal/beamsearch.py b/networkx/algorithms/traversal/beamsearch.py\nindex 7fe93669a3a..9b339e306f7 100644\n--- a/networkx/algorithms/traversal/beamsearch.py\n+++ b/networkx/algorithms/traversal/beamsearch.py\n@@ -1,8 +1,6 @@\n \"\"\"Basic algorithms for breadth-first searching the nodes of a graph.\"\"\"\n import networkx as nx\n \n-from .breadth_first_search import generic_bfs_edges\n-\n __all__ = [\"bfs_beam_edges\"]\n \n \n@@ -16,6 +14,15 @@ def bfs_beam_edges(G, source, value, width=None):\n     heuristic. In general, a beam search with a small beam width might\n     not visit each node in the graph.\n \n+    .. note::\n+\n+       With the default value of ``width=None`` or `width` greater than the\n+       maximum degree of the graph, this function equates to a slower\n+       version of `~networkx.algorithms.traversal.breadth_first_search.bfs_edges`.\n+       All nodes will be visited, though the order of the reported edges may\n+       vary. In such cases, `value` has no effect - consider using `bfs_edges`\n+       directly instead.\n+\n     Parameters\n     ----------\n     G : NetworkX graph\n@@ -50,28 +57,8 @@ def bfs_beam_edges(G, source, value, width=None):\n \n     >>> G = nx.karate_club_graph()\n     >>> centrality = nx.eigenvector_centrality(G)\n-    >>> source = 0\n-    >>> width = 5\n-    >>> for u, v in nx.bfs_beam_edges(G, source, centrality.get, width):\n-    ...     print((u, v))\n-    ...\n-    (0, 2)\n-    (0, 1)\n-    (0, 8)\n-    (0, 13)\n-    (0, 3)\n-    (2, 32)\n-    (1, 30)\n-    (8, 33)\n-    (3, 7)\n-    (32, 31)\n-    (31, 28)\n-    (31, 25)\n-    (25, 23)\n-    (25, 24)\n-    (23, 29)\n-    (23, 27)\n-    (29, 26)\n+    >>> list(nx.bfs_beam_edges(G, source=0, value=centrality.get, width=3))\n+    [(0, 2), (0, 1), (0, 8), (2, 32), (1, 13), (8, 33)]\n     \"\"\"\n \n     if width is None:\n@@ -85,10 +72,6 @@ def successors(v):\n         The \"best\" neighbors are chosen according to the `value`\n         function (higher is better). Only the `width` best neighbors of\n         `v` are returned.\n-\n-        The list returned by this function is in decreasing value as\n-        measured by the `value` function.\n-\n         \"\"\"\n         # TODO The Python documentation states that for small values, it\n         # is better to use `heapq.nlargest`. We should determine the\n@@ -103,4 +86,4 @@ def successors(v):\n         # `bfs_edges(G, source)` but with a sorted enqueue step.\n         return iter(sorted(G.neighbors(v), key=value, reverse=True)[:width])\n \n-    yield from generic_bfs_edges(G, source, successors)\n+    yield from nx.generic_bfs_edges(G, source, successors)\ndiff --git a/networkx/algorithms/traversal/tests/test_beamsearch.py b/networkx/algorithms/traversal/tests/test_beamsearch.py\nindex 8945b418457..38404717c3e 100644\n--- a/networkx/algorithms/traversal/tests/test_beamsearch.py\n+++ b/networkx/algorithms/traversal/tests/test_beamsearch.py\n@@ -1,32 +1,24 @@\n \"\"\"Unit tests for the beam search functions.\"\"\"\n+import pytest\n \n import networkx as nx\n \n \n-def identity(x):\n-    return x\n-\n-\n-class TestBeamSearch:\n-    \"\"\"Unit tests for the beam search function.\"\"\"\n-\n-    def test_narrow(self):\n-        \"\"\"Tests that a narrow beam width may cause an incomplete search.\"\"\"\n-        # In this search, we enqueue only the neighbor 3 at the first\n-        # step, then only the neighbor 2 at the second step. Once at\n-        # node 2, the search chooses node 3, since it has a higher value\n-        # that node 1, but node 3 has already been visited, so the\n-        # search terminates.\n-        G = nx.cycle_graph(4)\n-        edges = nx.bfs_beam_edges(G, 0, identity, width=1)\n-        assert list(edges) == [(0, 3), (3, 2)]\n-\n-    def test_wide(self):\n-        G = nx.cycle_graph(4)\n-        edges = nx.bfs_beam_edges(G, 0, identity, width=2)\n-        assert list(edges) == [(0, 3), (0, 1), (3, 2)]\n-\n-    def test_width_none(self):\n-        G = nx.cycle_graph(4)\n-        edges = nx.bfs_beam_edges(G, 0, identity, width=None)\n-        assert list(edges) == [(0, 3), (0, 1), (3, 2)]\n+def test_narrow():\n+    \"\"\"Tests that a narrow beam width may cause an incomplete search.\"\"\"\n+    # In this search, we enqueue only the neighbor 3 at the first\n+    # step, then only the neighbor 2 at the second step. Once at\n+    # node 2, the search chooses node 3, since it has a higher value\n+    # than node 1, but node 3 has already been visited, so the\n+    # search terminates.\n+    G = nx.cycle_graph(4)\n+    edges = nx.bfs_beam_edges(G, source=0, value=lambda n: n, width=1)\n+    assert list(edges) == [(0, 3), (3, 2)]\n+\n+\n+@pytest.mark.parametrize(\"width\", (2, None))\n+def test_wide(width):\n+    \"\"\"All nodes are searched when `width` is None or >= max degree\"\"\"\n+    G = nx.cycle_graph(4)\n+    edges = nx.bfs_beam_edges(G, source=0, value=lambda n: n, width=width)\n+    assert list(edges) == [(0, 3), (0, 1), (3, 2)]\n",
+  "pre_commit": "754bae32e6c050683a2af2f112cd519219cabbfe",
+  "post_commit": "948fdcdfd615e41f43693e7c41515e770f7687c6"
+}

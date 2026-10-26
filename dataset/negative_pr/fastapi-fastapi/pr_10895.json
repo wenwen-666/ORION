@@ -1,0 +1,57 @@
+{
+  "pr_number": 10895,
+  "title": "🐛 Fix openapi generation with responses kwarg",
+  "url": "https://github.com/fastapi/fastapi/pull/10895",
+  "description": "This PR fixes a bug where the schema of response models defined via the [`responses`](https://fastapi.tiangolo.com/advanced/additional-responses/?h=responses) keyword where generated as `validation` schema instead of `serialization` schema.\r\n\r\nAdditional discussions for that topic:\r\n- #10596\r\n- #9856",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "e049fc4ea15a7b844326efa545a7e370713f6612",
+  "merged_at": "2024-10-12T09:44:57+00:00",
+  "created_at": "2024-01-06T00:37:19+00:00",
+  "closed_at": "2024-10-12T09:44:57+00:00",
+  "user": "flxdot",
+  "additions": 59,
+  "deletions": 8,
+  "changed_files_count": 3,
+  "labels": [
+    "bug",
+    "p2"
+  ],
+  "comments": [
+    {
+      "author": "simonwallace",
+      "body": "I am also affected by this issue. Is this PR ready to be merged?",
+      "created_at": "2024-05-15T07:47:01+00:00"
+    },
+    {
+      "author": "flxdot",
+      "body": "> I am also affected by this issue. Is this PR ready to be merged?\r\n\r\nFrom my point of view, it is.\r\n\r\n@tiangolo is there anything else you need me to do here?",
+      "created_at": "2024-06-03T08:52:57+00:00"
+    },
+    {
+      "author": "jw-00000",
+      "body": "Seems like this is ready to be merged. Is there any update on when this will happen? Thanks in advance.",
+      "created_at": "2024-08-14T13:19:36+00:00"
+    },
+    {
+      "author": "alejsdev",
+      "body": "Hi @flxdot, thanks for your interest in contributing to FastAPI. We're aware of your PR and we'll come back to review it in detail soon. Thanks for your patience :pray: \r\n",
+      "created_at": "2024-09-06T21:36:19+00:00"
+    },
+    {
+      "author": "tiangolo",
+      "body": "Great, thank you @flxdot! :rocket: :cake: \r\n\r\nAnd thanks for the help and reviews @YuriiMotov, @svlandeg, @alejsdev :bow: \r\n\r\nThis will be available in FastAPI `0.115.1` in the next hours. :tada: ",
+      "created_at": "2024-10-12T09:44:51+00:00"
+    }
+  ],
+  "review_comments": [],
+  "changed_files": [
+    "fastapi/routing.py",
+    "tests/test_computed_fields.py",
+    "tests/test_openapi_separate_input_output_schemas.py"
+  ],
+  "diff": "diff --git a/fastapi/routing.py b/fastapi/routing.py\nindex 86e30360216cb..8ea4bb219a7da 100644\n--- a/fastapi/routing.py\n+++ b/fastapi/routing.py\n@@ -541,7 +541,9 @@ def __init__(\n                     additional_status_code\n                 ), f\"Status code {additional_status_code} must not have a response body\"\n                 response_name = f\"Response_{additional_status_code}_{self.unique_id}\"\n-                response_field = create_model_field(name=response_name, type_=model)\n+                response_field = create_model_field(\n+                    name=response_name, type_=model, mode=\"serialization\"\n+                )\n                 response_fields[additional_status_code] = response_field\n         if response_fields:\n             self.response_fields: Dict[Union[int, str], ModelField] = response_fields\ndiff --git a/tests/test_computed_fields.py b/tests/test_computed_fields.py\nindex 5286507b2d348..a1b4121688784 100644\n--- a/tests/test_computed_fields.py\n+++ b/tests/test_computed_fields.py\n@@ -24,13 +24,18 @@ def area(self) -> int:\n     def read_root() -> Rectangle:\n         return Rectangle(width=3, length=4)\n \n+    @app.get(\"/responses\", responses={200: {\"model\": Rectangle}})\n+    def read_responses() -> Rectangle:\n+        return Rectangle(width=3, length=4)\n+\n     client = TestClient(app)\n     return client\n \n \n+@pytest.mark.parametrize(\"path\", [\"/\", \"/responses\"])\n @needs_pydanticv2\n-def test_get(client: TestClient):\n-    response = client.get(\"/\")\n+def test_get(client: TestClient, path: str):\n+    response = client.get(path)\n     assert response.status_code == 200, response.text\n     assert response.json() == {\"width\": 3, \"length\": 4, \"area\": 12}\n \n@@ -58,7 +63,23 @@ def test_openapi_schema(client: TestClient):\n                         }\n                     },\n                 }\n-            }\n+            },\n+            \"/responses\": {\n+                \"get\": {\n+                    \"summary\": \"Read Responses\",\n+                    \"operationId\": \"read_responses_responses_get\",\n+                    \"responses\": {\n+                        \"200\": {\n+                            \"description\": \"Successful Response\",\n+                            \"content\": {\n+                                \"application/json\": {\n+                                    \"schema\": {\"$ref\": \"#/components/schemas/Rectangle\"}\n+                                }\n+                            },\n+                        }\n+                    },\n+                }\n+            },\n         },\n         \"components\": {\n             \"schemas\": {\ndiff --git a/tests/test_openapi_separate_input_output_schemas.py b/tests/test_openapi_separate_input_output_schemas.py\nindex aeb85f735b666..f7e045259faf7 100644\n--- a/tests/test_openapi_separate_input_output_schemas.py\n+++ b/tests/test_openapi_separate_input_output_schemas.py\n@@ -26,8 +26,8 @@ class Item(BaseModel):\n def get_app_client(separate_input_output_schemas: bool = True) -> TestClient:\n     app = FastAPI(separate_input_output_schemas=separate_input_output_schemas)\n \n-    @app.post(\"/items/\")\n-    def create_item(item: Item):\n+    @app.post(\"/items/\", responses={402: {\"model\": Item}})\n+    def create_item(item: Item) -> Item:\n         return item\n \n     @app.post(\"/items-list/\")\n@@ -174,7 +174,23 @@ def test_openapi_schema():\n                     \"responses\": {\n                         \"200\": {\n                             \"description\": \"Successful Response\",\n-                            \"content\": {\"application/json\": {\"schema\": {}}},\n+                            \"content\": {\n+                                \"application/json\": {\n+                                    \"schema\": {\n+                                        \"$ref\": \"#/components/schemas/Item-Output\"\n+                                    }\n+                                }\n+                            },\n+                        },\n+                        \"402\": {\n+                            \"description\": \"Payment Required\",\n+                            \"content\": {\n+                                \"application/json\": {\n+                                    \"schema\": {\n+                                        \"$ref\": \"#/components/schemas/Item-Output\"\n+                                    }\n+                                }\n+                            },\n                         },\n                         \"422\": {\n                             \"description\": \"Validation Error\",\n@@ -374,7 +390,19 @@ def test_openapi_schema_no_separate():\n                     \"responses\": {\n                         \"200\": {\n                             \"description\": \"Successful Response\",\n-                            \"content\": {\"application/json\": {\"schema\": {}}},\n+                            \"content\": {\n+                                \"application/json\": {\n+                                    \"schema\": {\"$ref\": \"#/components/schemas/Item\"}\n+                                }\n+                            },\n+                        },\n+                        \"402\": {\n+                            \"description\": \"Payment Required\",\n+                            \"content\": {\n+                                \"application/json\": {\n+                                    \"schema\": {\"$ref\": \"#/components/schemas/Item\"}\n+                                }\n+                            },\n                         },\n                         \"422\": {\n                             \"description\": \"Validation Error\",\n",
+  "pre_commit": "b29cf1621a9b9046ff68cf21c67f96953bc8feeb",
+  "post_commit": "e049fc4ea15a7b844326efa545a7e370713f6612",
+  "merge_type": "squash"
+}

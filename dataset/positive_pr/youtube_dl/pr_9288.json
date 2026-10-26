@@ -1,0 +1,37 @@
+{
+  "pr_number": 9288,
+  "title": "[ffmpeg] Fix embedding subtitles (#9063)",
+  "url": "https://github.com/ytdl-org/youtube-dl/pull/9288",
+  "description": "Change command line parameters for ffmpeg when embedding subtitles.\nChange to ‘-map 0:v -c:v copy -map 0:a -c:a copy’\n",
+  "comments": [
+    {
+      "author": "yan12125",
+      "body": "Sorry for the late response. Any broken example before this fix?\n",
+      "created_at": "2016-07-08T12:02:56Z"
+    },
+    {
+      "author": "thamwangjun",
+      "body": "Hi, sorry, this is to fix [#9063](https://github.com/rg3/youtube-dl/issues/9063). As discussed in that issue, this is caused by certain lynda videos having empty streams.\nThe changes to the parameters enables ffmpeg to pick the correct working streams in those lynda videos, including other videos that come along with empty streams.\n",
+      "created_at": "2016-07-08T12:33:13Z"
+    },
+    {
+      "author": "yan12125",
+      "body": "From http://ffmpeg.org/ffmpeg.html:\n\n```\nstream_type is one of following: ’v’ or ’V’ for video, ’a’ for audio, ’s’ for subtitle, ’d’ for data, and ’t’ for attachments.\n```\n\nHonestly I don't know what are data and attachments in media files, and I haven't seen any example with them. I guess not copying them does not cause problems :)\n",
+      "created_at": "2016-07-09T06:29:37Z"
+    }
+  ],
+  "diff": "diff --git a/youtube_dl/postprocessor/ffmpeg.py b/youtube_dl/postprocessor/ffmpeg.py\nindex 1793a878cb5..ca2d401f87e 100644\n--- a/youtube_dl/postprocessor/ffmpeg.py\n+++ b/youtube_dl/postprocessor/ffmpeg.py\n@@ -363,8 +363,10 @@ def run(self, information):\n         input_files = [filename] + sub_filenames\n \n         opts = [\n-            '-map', '0',\n-            '-c', 'copy',\n+            '-map', '0:v',\n+            '-c:v', 'copy',\n+            '-map', '0:a',\n+            '-c:a', 'copy',\n             # Don't copy the existing subtitles, we may be running the\n             # postprocessor a second time\n             '-map', '-0:s',\n",
+  "changed_files": [
+    "youtube_dl/postprocessor/ffmpeg.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "ce43100a0143837432c52fcd156068c3464c4303",
+  "post_commit": "ccff2c404d7ea9f5b21ede8ae57bb79feec7eb94",
+  "merged_at": "2016-07-09T06:29:53Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 4,
+  "deletions": 2,
+  "changed_files_count": 1
+}

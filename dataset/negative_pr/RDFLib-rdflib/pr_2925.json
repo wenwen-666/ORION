@@ -1,0 +1,38 @@
+{
+  "pr_number": 2925,
+  "title": "Fix for reassigned term aliases",
+  "url": "https://github.com/RDFLib/rdflib/pull/2925",
+  "description": "<!--\r\nThank you for your contribution to this project. This project has no formal\r\nfunding or full-time maintainers, and relies entirely on independent\r\ncontributors to keep it alive and relevant.\r\n\r\nThis pull request template includes some guidelines intended to help\r\ncontributors, not to deter contributions. While we prefer that PRs follow our\r\nguidelines, we will not reject PRs solely on the basis that they do not, though\r\nwe may take longer to process them as in most cases the remaining work will\r\nhave to be done by someone else.\r\n\r\nIf you have any questions regarding our guidelines, submit the PR as is\r\nand ask.\r\n\r\nMore detailed guidelines for pull requests are provided in our [developers\r\nguide](https://github.com/RDFLib/rdflib/blob/main/docs/developers.rst).\r\n\r\nPRs that are smaller in size and scope will be reviewed and merged quicker, so\r\nplease consider if your PR could be split up into more than one independent part\r\nbefore submitting it, no PR is too small. The maintainers of this project may\r\nalso split up larger PRs into smaller, more manageable PRs, if they deem it\r\nnecessary.\r\n\r\nPRs should be reviewed and approved by at least two people other than the author\r\nusing GitHub's review system before being merged. This is less important for bug\r\nfixes and changes that don't impact runtime behaviour, but more important for\r\nchanges that expand the RDFLib public API. Reviews are open to anyone, so please\r\nconsider reviewing other open pull requests, as this will also free up the\r\ncapacity required for your PR to be reviewed.\r\n-->\r\n\r\n# Summary of changes\r\n\r\nIn JSON-LD, when a term is aliased to one of the `NODE_KEYS` (e.g, `id` to `@id`), but is later reassigned in a child context (e.g., `id` to `dct:identifier`), rdflib incorrectly keeps the original alias and uses it for the binding (e.g., `@id` instead of `dct:identifier`).\r\n\r\nThis commit removes any aliases for a term inherited from parent contexts when that term is bound in the current context.\r\n\r\n<!--\r\nBriefly explain what changes the pull request is making and why. Ideally, this\r\nshould cover all changes in the pull request, as the changes will be reviewed\r\nagainst this summary to ensure that the PR does not include unintended changes.\r\n\r\nPlease also explicitly state if the PR makes any changes that are not backwards\r\ncompatible.\r\n-->\r\n\r\n# Checklist\r\n\r\n<!--\r\nIf an item on this list doesn't apply to your pull request, just remove it.\r\n\r\nIf, for some reason, you can't check some items on the checklist, or you are\r\nunsure about them, submit your PR as is and ask for help.\r\n-->\r\n\r\n- [X] Checked that there aren't other open pull requests for\r\n  the same change.\r\n- [X] Checked that all tests and type checking passes.\r\n- [X] Considered granting [push permissions to the PR branch](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/allowing-changes-to-a-pull-request-branch-created-from-a-fork),\r\n  so maintainers can fix minor issues and keep your PR up to date.\r\n\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "dc304a48be7edfde12c446da1ee42614bfb9709e",
+  "merged_at": "2024-10-10T00:32:41+00:00",
+  "created_at": "2024-10-09T10:17:55+00:00",
+  "closed_at": "2024-10-10T00:32:41+00:00",
+  "user": "avillar",
+  "additions": 59,
+  "deletions": 0,
+  "changed_files_count": 2,
+  "labels": [],
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "\n[![Coverage Status](https://coveralls.io/builds/70244720/badge)](https://coveralls.io/builds/70244720)\n\ncoverage: 90.631% (-0.02%) from 90.648%\nwhen pulling **4b407d689b6f07fda610f2d2fdcd13b22968074f on avillar:fix-jsonld-reassign-id**\ninto **0b69f4f5f49aa2ea1caf23bbee20c7166625a4bd on RDFLib:main**.\n",
+      "created_at": "2024-10-09T10:26:32+00:00"
+    },
+    {
+      "author": "ashleysommer",
+      "body": "Looks like a great fix, thanks @avillar ",
+      "created_at": "2024-10-10T00:19:55+00:00"
+    }
+  ],
+  "review_comments": [],
+  "changed_files": [
+    "rdflib/plugins/shared/jsonld/context.py",
+    "test/jsonld/test_reassign_id.py"
+  ],
+  "diff": "diff --git a/rdflib/plugins/shared/jsonld/context.py b/rdflib/plugins/shared/jsonld/context.py\nindex 1eec94419..e6b668878 100644\n--- a/rdflib/plugins/shared/jsonld/context.py\n+++ b/rdflib/plugins/shared/jsonld/context.py\n@@ -580,6 +580,11 @@ def _read_term(\n \n         if idref in NODE_KEYS:\n             self._alias.setdefault(idref, []).append(name)\n+        else:\n+            # undo aliases that may have been inherited from parent context\n+            for v in self._alias.values():\n+                if name in v:\n+                    v.remove(name)\n \n     def _rec_expand(\n         self, source: Dict[str, Any], expr: Optional[str], prev: Optional[str] = None\ndiff --git a/test/jsonld/test_reassign_id.py b/test/jsonld/test_reassign_id.py\nnew file mode 100644\nindex 000000000..97a723dbc\n--- /dev/null\n+++ b/test/jsonld/test_reassign_id.py\n@@ -0,0 +1,54 @@\n+from __future__ import annotations\n+\n+from rdflib import BNode, Graph, Literal, Namespace, URIRef\n+\n+DATA = \"\"\"\n+{\n+  \"@context\": {\n+    \"@version\": 1.1,\n+    \"ex\": \"https://example.com/\",\n+    \"@base\": \"https://example.com/res/\",\n+    \"id\": \"@id\",\n+    \"test\": {\n+      \"@id\": \"ex:test\",\n+      \"@context\": {\n+        \"id\": \"ex:id\"\n+      }\n+    }\n+  },\n+  \"id\": \"parent\",\n+  \"test\": [\n+    { \"id\": \"item1\" },\n+    { \"id\": \"item2\" }\n+  ]\n+}\n+\"\"\"\n+\n+DATA_OK = \"\"\"\n+<https://example.com/res/parent> <https://example.com/test> _:b0 .\n+<https://example.com/res/parent> <https://example.com/test> _:b1 .\n+_:b0 <https://example.com/id> \"item1\" .\n+_:b1 <https://example.com/id> \"item2\" .\n+\"\"\"\n+\n+EX = Namespace(\"https://example.com/\")\n+\n+\n+def test_reassign_id():\n+    g = Graph().parse(data=DATA, format=\"json-ld\")\n+    # g = Graph().parse(data=DATA_OK)\n+\n+    parent = URIRef(\"https://example.com/res/parent\")\n+    ex_id = EX.id\n+    ex_test = EX.test\n+\n+    objects = list(g.objects(parent, ex_test))\n+\n+    assert len(g) == 4\n+    assert len(objects) == 2\n+    for obj in objects:\n+        assert isinstance(obj, BNode)\n+        obj_pred_objects = list(g.predicate_objects(obj))\n+        assert len(obj_pred_objects) == 1\n+        assert obj_pred_objects[0][0] == ex_id\n+        assert isinstance(obj_pred_objects[0][1], Literal)\n",
+  "pre_commit": "0b69f4f5f49aa2ea1caf23bbee20c7166625a4bd",
+  "post_commit": "dc304a48be7edfde12c446da1ee42614bfb9709e",
+  "merge_type": "squash"
+}

@@ -1,0 +1,21 @@
+{
+  "pr_number": 11250,
+  "title": "[ie/adobepass] Use newer user-agent for provider redirect request",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/11250",
+  "description": "Closes #10848\r\n\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check all of the following options that apply:\r\n- [x] I am the original author of this code and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n\r\n### What is the purpose of your *pull request*?\r\n- [x] Fix or improvement to an extractor (Make sure to add/update tests)\r\n\r\n</details>\r\n",
+  "comments": [],
+  "diff": "diff --git a/yt_dlp/extractor/adobepass.py b/yt_dlp/extractor/adobepass.py\nindex eb7e597e52d7..7cc15ec7b6f2 100644\n--- a/yt_dlp/extractor/adobepass.py\n+++ b/yt_dlp/extractor/adobepass.py\n@@ -1355,6 +1355,7 @@\n class AdobePassIE(InfoExtractor):  # XXX: Conventionally, base classes should end with BaseIE/InfoExtractor\n     _SERVICE_PROVIDER_TEMPLATE = 'https://sp.auth.adobe.com/adobe-services/%s'\n     _USER_AGENT = 'Mozilla/5.0 (X11; Linux i686; rv:47.0) Gecko/20100101 Firefox/47.0'\n+    _MODERN_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; rv:131.0) Gecko/20100101 Firefox/131.0'\n     _MVPD_CACHE = 'ap-mvpd'\n \n     _DOWNLOADING_LOGIN_PAGE = 'Downloading Provider Login Page'\n@@ -1454,7 +1455,11 @@ def extract_redirect_url(html, url=None, fatal=False):\n                             'no_iframe': 'false',\n                             'domain_name': 'adobe.com',\n                             'redirect_url': url,\n-                        })\n+                        }, headers={\n+                            # yt-dlp's default user-agent is usually too old for Comcast_SSO\n+                            # See: https://github.com/yt-dlp/yt-dlp/issues/10848\n+                            'User-Agent': self._MODERN_USER_AGENT,\n+                        } if mso_id == 'Comcast_SSO' else None)\n                 elif not self._cookies_passed:\n                     raise_mvpd_required()\n \n",
+  "changed_files": [
+    "yt_dlp/extractor/adobepass.py"
+  ],
+  "changed_functions": [],
+  "pre_commit": "cba7868502f04175fecf9ab3e363296aee7ebec2",
+  "post_commit": "dcfeea4dd5e5686821350baa6c7767a011944867",
+  "merged_at": "2024-10-14T22:19:26Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 6,
+  "deletions": 1,
+  "changed_files_count": 1
+}

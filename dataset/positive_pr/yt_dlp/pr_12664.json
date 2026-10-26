@@ -1,0 +1,68 @@
+{
+  "pr_number": 12664,
+  "title": "[pp/XAttrMetadata] Add macOS \"Where from\" attribute",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/12664",
+  "description": "<!--\r\n    **IMPORTANT**: PRs without the template will be CLOSED\r\n    \r\n    Due to the high volume of pull requests, it may be a while before your PR is reviewed.\r\n    Please try to keep your pull request focused on a single bugfix or new feature.\r\n    Pull requests with a vast scope and/or very large diff will take much longer to review.\r\n    It is recommended for new contributors to stick to smaller pull requests, so you can receive much more immediate feedback as you familiarize yourself with the codebase.\r\n\r\n    PLEASE AVOID FORCE-PUSHING after opening a PR, as it makes reviewing more difficult.\r\n-->\r\n\r\n### Description of your *pull request* and other information\r\n\r\nUpdate the xattr post-processor on macOS to set the [`kMDItemWhereFroms`](https://developer.apple.com/documentation/coreservices/kmditemwherefroms) extended attribute to the URL where the file originated, which displays nicely as the \"Where from\" attribute:\r\n\r\n<details><summary>Example of metadata display in Finder</summary>\r\n<img width=\"851\" alt=\"Screenshot 2025-03-18 at 11 17 37 PM\" src=\"https://github.com/user-attachments/assets/641b83c3-4a13-46d2-ba08-47aca110f61d\" />\r\n</details>\r\n\r\nSince the value has to be formatted [as an array in a plist](https://discussions.apple.com/thread/5521669?answerId=23654882022#23654882022) for macOS to recognize it correctly, I needed to reorganize a couple of things in `XAttrMetadataPP` to add platform-specific attributes and per-attribute formatting.\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n<!--\r\n    # PLEASE FOLLOW THE GUIDE BELOW\r\n\r\n    - You will be asked some questions, please read them **carefully** and answer honestly\r\n    - Put an `x` into all the boxes `[ ]` relevant to your *pull request* (like [x])\r\n    - Use *Preview* tab to see what your *pull request* will actually look like\r\n-->\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check those that apply and remove the others:\r\n- [x] I am the original author of the code in this PR, and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n- [ ] I am not the original author of the code in this PR, but it is in the public domain or released under [Unlicense](http://unlicense.org/) (provide reliable evidence)\r\n\r\n### What is the purpose of your *pull request*? Check those that apply and remove the others:\r\n- [x] Core bug fix/improvement\r\n\r\n</details>\r\n",
+  "comments": [
+    {
+      "author": "Grub4K",
+      "body": "I am unsure if it makes sense to add this only if the current ytdlp platform is macos? If the file were moved from and to a supporting filesystem, let it be linux to macos, it would make sense to have this attribute as well?",
+      "created_at": "2025-03-19T06:32:54Z"
+    },
+    {
+      "author": "rolandcrosby",
+      "body": "@Grub4K Oh, good point, for some reason I was thinking that this attribute wouldn't be writable or preserved on non-Apple platforms. I just tested this out by round-tripping a file with this attribute set from macOS to Linux and back, and it worked fine, so I updated the PR to write this metadata regardless of platform. ",
+      "created_at": "2025-03-19T13:29:07Z"
+    },
+    {
+      "author": "rolandcrosby",
+      "body": "@Grub4K thanks for the review! Is there anything else you need from me to get this merged?",
+      "created_at": "2025-03-22T21:35:14Z"
+    }
+  ],
+  "diff": "diff --git a/yt_dlp/postprocessor/xattrpp.py b/yt_dlp/postprocessor/xattrpp.py\nindex e486b797b7cf..fd83d783ba11 100644\n--- a/yt_dlp/postprocessor/xattrpp.py\n+++ b/yt_dlp/postprocessor/xattrpp.py\n@@ -33,8 +33,17 @@ class XAttrMetadataPP(PostProcessor):\n         # (e.g., 4kB on ext4), and we don't want to have the other ones fail\n         'user.dublincore.description': 'description',\n         # 'user.xdg.comment': 'description',\n+        'com.apple.metadata:kMDItemWhereFroms': 'webpage_url',\n     }\n \n+    APPLE_PLIST_TEMPLATE = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n+<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n+<plist version=\"1.0\">\n+<array>\n+\\t<string>%s</string>\n+</array>\n+</plist>'''\n+\n     def run(self, info):\n         mtime = os.stat(info['filepath']).st_mtime\n         self.to_screen('Writing metadata to file\\'s xattrs')\n@@ -44,6 +53,8 @@ def run(self, info):\n                 if value:\n                     if infoname == 'upload_date':\n                         value = hyphenate_date(value)\n+                    elif xattrname == 'com.apple.metadata:kMDItemWhereFroms':\n+                        value = self.APPLE_PLIST_TEMPLATE % value\n                     write_xattr(info['filepath'], xattrname, value.encode())\n \n             except XAttrUnavailableError as e:\n",
+  "changed_files": [
+    "yt_dlp/postprocessor/xattrpp.py"
+  ],
+  "changed_functions": [
+    "run"
+  ],
+  "pre_commit": "035b1ece8f382358f5503bf5011ca098f6c9eaf9",
+  "post_commit": "3e918d825d7ff367812658957b281b8cda8f9ebb",
+  "merged_at": "2025-07-22T17:50:42Z",
+  "review_comments": [
+    {
+      "author": "Grub4K",
+      "body": "I would probably still inline the function call, since its just two `if`s but I think its fine like this as well",
+      "path": "yt_dlp/postprocessor/xattrpp.py",
+      "line": null,
+      "created_at": "2025-03-19T17:25:23Z"
+    },
+    {
+      "author": "rolandcrosby",
+      "body": "Done, thanks",
+      "path": "yt_dlp/postprocessor/xattrpp.py",
+      "line": null,
+      "created_at": "2025-03-19T22:34:51Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "maybe `com.apple.metadata:kMDItemWhereFroms` should go after `description` since even without any url it's already longer than many videos' description strings?",
+      "path": "yt_dlp/postprocessor/xattrpp.py",
+      "line": null,
+      "created_at": "2025-03-22T21:37:54Z"
+    },
+    {
+      "author": "rolandcrosby",
+      "body": "good idea, done",
+      "path": "yt_dlp/postprocessor/xattrpp.py",
+      "line": null,
+      "created_at": "2025-03-22T21:42:37Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 11,
+  "deletions": 0,
+  "changed_files_count": 1
+}

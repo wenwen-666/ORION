@@ -1,0 +1,31 @@
+# Ignore conda environments
+conda_envs/
+conda_envs_testora/
+conda_env_workspace/
+conda _envs_negative/
+venv/
+.venv/
+env/
+
+# Ignore large data directories
+pr_delete/
+
+# Keep the directory structure but not the contents
+!conda_envs/.gitkeep
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Generated outputs
+output/
+**/output/
+
+# Notebook and OS metadata
+.ipynb_checkpoints/
+.DS_Store

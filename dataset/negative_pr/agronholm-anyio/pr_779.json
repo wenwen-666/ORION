@@ -1,0 +1,70 @@
+{
+  "pr_number": 779,
+  "title": "Fixed KeyboardInterrupt hanging the asyncio test runner",
+  "url": "https://github.com/agronholm/anyio/pull/779",
+  "description": "<!-- Thank you for your contribution! -->\r\n## Changes\r\n\r\nThis fixes ctrl+c causing the anyio pytest plugin to hang if the test is currently awaiting something. This was caused by the test runner dropping exceptions on the floor.\r\n\r\n<!-- Please give a short brief about these changes. -->\r\n\r\n## Checklist\r\n\r\nIf this is a user-facing code change, like a bugfix or a new feature, please ensure that\r\nyou've fulfilled the following conditions (where applicable):\r\n\r\n- [X] You've added tests (in `tests/`) added which would fail without your patch\r\n- [ ] You've updated the documentation (in `docs/`, in case of behavior changes or new\r\nfeatures)\r\n- [X] You've added a new changelog entry (in `docs/versionhistory.rst`).\r\n\r\nIf this is a trivial change, like a typo fix or a code reformatting, then you can ignore\r\nthese instructions.\r\n\r\n### Updating the changelog\r\n\r\nIf there are no entries after the last release, use `**UNRELEASED**` as the version.\r\nIf, say, your patch fixes issue #123, the entry should look like this:\r\n\r\n`* Fix big bad boo-boo in task groups (#123\r\n<https://github.com/agronholm/anyio/issues/123>_; PR by @yourgithubaccount)`\r\n\r\nIf there's no issue linked, just link to your pull request instead by updating the\r\nchangelog after you've created the PR.\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "d1aea98c4f552d04458e49f1484b9c018f2a3ca8",
+  "merged_at": "2024-09-11T06:57:01+00:00",
+  "created_at": "2024-09-01T09:21:49+00:00",
+  "closed_at": "2024-09-11T06:57:01+00:00",
+  "user": "agronholm",
+  "additions": 38,
+  "deletions": 0,
+  "changed_files_count": 3,
+  "labels": [],
+  "comments": [
+    {
+      "author": "agronholm",
+      "body": "Thanks for the review!",
+      "created_at": "2024-09-11T06:57:09+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "graingert",
+      "body": "Do you want to extract and pass on the cancel message?",
+      "path": "src/anyio/_backends/_asyncio.py",
+      "line": null,
+      "created_at": "2024-09-10T08:06:57+00:00"
+    },
+    {
+      "author": "agronholm",
+      "body": "Hm, might be a good idea.",
+      "path": "src/anyio/_backends/_asyncio.py",
+      "line": null,
+      "created_at": "2024-09-10T08:37:40+00:00"
+    },
+    {
+      "author": "Zac-HD",
+      "body": "This might cause problems in environments where `pytest` is not installed?  My habit is to do something like\r\n\r\n```python\r\nOutcomeException = getattr(sys.modules.get(\"_pytest.outcomes\"), \"OutcomeException\", ())\r\n```\r\n\r\nwhich doesn't require it to be installed and also avoids paying for the import if it wouldn't otherwise be used.",
+      "path": "src/anyio/_backends/_asyncio.py",
+      "line": null,
+      "created_at": "2024-09-10T20:38:17+00:00"
+    },
+    {
+      "author": "agronholm",
+      "body": "I'm not understanding. This is an import in the AnyIO pytest runner. Why would someone try to use that without pytest in the first place?",
+      "path": "src/anyio/_backends/_asyncio.py",
+      "line": null,
+      "created_at": "2024-09-10T21:05:25+00:00"
+    },
+    {
+      "author": "Zac-HD",
+      "body": "Ah, right, I just wasn't looking at a wide enough context 🤦 ",
+      "path": "src/anyio/_backends/_asyncio.py",
+      "line": null,
+      "created_at": "2024-09-10T23:32:52+00:00"
+    }
+  ],
+  "changed_files": [
+    "docs/versionhistory.rst",
+    "src/anyio/_backends/_asyncio.py",
+    "tests/test_pytest_plugin.py"
+  ],
+  "diff": "diff --git a/docs/versionhistory.rst b/docs/versionhistory.rst\nindex d99d30a27..4ce4d4c74 100644\n--- a/docs/versionhistory.rst\n+++ b/docs/versionhistory.rst\n@@ -42,6 +42,7 @@ This library adheres to `Semantic Versioning 2.0 <http://semver.org/>`_.\n   arrives in an exception group)\n - Fixed support for Linux abstract namespaces in UNIX sockets that was broken in v4.2\n   (#781 <https://github.com/agronholm/anyio/issues/781>_; PR by @tapetersen)\n+- Fixed ``KeyboardInterrupt`` (ctrl+c) hanging the asyncio pytest runner\n \n **4.4.0**\n \ndiff --git a/src/anyio/_backends/_asyncio.py b/src/anyio/_backends/_asyncio.py\nindex 97edb8ad7..0d4cdf650 100644\n--- a/src/anyio/_backends/_asyncio.py\n+++ b/src/anyio/_backends/_asyncio.py\n@@ -2082,13 +2082,23 @@ async def _run_tests_and_fixtures(\n             tuple[Awaitable[T_Retval], asyncio.Future[T_Retval]]\n         ],\n     ) -> None:\n+        from _pytest.outcomes import OutcomeException\n+\n         with receive_stream, self._send_stream:\n             async for coro, future in receive_stream:\n                 try:\n                     retval = await coro\n+                except CancelledError as exc:\n+                    if not future.cancelled():\n+                        future.cancel(*exc.args)\n+\n+                    raise\n                 except BaseException as exc:\n                     if not future.cancelled():\n                         future.set_exception(exc)\n+\n+                    if not isinstance(exc, (Exception, OutcomeException)):\n+                        raise\n                 else:\n                     if not future.cancelled():\n                         future.set_result(retval)\ndiff --git a/tests/test_pytest_plugin.py b/tests/test_pytest_plugin.py\nindex 2b7d9ca4a..1aa8911e6 100644\n--- a/tests/test_pytest_plugin.py\n+++ b/tests/test_pytest_plugin.py\n@@ -441,3 +441,30 @@ async def test_debugger_exit():\n \n     result = testdir.runpytest(*pytest_args)\n     result.assert_outcomes()\n+\n+\n+@pytest.mark.parametrize(\"anyio_backend\", get_all_backends(), indirect=True)\n+def test_keyboardinterrupt_during_test(\n+    testdir: Pytester, anyio_backend_name: str\n+) -> None:\n+    testdir.makepyfile(\n+        f\"\"\"\n+        import pytest\n+        from anyio import create_task_group, sleep\n+\n+        @pytest.fixture\n+        def anyio_backend():\n+            return {anyio_backend_name!r}\n+\n+        async def send_keyboardinterrupt():\n+            raise KeyboardInterrupt\n+\n+        @pytest.mark.anyio\n+        async def test_anyio_mark_first():\n+            async with create_task_group() as tg:\n+                tg.start_soon(send_keyboardinterrupt)\n+                await sleep(10)\n+        \"\"\"\n+    )\n+\n+    testdir.runpytest_subprocess(*pytest_args, timeout=3)\n",
+  "pre_commit": "c1aff53d8ae5ddc2cf1b8558614a7a2d60c12518",
+  "post_commit": "d1aea98c4f552d04458e49f1484b9c018f2a3ca8",
+  "merge_type": "squash"
+}

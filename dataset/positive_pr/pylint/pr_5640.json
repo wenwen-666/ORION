@@ -1,0 +1,131 @@
+{
+  "pr_number": 5640,
+  "title": "Add checker `redefined-slots-in-subclass`",
+  "url": "https://github.com/pylint-dev/pylint/pull/5640",
+  "description": "<!--\r\nThank you for submitting a PR to pylint!\r\n\r\nTo ease the process of reviewing your PR, do make sure to complete the following boxes.\r\n\r\n- [ ] Add yourself to CONTRIBUTORS if you are a new contributor.\r\n- [ ] Add a ChangeLog entry describing what your PR does.\r\n- [ ] If it's a new feature, or an important bug fix, add a What's New entry in\r\n      `doc/whatsnew/<current release.rst>`.\r\n- [ ] Write a good description on what the PR does.\r\n-->\r\n\r\n## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n|    | :bug: Bug fix          |\r\n| ✓   | :sparkles: New feature |\r\n|    | :hammer: Refactoring   |\r\n|    | :scroll: Docs          |\r\n\r\n## Description\r\n\r\n<!--\r\nIf this PR fixes a particular issue, use the following to automatically close that issue\r\nonce this PR gets merged:\r\n-->\r\n\r\nCloses #5617\r\n",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 1694447934](https://coveralls.io/builds/45611678)\n\n* **14** of **14**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* **25** unchanged lines in **2** files lost coverage.\n* Overall coverage increased (+**0.08%**) to **93.836%**\n\n---\n\n\n|  Files with Coverage Reduction | New Missed Lines | % |\n| :-----|--------------|--: |\n| [pylint/checkers/__init__.py](https://coveralls.io/builds/45611678/source?filename=pylint%2Fcheckers%2F__init__.py#L92) | 2 | 93.94% |\n| [pylint/checkers/variables.py](https://coveralls.io/builds/45611678/source?filename=pylint%2Fcheckers%2Fvariables.py#L1515) | 23 | 96.2% |\n<!-- | **Total:** | **25** |  | -->\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/45611678/badge)](https://coveralls.io/builds/45611678) |\n| :-- | --: |\n| Change from base [Build 1684648459](https://coveralls.io/builds/45546345): |  0.08% |\n| Covered Lines: | 14660 |\n| Relevant Lines: | 15623 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-01-05T16:25:01Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "> One final change which I should have caught earlier.\r\nThanks, @mbyrnepr2! Sorry for the back and forth on that list comprehension, but I think we got a good final result 👍\r\n\r\nNo, thank you for your attention to detail! Updated the number btw.\r\n",
+      "created_at": "2022-01-13T19:23:57Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex 68d3b29cb4..71af7bddf8 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -67,6 +67,10 @@ Release date: TBA\n \n   Closes #5499\n \n+* Add checker ``redefined-slots-in-subclass``: Emitted when a slot is redefined in a subclass.\n+\n+  Closes #5617\n+\n * Fixed false positive for ``global-variable-not-assigned`` when the ``del`` statement is used\n \n   Closes #5333\ndiff --git a/doc/whatsnew/2.13.rst b/doc/whatsnew/2.13.rst\nindex 959ded73b8..2f9248fb9d 100644\n--- a/doc/whatsnew/2.13.rst\n+++ b/doc/whatsnew/2.13.rst\n@@ -14,6 +14,10 @@ New checkers\n \n   Closes #5460\n \n+* Add checker ``redefined-slots-in-subclass``: Emitted when a slot is redefined in a subclass.\n+\n+  Closes #5617\n+\n * Rewrote Checker of ``non-ascii-name``.\n    It now ensures __all__ Python names are ASCII and also properly\n    checks the names of imports (``non-ascii-module-import``) as\ndiff --git a/pylint/checkers/classes/class_checker.py b/pylint/checkers/classes/class_checker.py\nindex f64e7addc5..b82f2bc9ae 100644\n--- a/pylint/checkers/classes/class_checker.py\n+++ b/pylint/checkers/classes/class_checker.py\n@@ -588,6 +588,11 @@ def _has_same_layout_slots(slots, assigned_value):\n         \"subclassed-final-class\",\n         \"Used when a class decorated with typing.final has been subclassed.\",\n     ),\n+    \"W0244\": (\n+        \"Redefined slots %r in subclass\",\n+        \"redefined-slots-in-subclass\",\n+        \"Used when a slot is re-defined in a subclass.\",\n+    ),\n     \"E0236\": (\n         \"Invalid object %r in __slots__, must contain only non empty strings\",\n         \"invalid-slots-object\",\n@@ -792,6 +797,7 @@ def _ignore_mixin(self):\n         \"useless-object-inheritance\",\n         \"inconsistent-mro\",\n         \"duplicate-bases\",\n+        \"redefined-slots-in-subclass\",\n     )\n     def visit_classdef(self, node: nodes.ClassDef) -> None:\n         \"\"\"init visit variable _accessed\"\"\"\n@@ -1329,7 +1335,7 @@ def _check_invalid_overridden_method(self, function_node, parent_function_node):\n                 node=function_node,\n             )\n \n-    def _check_slots(self, node):\n+    def _check_slots(self, node: nodes.ClassDef) -> None:\n         if \"__slots__\" not in node.locals:\n             return\n         for slots in node.igetattr(\"__slots__\"):\n@@ -1359,6 +1365,40 @@ def _check_slots(self, node):\n                     self._check_slots_elt(elt, node)\n                 except astroid.InferenceError:\n                     continue\n+            self._check_redefined_slots(node, slots, values)\n+\n+    def _check_redefined_slots(\n+        self,\n+        node: nodes.ClassDef,\n+        slots_node: nodes.NodeNG,\n+        slots_list: List[nodes.NodeNG],\n+    ) -> None:\n+        \"\"\"Check if `node` redefines a slot which is defined in an ancestor class\"\"\"\n+        slots_names: List[str] = []\n+        for slot in slots_list:\n+            if isinstance(slot, nodes.Const):\n+                slots_names.append(slot.value)\n+            else:\n+                inferred_slot = safe_infer(slot)\n+                if inferred_slot:\n+                    slots_names.append(inferred_slot.value)\n+\n+        # Slots of all parent classes\n+        ancestors_slots_names = {\n+            slot.value\n+            for ancestor in node.local_attr_ancestors(\"__slots__\")\n+            for slot in ancestor.slots() or []\n+        }\n+\n+        # Slots which are common to `node` and its parent classes\n+        redefined_slots = ancestors_slots_names.intersection(slots_names)\n+\n+        if redefined_slots:\n+            self.add_message(\n+                \"redefined-slots-in-subclass\",\n+                args=\", \".join(name for name in slots_names if name in redefined_slots),\n+                node=slots_node,\n+            )\n \n     def _check_slots_elt(self, elt, node):\n         for inferred in elt.infer():\ndiff --git a/tests/functional/r/redefined_slots.py b/tests/functional/r/redefined_slots.py\nnew file mode 100644\nindex 0000000000..bd9281e40c\n--- /dev/null\n+++ b/tests/functional/r/redefined_slots.py\n@@ -0,0 +1,33 @@\n+\"\"\"Checks that a subclass does not redefine a slot which has been defined in a parent class.\"\"\"\n+\n+# pylint: disable=too-few-public-methods\n+\n+from collections import deque\n+\n+\n+class Base:\n+    \"\"\"Class defining the `a`, `b` & `deque.__name__` slots\"\"\"\n+    __slots__ = (\"a\", \"b\", deque.__name__)\n+\n+\n+class Subclass1(Base):\n+    \"\"\"Redefining the `a` & `deque.__name__` slots & adding the `d` & `e` slots\"\"\"\n+    __slots__ = (\"a\", deque.__name__, \"d\", \"e\")  # [redefined-slots-in-subclass]\n+\n+\n+class Subclass2(Base):\n+    \"\"\"Adding the `f`, `g` & `h` slots\"\"\"\n+    __slots__ = (\"f\", \"g\", \"h\")\n+\n+\n+class Base2:\n+    \"\"\"Class defining the `i`, `j` & `k` slots\"\"\"\n+    __slots__ = (\"i\", \"j\", \"k\")\n+\n+\n+class Subclass3(Base, Base2):\n+    \"\"\"Adding the `l`, `m`, `n` slots\n+       Redefining the `a`, `b`, & `c` slot already defined in `Base`\n+       Redefining the `i`, `j`, `k` slot already defined in `Base2`\n+    \"\"\"\n+    __slots__ = (\"a\", \"b\", \"c\", \"i\", \"j\", \"k\", \"l\", \"m\", \"n\")  # [redefined-slots-in-subclass]\ndiff --git a/tests/functional/r/redefined_slots.txt b/tests/functional/r/redefined_slots.txt\nnew file mode 100644\nindex 0000000000..48cb9ea983\n--- /dev/null\n+++ b/tests/functional/r/redefined_slots.txt\n@@ -0,0 +1,2 @@\n+redefined-slots-in-subclass:15:16:15:47:Subclass1:Redefined slots 'a, deque' in subclass:UNDEFINED\n+redefined-slots-in-subclass:33:16:33:61:Subclass3:Redefined slots 'a, b, i, j, k' in subclass:UNDEFINED\n",
+  "changed_files": [
+    "ChangeLog",
+    "doc/whatsnew/2.13.rst",
+    "pylint/checkers/classes/class_checker.py",
+    "tests/functional/r/redefined_slots.py",
+    "tests/functional/r/redefined_slots.txt"
+  ],
+  "changed_functions": [
+    "_check_slots",
+    "_check_redefined_slots"
+  ],
+  "pre_commit": "a6a10e50fa63e46bbb649627f3891834458afab9",
+  "post_commit": "56129b7e05ed606a40546659daaac510c7572d20",
+  "merged_at": "2022-01-16T21:06:25Z",
+  "review_comments": [
+    {
+      "author": "mbyrnepr2",
+      "body": "Using `getattr` here instead of `slot.value` as a test scenario fails(AttributeError) which uses `deque.__name__` as a slot.",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-05T16:10:27Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n    def _check_slots(self, node: nodes.ClassDef) -> None:\r\n```",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-10T16:54:59Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        slots_names = [getattr(slot, \"value\", \"\") for slot in slots_list]\r\n```",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-10T16:55:22Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        ancestors_slots_names = {\r\n```",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-10T16:56:06Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I haven't looked at the internals, but how can `slot.value` be nothing?",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": 1385,
+      "created_at": "2022-01-10T16:56:45Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        redefined_slots = ancestors_slots_names.intersection(slots_names)\r\n```",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-10T16:57:19Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Thanks for the question @DanielNoord. Here is a demo showing when `deque.__name__` has no value attribute:\r\n\r\n```\r\n(venv310) cat demo.py \r\nfrom collections import deque\r\n\r\nclass Base:\r\n    __slots__ = \"a\", \"b\", \"__dict__\", deque.__name__\r\n(venv310)\r\n(venv310) pylint demo.py \r\n> /Users/markbyrne/programming/pylint/pylint/checkers/classes/class_checker.py(1375)_check_redefined_slots()\r\n-> slots_names = [getattr(slot, \"value\", \"\") for slot in slots_list]\r\n(Pdb) slots_list\r\n[<Const.str l.3 at 0x10a4a52a0>, <Const.str l.3 at 0x10a4a50f0>, <Const.str l.3 at 0x10a4a5210>, <Attribute.__name__ l.3 at 0x10a4a5240>]\r\n(Pdb) slots_list[3]\r\n<Attribute.__name__ l.3 at 0x10a4a5240>\r\n(Pdb) slots_list[3].value\r\n*** AttributeError: 'Attribute' object has no attribute 'value'\r\n(Pdb) \r\n```\r\n\r\nUpdate: On second glance I realise this may not answer your question - let me know!",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": 1385,
+      "created_at": "2022-01-11T21:27:45Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "This does answer my question, but creates a follow-up 😄 \r\n\r\nShouldn't we do something with `deque.__name__`? As in, extract `__name__` or something from it? If a subclass redefines `deque.__name__` it should raise as well right?\r\n\r\nThis `getattr` is a different way of doing `isinstance(slot, nodes.Const)` which I find a bit more explicit. So whatever we decide on for `deque.__name__` personally I would prefer rewriting as a `Const` check.",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": 1385,
+      "created_at": "2022-01-12T08:12:54Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n            slot.value if isinstance(slot, nodes.Const) else utils.safe_infer(slot).value\r\n```",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-13T16:49:01Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Using `getattr` since have the following from mypy otherwise:\r\n`pylint/checkers/classes/class_checker.py:1378: error: Item \"None\" of \"Optional[Any]\" has no attribute \"value\"  [union-attr]`",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-13T18:27:00Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        slots_names: List[str] = []\r\n        for slot in slots_list:\r\n            if isinstance(slot, nodes.Const):\r\n                slots_names.append(slot.value)\r\n            else:\r\n                inferred_slot = safe_infer(slot)\r\n                if inferred_slot:\r\n                    slots_names.append(inferred_slot.value)\r\n```\r\n\r\nIt's a bit longer, but I prefer how explicit and readable this is. Let me know what you think!",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-13T18:55:11Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n    \"W0244\": (\r\n```\r\n\r\nI just noticed that there is `E0241`. I know we don't really enforce this right now, but I think we're going to move to making the last two digits exclusive within a checker class.",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-13T19:15:44Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "I'm also fine with that. Thanks @DanielNoord ",
+      "path": "pylint/checkers/classes/class_checker.py",
+      "line": null,
+      "created_at": "2022-01-13T19:17:46Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 84,
+  "deletions": 1,
+  "changed_files_count": 5
+}

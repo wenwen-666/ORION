@@ -1,0 +1,86 @@
+{
+  "pr_number": 1047,
+  "title": "AbstractFileSystem: add read_text/write_text api",
+  "url": "https://github.com/fsspec/filesystem_spec/pull/1047",
+  "description": "Closes #1045.",
+  "state": "closed",
+  "merged": true,
+  "merged_at": "2022-09-23T17:48:57+00:00",
+  "additions": 63,
+  "deletions": 0,
+  "changed_files_count": 2,
+  "comments": [
+    {
+      "author": "efiop",
+      "body": "Feels like if we decide to bother with `read_text/write_text` we might add `read_bytes/write_bytes` as well for symmetry.\r\n\r\nAlso this is interesting as it provides (arguably) a more pythonic interface as opposed to unix-like cat/pipe that we already have. I'm personally not a fan of creating too many different ways of doing the same thing and I'm not a fan of pathlib, but one could indeed argue that `read/write_bytes/text` should be more natural to the users. Overall I don't have very strong opinion here.",
+      "created_at": "2022-09-20T20:14:08+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Thank you @efiop . Hoping for more opinions too.",
+      "created_at": "2022-09-20T20:15:36+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "read_bytes/write_bytes would be simple aliases of cat/pipe? I'll allow it :)",
+      "created_at": "2022-09-22T15:43:12+00:00"
+    },
+    {
+      "author": "skshetry",
+      "body": ">  read_bytes/write_bytes would be simple aliases of cat/pipe? I'll allow it :)\r\n\r\nThanks, I have added those aliases. I am not sure what you mean by simple aliases, simpler form than cat/pipe or just alias with same function signatures? Since we are calling them aliases, I went with the latter (and I assumed that's what you meant). 🙂 \r\n\r\n",
+      "created_at": "2022-09-23T04:29:36+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "skshetry",
+      "body": "A `read_text`/`write_text` in 2022 should probably just default to `utf-8`. In Python 3.10, `Path.read_text()` raises `EncodingWarning` if `-X warn_default_encoding` is set. Also, Python recommends to set encoding to \"utf-8\" by default for new APIs:\r\n\r\n> please consider using UTF-8 by default (i.e. encoding=\"utf-8\") for new APIs.\r\n\r\nSee https://docs.python.org/3/library/io.html#text-encoding.",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-16T04:58:26+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "I didn't know that. Is this also true for builtins.open or TextIOWrapper? Certainly, utf8 is the only encoding I've come across, but people on windows still seem to have latin1 and others.",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-16T13:15:51+00:00"
+    },
+    {
+      "author": "skshetry",
+      "body": "> Is this also true for builtins.open or TextIOWrapper?\r\n\r\n~No, there's a new `io.text_encoding()` that has to be opt-in by the users of `open()` and `TextIOWrapper()` for this. That's what `Path().read_text()` does.~ See https://docs.python.org/3/library/io.html#opt-in-encodingwarning.\r\n\r\nSee comment below, I was wrong.",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-16T13:22:02+00:00"
+    },
+    {
+      "author": "skshetry",
+      "body": "Reading the [PEP 597](https://peps.python.org/pep-0597/) again, yes it also applies to `builtins.open()` and `io.TextIOWrapper`. 🤦🏼 \r\n\r\n> When the flag is set, io.TextIOWrapper(), open() and other modules using them will emit EncodingWarning when the encoding argument is omitted.\r\n\r\n",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-16T15:08:27+00:00"
+    },
+    {
+      "author": "martindurant",
+      "body": "Same as `self.cat(path, **kwargs).decode(encoding=encoding, errors=errors)`? Does the value of newlines matter?",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-16T18:30:16+00:00"
+    },
+    {
+      "author": "skshetry",
+      "body": "To my mind, `open()` is much cleaner, and since it just works with `mode=\"r\"`, I did not want to bother with handling that decoding _manually_. But no strong opinion here, API matters more than the implementation to me.\r\nAre there any potential optimizations that `fs.cat()` offers?\r\n\r\n> Does the value of newlines matter?\r\n\r\nI haven't used `newline` that much even in `open()`, except when loading/writing `csv`s.  I see that `Path.write_text()` has `newline=\"\"` support from 3.10 onwards, but not `read_text()`. Again, no strong opinion here, we could leave that out for now.",
+      "path": "fsspec/spec.py",
+      "line": null,
+      "created_at": "2022-09-19T03:07:04+00:00"
+    }
+  ],
+  "changed_files": [
+    "fsspec/spec.py",
+    "fsspec/tests/test_api.py"
+  ],
+  "changed_functions": [],
+  "diff": "diff --git a/fsspec/spec.py b/fsspec/spec.py\nindex f37ca14f5..4cb0d5f86 100644\n--- a/fsspec/spec.py\n+++ b/fsspec/spec.py\n@@ -649,6 +649,50 @@ def isfile(self, path):\n         except:  # noqa: E722\n             return False\n \n+    def read_text(self, path, encoding=None, errors=None, newline=None, **kwargs):\n+        \"\"\"Get the contents of the file as a string.\n+\n+        Parameters\n+        ----------\n+        path: str\n+            URL of file on this filesystems\n+        encoding, errors, newline: same as `open`.\n+        \"\"\"\n+        with self.open(\n+            path,\n+            mode=\"r\",\n+            encoding=encoding,\n+            errors=errors,\n+            newline=newline,\n+            **kwargs,\n+        ) as f:\n+            return f.read()\n+\n+    def write_text(\n+        self, path, value, encoding=None, errors=None, newline=None, **kwargs\n+    ):\n+        \"\"\"Write the text to the given file.\n+\n+        An existing file will be overwritten.\n+\n+        Parameters\n+        ----------\n+        path: str\n+            URL of file on this filesystems\n+        value: str\n+            Text to write.\n+        encoding, errors, newline: same as `open`.\n+        \"\"\"\n+        with self.open(\n+            path,\n+            mode=\"w\",\n+            encoding=encoding,\n+            errors=errors,\n+            newline=newline,\n+            **kwargs,\n+        ) as f:\n+            return f.write(value)\n+\n     def cat_file(self, path, start=None, end=None, **kwargs):\n         \"\"\"Get the content of a file\n \n@@ -1220,6 +1264,14 @@ def modified(self, path):\n     # ------------------------------------------------------------------------\n     # Aliases\n \n+    def read_bytes(self, path, start=None, end=None, **kwargs):\n+        \"\"\"Alias of `AbstractFileSystem.cat_file`.\"\"\"\n+        return self.cat_file(path, start=start, end=end, **kwargs)\n+\n+    def write_bytes(self, path, value, **kwargs):\n+        \"\"\"Alias of `AbstractFileSystem.pipe_file`.\"\"\"\n+        self.pipe_file(path, value, **kwargs)\n+\n     def makedir(self, path, create_parents=True, **kwargs):\n         \"\"\"Alias of `AbstractFileSystem.mkdir`.\"\"\"\n         return self.mkdir(path, create_parents=create_parents, **kwargs)\ndiff --git a/fsspec/tests/test_api.py b/fsspec/tests/test_api.py\nindex 65b513ca0..84bcb7ae9 100644\n--- a/fsspec/tests/test_api.py\n+++ b/fsspec/tests/test_api.py\n@@ -171,6 +171,17 @@ def test_open_text(m):\n     assert f.encoding == \"latin1\"\n \n \n+def test_read_text(m):\n+    with m.open(\"/myfile\", \"w\", encoding=\"utf-8\") as f:\n+        f.write(\"some\\nlines\\nof\\ntext\")\n+    assert m.read_text(\"/myfile\", encoding=\"utf-8\") == \"some\\nlines\\nof\\ntext\"\n+\n+\n+def test_write_text(m):\n+    m.write_text(\"/myfile\", \"some\\nlines\\nof\\ntext\", encoding=\"utf-8\")\n+    assert m.read_text(\"/myfile\", encoding=\"utf-8\") == \"some\\nlines\\nof\\ntext\"\n+\n+\n def test_chained_fs():\n     d1 = tempfile.mkdtemp()\n     d2 = tempfile.mkdtemp()\n",
+  "pre_commit": "f4a2a804a706e27ea69f0f18ae580adda9577c43",
+  "post_commit": "bb9989ce5bf0ed0c0a5f7d3540c3a59581d259ce"
+}

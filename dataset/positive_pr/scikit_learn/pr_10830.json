@@ -1,0 +1,119 @@
+{
+  "pr_number": 10830,
+  "title": "TST check for nan and inf + single sample for metrics cl…",
+  "url": "https://github.com/scikit-learn/scikit-learn/pull/10830",
+  "description": "Quite interesting that the clustering metrics were accepting non finite input.\r\n@jnothman Do you think about any particular reason to be that much permissive?",
+  "comments": [
+    {
+      "author": "glemaitre",
+      "body": "I will still have one test failing:\r\n\r\nhttps://github.com/scikit-learn/scikit-learn/blob/master/sklearn/metrics/cluster/tests/test_supervised.py#L51\r\n\r\nDoes it make sense to have this test. Why the metric should return 1.0 on some empty arrays?",
+      "created_at": "2018-03-18T12:01:48Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "@amueller Do you know the reason that an empty cluster give the best score?",
+      "created_at": "2019-08-08T08:39:05Z"
+    },
+    {
+      "author": "amueller",
+      "body": "@glemaitre can you please elaborate / give more context?",
+      "created_at": "2019-08-08T16:05:04Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "> @glemaitre can you please elaborate / give more context?\r\n\r\nFrom what I recall, there is a failing test `test_perfect_matches` enforcing:\r\n`assert score_func([], []) == 1.0`\r\n\r\nThe question is: is it making sense that supervised metric for clustering would return a perfect match when a cluster is an empty cluster.",
+      "created_at": "2019-08-09T07:56:22Z"
+    },
+    {
+      "author": "jnothman",
+      "body": "I think scoring an empty clustering as a perfect clustering makes sense if\nany clustering of a single point is a perfect clustering. We could return\nNaN instead.\n",
+      "created_at": "2019-08-11T23:45:25Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "ping @rth \r\n\r\nI think that we could merge this one.",
+      "created_at": "2019-08-22T14:44:08Z"
+    },
+    {
+      "author": "rth",
+      "body": "> is it making sense that supervised metric for clustering would return a perfect match when a cluster is an empty cluster.\r\n\r\nI have no idea what the score should be for an empty cluster, but I still wonder if we should error or not with 0 samples.",
+      "created_at": "2019-08-22T15:51:53Z"
+    }
+  ],
+  "diff": "diff --git a/sklearn/metrics/cluster/supervised.py b/sklearn/metrics/cluster/supervised.py\nindex 44597343d3794..af9ebacc2e9af 100644\n--- a/sklearn/metrics/cluster/supervised.py\n+++ b/sklearn/metrics/cluster/supervised.py\n@@ -21,7 +21,7 @@\n from scipy import sparse as sp\n \n from .expected_mutual_info_fast import expected_mutual_information\n-from ...utils.validation import check_array\n+from ...utils.validation import check_array, check_consistent_length\n from ...utils.fixes import comb, _astype_copy_false\n \n \n@@ -36,14 +36,18 @@ def check_clusterings(labels_true, labels_pred):\n \n     Parameters\n     ----------\n-    labels_true : int array, shape = [n_samples]\n-        The true labels\n+    labels_true : array-like of shape (n_samples,)\n+        The true labels.\n \n-    labels_pred : int array, shape = [n_samples]\n-        The predicted labels\n+    labels_pred : array-like of shape (n_samples,)\n+        The predicted labels.\n     \"\"\"\n-    labels_true = np.asarray(labels_true)\n-    labels_pred = np.asarray(labels_pred)\n+    labels_true = check_array(\n+        labels_true, ensure_2d=False, ensure_min_samples=0\n+    )\n+    labels_pred = check_array(\n+        labels_pred, ensure_2d=False, ensure_min_samples=0\n+    )\n \n     # input checks\n     if labels_true.ndim != 1:\n@@ -52,10 +56,8 @@ def check_clusterings(labels_true, labels_pred):\n     if labels_pred.ndim != 1:\n         raise ValueError(\n             \"labels_pred must be 1D: shape is %r\" % (labels_pred.shape,))\n-    if labels_true.shape != labels_pred.shape:\n-        raise ValueError(\n-            \"labels_true and labels_pred must have same size, got %d and %d\"\n-            % (labels_true.shape[0], labels_pred.shape[0]))\n+    check_consistent_length(labels_true, labels_pred)\n+\n     return labels_true, labels_pred\n \n \ndiff --git a/sklearn/metrics/cluster/tests/test_common.py b/sklearn/metrics/cluster/tests/test_common.py\nindex 810a573b12e63..5b6d9ca976ae9 100644\n--- a/sklearn/metrics/cluster/tests/test_common.py\n+++ b/sklearn/metrics/cluster/tests/test_common.py\n@@ -126,8 +126,7 @@ def test_normalized_output(metric_name):\n # 0.22 AMI and NMI changes\n @pytest.mark.filterwarnings('ignore::FutureWarning')\n @pytest.mark.parametrize(\n-    \"metric_name\",\n-    dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS)\n+    \"metric_name\", dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS)\n )\n def test_permute_labels(metric_name):\n     # All clustering metrics do not change score due to permutations of labels\n@@ -150,11 +149,10 @@ def test_permute_labels(metric_name):\n # 0.22 AMI and NMI changes\n @pytest.mark.filterwarnings('ignore::FutureWarning')\n @pytest.mark.parametrize(\n-    \"metric_name\",\n-    dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS)\n+    \"metric_name\", dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS)\n )\n # For all clustering metrics Input parameters can be both\n-# in the form of arrays lists, positive, negetive or string\n+# in the form of arrays lists, positive, negative or string\n def test_format_invariance(metric_name):\n     y_true = [0, 0, 0, 0, 1, 1, 1, 1]\n     y_pred = [0, 1, 2, 3, 4, 5, 6, 7]\n@@ -183,3 +181,29 @@ def generate_formats(y):\n         y_true_gen = generate_formats(y_true)\n         for (y_true_fmt, fmt_name) in y_true_gen:\n             assert score_1 == metric(X, y_true_fmt)\n+\n+\n+@pytest.mark.parametrize(\"metric\", SUPERVISED_METRICS.values())\n+def test_single_sample(metric):\n+    # only the supervised metrics support single sample\n+    for i, j in [(0, 0), (0, 1), (1, 0), (1, 1)]:\n+        metric([i], [j])\n+\n+\n+@pytest.mark.parametrize(\n+    \"metric_name, metric_func\",\n+    dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS).items()\n+)\n+def test_inf_nan_input(metric_name, metric_func):\n+    if metric_name in SUPERVISED_METRICS:\n+        invalids = [([0, 1], [np.inf, np.inf]),\n+                    ([0, 1], [np.nan, np.nan]),\n+                    ([0, 1], [np.nan, np.inf])]\n+    else:\n+        X = np.random.randint(10, size=(2, 10))\n+        invalids = [(X, [np.inf, np.inf]),\n+                    (X, [np.nan, np.nan]),\n+                    (X, [np.nan, np.inf])]\n+    with pytest.raises(ValueError, match='contains NaN, infinity'):\n+        for args in invalids:\n+            metric_func(*args)\ndiff --git a/sklearn/metrics/cluster/tests/test_supervised.py b/sklearn/metrics/cluster/tests/test_supervised.py\nindex 8b67c6e2aad9c..eed6cb9293b19 100644\n--- a/sklearn/metrics/cluster/tests/test_supervised.py\n+++ b/sklearn/metrics/cluster/tests/test_supervised.py\n@@ -34,8 +34,8 @@\n @ignore_warnings(category=FutureWarning)\n def test_error_messages_on_wrong_input():\n     for score_func in score_funcs:\n-        expected = ('labels_true and labels_pred must have same size,'\n-                    ' got 2 and 3')\n+        expected = (r'Found input variables with inconsistent numbers '\n+                    r'of samples: \\[2, 3\\]')\n         with pytest.raises(ValueError, match=expected):\n             score_func([0, 1], [1, 1, 1])\n \n",
+  "changed_files": [
+    "sklearn/metrics/cluster/supervised.py",
+    "sklearn/metrics/cluster/tests/test_common.py",
+    "sklearn/metrics/cluster/tests/test_supervised.py"
+  ],
+  "changed_functions": [
+    "test_single_sample",
+    "test_inf_nan_input"
+  ],
+  "pre_commit": "ac72a4844ad7b9c170af546050eb9147ed8318bf",
+  "post_commit": "a47e914163c2dbecb4a80ec40d2d8fe313a83010",
+  "merged_at": "2019-10-04T14:04:57Z",
+  "review_comments": [
+    {
+      "author": "jnothman",
+      "body": "I don't consider this a user-facing change",
+      "path": "doc/whats_new/v0.20.rst",
+      "line": null,
+      "created_at": "2019-08-08T23:50:05Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "@amueller note that the test can pass if I allow for 0 sample. I think it was more a general question (but this is a long time ago).",
+      "path": "sklearn/metrics/cluster/supervised.py",
+      "line": 46,
+      "created_at": "2019-08-09T08:01:59Z"
+    },
+    {
+      "author": "rth",
+      "body": "That removes the check about the potential second dimension though? Not sure if it matters...",
+      "path": "sklearn/metrics/cluster/supervised.py",
+      "line": 59,
+      "created_at": "2019-08-22T15:40:24Z"
+    },
+    {
+      "author": "rth",
+      "body": "```suggestion\r\n    SUPERVISED_METRICS\r\n```\r\n",
+      "path": "sklearn/metrics/cluster/tests/test_common.py",
+      "line": null,
+      "created_at": "2019-08-22T15:41:09Z"
+    },
+    {
+      "author": "rth",
+      "body": "```suggestion\r\n    for i, j in [(0, 0), (0, 1), (1, 0), (1, 1)]:\r\n```\r\n\r\nmore explicit..",
+      "path": "sklearn/metrics/cluster/tests/test_common.py",
+      "line": null,
+      "created_at": "2019-08-22T15:43:18Z"
+    },
+    {
+      "author": "rth",
+      "body": "```suggestion\r\n    dict(SUPERVISED_METRICS, **UNSUPERVISED_METRICS)\r\n```",
+      "path": "sklearn/metrics/cluster/tests/test_common.py",
+      "line": null,
+      "created_at": "2019-08-22T15:43:44Z"
+    },
+    {
+      "author": "rth",
+      "body": "Everything below this line is strictly identical in both `if` branches. Only `invalids` and metric needs to be defined there I think?\r\n\r\nOr rather,\r\n```py\r\nfor args in invalids:\r\n    metric(*args)\r\n```\r\nas it's confusing to see `metric(y_true, y_score)` for unsupervised ones.",
+      "path": "sklearn/metrics/cluster/tests/test_common.py",
+      "line": null,
+      "created_at": "2019-08-22T15:45:31Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "oh smart :)",
+      "path": "sklearn/metrics/cluster/tests/test_common.py",
+      "line": null,
+      "created_at": "2019-08-22T16:40:10Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 44,
+  "deletions": 18,
+  "changed_files_count": 3
+}

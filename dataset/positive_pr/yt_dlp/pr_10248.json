@@ -1,0 +1,46 @@
+{
+  "pr_number": 10248,
+  "title": "[pp/embedthumbnail] Fix ",
+  "url": "https://github.com/yt-dlp/yt-dlp/pull/10248",
+  "description": "**IMPORTANT**: PRs without the template will be CLOSED\r\n\r\n### Description of your *pull request* and other information\r\n\r\nTackles the following problems:\r\n\r\n- Incorrect `imghdr.what` detection\r\n- Cryptic `imghdr.what` fail message\r\n- Incorrect AtomicParsley error handling\r\n\r\nFixes #10245\r\n\r\n\r\n<details open><summary>Template</summary> <!-- OPEN is intentional -->\r\n\r\n<!--\r\n\r\n# PLEASE FOLLOW THE GUIDE BELOW\r\n\r\n- You will be asked some questions, please read them **carefully** and answer honestly\r\n- Put an `x` into all the boxes `[ ]` relevant to your *pull request* (like [x])\r\n- Use *Preview* tab to see how your *pull request* will actually look like\r\n\r\n-->\r\n\r\n### Before submitting a *pull request* make sure you have:\r\n- [x] At least skimmed through [contributing guidelines](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#developer-instructions) including [yt-dlp coding conventions](https://github.com/yt-dlp/yt-dlp/blob/master/CONTRIBUTING.md#yt-dlp-coding-conventions)\r\n- [x] [Searched](https://github.com/yt-dlp/yt-dlp/search?q=is%3Apr&type=Issues) the bugtracker for similar pull requests\r\n\r\n### In order to be accepted and merged into yt-dlp each piece of code must be in public domain or released under [Unlicense](http://unlicense.org/). Check all of the following options that apply:\r\n- [x] I am the original author of this code and I am willing to release it under [Unlicense](http://unlicense.org/)\r\n\r\n### What is the purpose of your *pull request*?\r\n- [x] Core bug fix/improvement\r\n\r\n</details>\r\n",
+  "comments": [],
+  "diff": "diff --git a/yt_dlp/compat/imghdr.py b/yt_dlp/compat/imghdr.py\nindex 5d64ab07bc98..4ae173fdecc9 100644\n--- a/yt_dlp/compat/imghdr.py\n+++ b/yt_dlp/compat/imghdr.py\n@@ -1,16 +1,22 @@\n-tests = {\n-    'webp': lambda h: h[0:4] == b'RIFF' and h[8:] == b'WEBP',\n-    'png': lambda h: h[:8] == b'\\211PNG\\r\\n\\032\\n',\n-    'jpeg': lambda h: h[6:10] in (b'JFIF', b'Exif'),\n-    'gif': lambda h: h[:6] in (b'GIF87a', b'GIF89a'),\n-}\n-\n-\n def what(file=None, h=None):\n     \"\"\"Detect format of image (Currently supports jpeg, png, webp, gif only)\n-    Ref: https://github.com/python/cpython/blob/3.10/Lib/imghdr.py\n+    Ref: https://github.com/python/cpython/blob/3.11/Lib/imghdr.py\n+    Ref: https://www.w3.org/Graphics/JPEG/itu-t81.pdf\n     \"\"\"\n     if h is None:\n         with open(file, 'rb') as f:\n             h = f.read(12)\n-    return next((type_ for type_, test in tests.items() if test(h)), None)\n+\n+    if h.startswith(b'RIFF') and h.startswith(b'WEBP', 8):\n+        return 'webp'\n+\n+    if h.startswith(b'\\x89PNG'):\n+        return 'png'\n+\n+    if h.startswith(b'\\xFF\\xD8\\xFF'):\n+        return 'jpeg'\n+\n+    if h.startswith(b'GIF'):\n+        return 'gif'\n+\n+    return None\ndiff --git a/yt_dlp/postprocessor/embedthumbnail.py b/yt_dlp/postprocessor/embedthumbnail.py\nindex 673a924685ac..f2228ac61eb9 100644\n--- a/yt_dlp/postprocessor/embedthumbnail.py\n+++ b/yt_dlp/postprocessor/embedthumbnail.py\n@@ -119,14 +119,21 @@ def run(self, info):\n             if not mutagen or prefer_atomicparsley:\n                 success = False\n             else:\n+                self._report_run('mutagen', filename)\n+                f = {'jpeg': MP4Cover.FORMAT_JPEG, 'png': MP4Cover.FORMAT_PNG}\n                 try:\n-                    self._report_run('mutagen', filename)\n+                    with open(thumbnail_filename, 'rb') as thumbfile:\n+                        thumb_data = thumbfile.read()\n+\n+                    type_ = imghdr.what(h=thumb_data)\n+                    if not type_:\n+                        raise ValueError('could not determine image type')\n+                    elif type_ not in f:\n+                        raise ValueError(f'incompatible image type: {type_}')\n+\n                     meta = MP4(filename)\n                     # NOTE: the 'covr' atom is a non-standard MPEG-4 atom,\n                     # Apple iTunes 'M4A' files include the 'moov.udta.meta.ilst' atom.\n-                    f = {'jpeg': MP4Cover.FORMAT_JPEG, 'png': MP4Cover.FORMAT_PNG}[imghdr.what(thumbnail_filename)]\n-                    with open(thumbnail_filename, 'rb') as thumbfile:\n-                        thumb_data = thumbfile.read()\n                     meta.tags['covr'] = [MP4Cover(data=thumb_data, imageformat=f)]\n                     meta.save()\n                     temp_filename = filename\n@@ -160,9 +167,10 @@ def run(self, info):\n                     stdout, stderr, returncode = Popen.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)\n                     if returncode:\n                         self.report_warning(f'Unable to embed thumbnails using AtomicParsley; {stderr.strip()}')\n+                        success = False\n                     # for formats that don't support thumbnails (like 3gp) AtomicParsley\n                     # won't create to the temporary file\n-                    if 'No changes' in stdout:\n+                    elif 'No changes' in stdout:\n                         self.report_warning('The file format doesn\\'t support embedding a thumbnail')\n                         success = False\n \n",
+  "changed_files": [
+    "yt_dlp/compat/imghdr.py",
+    "yt_dlp/postprocessor/embedthumbnail.py"
+  ],
+  "changed_functions": [
+    "what"
+  ],
+  "pre_commit": "0953209a857c51648aee89d205c086b0e1dd3864",
+  "post_commit": "f2a4ea1794718e4dc0148bc172cb877f1080903b",
+  "merged_at": "2024-06-27T14:12:19Z",
+  "review_comments": [
+    {
+      "author": "bashonly",
+      "body": "should this check be done earlier, e.g. around L84 where we convert to png if the thumb isn't a compatible format?",
+      "path": "yt_dlp/postprocessor/embedthumbnail.py",
+      "line": 132,
+      "created_at": "2024-06-23T21:11:39Z"
+    },
+    {
+      "author": "bashonly",
+      "body": "```suggestion\r\n    \"\"\" Detect format of image (Currently supports jpeg, png, webp, gif only)\r\n    Ref: https://github.com/python/cpython/blob/3.11/Lib/imghdr.py\r\n    Ref: https://www.w3.org/Graphics/JPEG/itu-t81.pdf\r\n    \"\"\"\r\n```",
+      "path": "yt_dlp/compat/imghdr.py",
+      "line": null,
+      "created_at": "2024-06-23T21:12:01Z"
+    },
+    {
+      "author": "Grub4K",
+      "body": "I think given that `imghdr` works as expected that branch should not be hit, but you never know. The discrepancy only happens if you use `imghdr`, so i think doing it in this branch is fine",
+      "path": "yt_dlp/postprocessor/embedthumbnail.py",
+      "line": 132,
+      "created_at": "2024-06-23T22:52:21Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 29,
+  "deletions": 15,
+  "changed_files_count": 2
+}

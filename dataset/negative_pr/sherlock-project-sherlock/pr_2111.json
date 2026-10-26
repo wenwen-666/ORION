@@ -1,0 +1,209 @@
+{
+  "pr_number": 2111,
+  "title": "Switch PyProject to Poetry",
+  "url": "https://github.com/sherlock-project/sherlock/pull/2111",
+  "description": "Continuation of #2036\r\n\r\n## Package info\r\n\r\nSherlock Project added as Author\r\nHomepage URL set to the github[.]io homepage (PyPi homepage already set, but not pip show)\r\nDynamic versioning fixed (pulled from sherlock[.]py)\r\nMaintainers added\r\nClassifiers added\r\nKeywords added\r\nDescription added\r\netc\r\n\r\n\r\n___\r\n\r\n__Refocused PR :__ PrProject being merged elsewhere to expedite package review process and resolve dependency issues (it takes time). This PR is now only to discuss switching to Poetry. (main pr #2116)\r\n\r\n### ::: [>>> Jump to start of refocused discussion <<<](https://github.com/sherlock-project/sherlock/pull/2111#issuecomment-2113992558) :::",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "b8ca8aade48dd4b6497ef114e41067aac476da65",
+  "merged_at": "2024-06-09T06:34:24+00:00",
+  "created_at": "2024-05-08T06:58:16+00:00",
+  "closed_at": "2024-06-09T06:34:23+00:00",
+  "user": "ppfeister",
+  "additions": 107,
+  "deletions": 178,
+  "changed_files_count": 20,
+  "labels": [],
+  "comments": [
+    {
+      "author": "ppfeister",
+      "body": "Personally indifferent. No reservations or preference either way.\r\nAs long as normal pip usage isn't broken, then additional package manager support can only really be a plus.\r\n\r\n_~~As someone who hasn't used poetry, would this be as simple as making the pyproject compatible?~~_ Misread. It does in fact appear that simple.",
+      "created_at": "2024-05-08T17:31:01+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "So, I may be wrong on this, but it seems that poetry does not support dynamic versioning OOTB.\r\n\r\nThe package version will either have to be manually updated each time, or it would require an additional plugin that versions based on git tags (which sherlock doesn't currently use). Thoughts?",
+      "created_at": "2024-05-08T23:30:38+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "It also doesn't seem that poetry has support for dynamic loading of dependencies -- they would need to be explicitly listed in the pyproj. Thoughts there?\r\n\r\nSeems finicky on my end. I'm able to install with poetry right now, but unable to uninstall it with poetry (need to use pip). I'm also unable to run sherlock via `sherlock` due to an odd import error, needing to run it with `poetry run sherlock` instead. I'm sure both problems can be solved, just haven't seen why yet.\r\n\r\n_Latest commit [cb22902](https://github.com/sherlock-project/sherlock/pull/2111/commits/cb229023d3d917e0e23a854bb20ae964714709c8) is what I have for poetry._",
+      "created_at": "2024-05-08T23:54:32+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Rebased onto master to fix conflict (some ~183 behind).\r\n\r\nPoetry rewritten in a way that actually works.\r\n\r\nDiscovered that the current version of pyproject has some \\~undesirable\\~ install issues, namely it doesn't install the src into a named directory and dumps them straight into site-packages for some unknown reason. Not only is this not pretty, it can cause some conflicts. This version fixes that behavior.\r\n\r\nDue to how poetry handles packaging, the imports had to be rewritten.\r\n\r\nDue to how the imports were rewritten, the (already poorly located) unit tests no longer function as desired.\r\n\r\nUnit tests were relocated to the root where they probably should be anyways. Unit tests work from this location with modified imports.\r\n\r\n\\*\\*\\*\\* PR action currently uses the *old* unit test location, so failure here **is expected**. \\*\\*\\*\\*\r\n\r\nGitHub Actions for PRs will be fixed in another PR. I'll probably take advantage of that fixup to switch from the unittest module to tox, which is a bit more portable in my opinion.\r\n\r\nThis also removes the `requirements.txt` file, as dependencies should now be listed within the pyproj. If some sort of workflow requires the requirements.txt file, poetry itself can dump it from the pyproj.\r\n\r\nRemoved the setup.py and setup.cfg items as they are no longer necessary with the new layout.\r\n\r\nRemoved the rpm spec file.\r\n\r\nDynamic versioning still needs to be set up.",
+      "created_at": "2024-05-16T04:15:30+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "(a couple minor doc updates included, i.e. pyproj readme logo and capitalization)",
+      "created_at": "2024-05-16T04:30:28+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Dynamic versioning added but not yet enabled. Relies on named tags and applies throughout Sherlock, rather than pulling from src.",
+      "created_at": "2024-05-16T06:12:08+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Fixed an import issue in entry point \\_\\_main\\_\\_.\r\n\r\nNote that `python3 sherlock/sherlock` is not likely to work anymore, as that would require a bunch of try catch imports. `python3 -m sherlock` should be used to load the module properly now. Documentation updated to reflect.\r\n\r\n```console\r\n$ python -m sherlock --version\r\nSherlock  0.14.4\r\nRequests  2.28.2\r\nPython    3.12.3\r\n```",
+      "created_at": "2024-05-17T03:55:21+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Most of my original comments seem to be resolved, which is nice. It was easier to just _rewrite_ it rather than adapt it for some reason.\r\n\r\n> Yes, poetry doesn't natively support dynamic versioning. We use community plugins for that. We don't need to rely on git tags; we can use the __version__ variable which should be located in sherlock/__init__.py (this is the location used by the community to store package metadata like version, name, etc.).\r\n> \r\n> The plugin we can use for this is: https://github.com/tiangolo/poetry-version-plugin\r\n\r\nMy original find was `poetry-dynamic-versioning`, but that dynamically populates version tags within the package rather than dynamically populating the pyproj from tags within the package (backwards). Your linked plugin might be better since it pulls from src as before\r\n\r\nOnly problem I've noticed is that there doesn't seem to be a way to *require* your plugin for builds. Since there is no backend, it also doesn't change how things are built sans-`poetry build`. python -m build will now forever use version 0, and poetry build itself will return 0 by default unless a dev goes out of their way to realize it's needed and install the plugin.\r\n\r\nAny suggestions to enforce this plugin, or just let people figure it out?",
+      "created_at": "2024-05-18T01:29:11+00:00"
+    },
+    {
+      "author": "matheusfelipeog",
+      "body": "There is no way to require poetry plugins because they are not part of the project itself but rather part of poetry. This is a community need, and there are discussions about implementing this in the future.\r\n\r\nIdeally, we should have a [workflow for build and publish](https://github.com/search?q=poetry-version-plugin+path%3A%2F%5E.github%5C%2Fworkflows%5C%2F%2F&type=code) so we don't handle this manually.\r\n\r\nFor those who want to build locally from the source for any reason, this should be documented in the respective section of the documentation.",
+      "created_at": "2024-05-18T03:04:53+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Well in that case, that's all I've got. _Probably_ good to merge... don't think anything else needs to be tweaked\r\n\r\n(except the github actions, which should probably be addressed separately)",
+      "created_at": "2024-05-18T03:19:17+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "matheusfelipeog",
+      "body": "We can add the author's and maintainers' emails after their names. In the suggestion, the emails associated with the commits are used.\r\n\r\n```suggestion\r\n    \"Siddharth Dushantha <siddharth.dushantha@gmail.com>\"\r\n```",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T03:40:07+00:00"
+    },
+    {
+      "author": "matheusfelipeog",
+      "body": "Same thing I mentioned before.\r\n\r\n```suggestion\r\n    \"Paul Pfeister <code@pfeister.dev>\",\r\n    \"Matheus Felipe <matheusfelipeog@protonmail.com>\",\r\n    \"Sondre Karlsen Dyrnes <sondre@villdyr.no>\"\r\n```",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T03:43:59+00:00"
+    },
+    {
+      "author": "matheusfelipeog",
+      "body": "Oops... It looks like we missed the https here.\r\n\r\n```suggestion\r\nhomepage = \"https://sherlock-project.github.io/\"\r\n```",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T03:46:05+00:00"
+    },
+    {
+      "author": "matheusfelipeog",
+      "body": "`*.git` is not necessary.\r\n\r\n```suggestion\r\nrepository = \"https://github.com/sherlock-project/sherlock\"\r\n```",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T03:48:23+00:00"
+    },
+    {
+      "author": "matheusfelipeog",
+      "body": "I think we should use [Caret requirements](https://python-poetry.org/docs/dependency-specification/#caret-requirements) instead of [Inequality requirements](https://python-poetry.org/docs/dependency-specification/#inequality-requirements) here. This helps prevent things from breaking since major version updates can also include deprecations and compatibility issues.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T03:56:07+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Believe it or not, this breaks PyPI.\r\nIt seems that you can have **either** multiple maintainers **or** a maintainer with an email address. When you have multiple with email addresses, it only shows the first maintainer for some unknown reason.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:26:59+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "This was a choice made by `@sdushantha`. I support having email addresses but he was wary of spam.\r\n\r\nWhat do you think @sdushantha ",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:28:04+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": ":man_facepalming: ",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:28:35+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "I've always been torn on this. I like the `.git` when referring to the repo itself (rather than the web page for the repo) for some extra verbosity, but it's very not necessary\r\n\r\nI support removal",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:31:29+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "I believe the original requirements.txt used raw greater-thans as well. When I copied them over and changed them to carets, things broke as the min version was so out of date and no longer available.\r\n\r\nLet's see if I can grab current versions that are available on all targets... Will update here.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:33:56+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Seems that Poetry does that _anyways_ with builds uploaded to PyPI so the point I raised is moot",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T04:58:12+00:00"
+    },
+    {
+      "author": "sdushantha",
+      "body": "Just noticed that my email address is in every commit. So we may as well just include it in the `pyproject.toml`",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T13:37:00+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "Done",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-05-18T21:50:32+00:00"
+    },
+    {
+      "author": "sdushantha",
+      "body": "Since this variable is only being used for checking for updates, cant we just remove this and then check the `__init__,py` file instead?",
+      "path": "sherlock/sherlock.py",
+      "line": null,
+      "created_at": "2024-05-19T07:51:56+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "We could (and I forgot to make that change, so good call), but we still have to leave that text in place until ready to bump the version\r\n\r\nIf we remove it from sherlock.py now, before the next version num is ready, it'll trigger unnecessary update available notifications\r\n\r\nWill commit a change to pull version num from \\_\\_init\\_\\_ in a bit",
+      "path": "sherlock/sherlock.py",
+      "line": null,
+      "created_at": "2024-05-19T18:26:47+00:00"
+    },
+    {
+      "author": "ppfeister",
+      "body": "@sdushantha Changed url to check \\_\\_init\\_\\_\r\nNote that testing this feature locally will fail since it doesn't actually exist til merged",
+      "path": "sherlock/sherlock.py",
+      "line": null,
+      "created_at": "2024-05-20T04:52:40+00:00"
+    }
+  ],
+  "changed_files": [
+    ".github/CODEOWNERS",
+    ".github/FUNDING.yml",
+    ".gitignore",
+    "docs/CONTRIBUTING.md",
+    "docs/INSTALL.md",
+    "docs/README.md",
+    "docs/pyproj/README.md",
+    "pyproject.toml",
+    "requirements.txt",
+    "setup.cfg",
+    "setup.py",
+    "sherlock-project.spec",
+    "sherlock/__init__.py",
+    "sherlock/__main__.py",
+    "sherlock/notify.py",
+    "sherlock/sherlock.py",
+    "tests/__init__.py",
+    "tests/all.py",
+    "tests/base.py",
+    "tests/test_multiple_usernames.py"
+  ],
+  "diff": "diff --git a/.github/CODEOWNERS b/.github/CODEOWNERS\nindex 76001ae9a..ae6c8b316 100644\n--- a/.github/CODEOWNERS\n+++ b/.github/CODEOWNERS\n@@ -6,6 +6,3 @@\n # Changes made to these items without code owner approval may negatively\n # impact packaging pipelines. Code owners may need time to verify or adapt.\n /pyproject.toml @ppfeister @sdushantha\n-/setup.cfg @ppfeister @sdushantha\n-/setup.py @ppfeister\n-/*.spec @ppfeister\ndiff --git a/.github/FUNDING.yml b/.github/FUNDING.yml\nnew file mode 100644\nindex 000000000..b21b31ed8\n--- /dev/null\n+++ b/.github/FUNDING.yml\n@@ -0,0 +1 @@\n+github: [ sdushantha, ppfeister ]\n\\ No newline at end of file\ndiff --git a/.gitignore b/.gitignore\nindex 4d47421ae..c53e34ad9 100644\n--- a/.gitignore\n+++ b/.gitignore\n@@ -1,8 +1,9 @@\n-# Virtual Environment\n+# Virtual Environments\n venv/\n bin/\n lib/\n pyvenv.cfg\n+poetry.lock\n \n # Editor Configurations\n .vscode/\n@@ -14,8 +15,9 @@ __pycache__/\n # Pip\n src/\n \n-# Pip / PyProject Devel & Installation\n+# Devel, Build, and Installation\n *.egg-info/\n+dist/**\n \n # Jupyter Notebook\n .ipynb_checkpoints\ndiff --git a/docs/CONTRIBUTING.md b/docs/CONTRIBUTING.md\nindex 996efe8a3..fe91e7ca4 100644\n--- a/docs/CONTRIBUTING.md\n+++ b/docs/CONTRIBUTING.md\n@@ -68,7 +68,7 @@ Sherlock.  This invocation hides the progress text that Sherlock normally\n outputs, and instead shows the verbose output of the tests.\n \n ```console\n-$ cd sherlock/sherlock\n+# Assumes pwd is respository root\n $ python3 -m unittest tests.all --verbose\n ```\n \ndiff --git a/docs/INSTALL.md b/docs/INSTALL.md\nindex 9813a09c0..52c70086e 100644\n--- a/docs/INSTALL.md\n+++ b/docs/INSTALL.md\n@@ -37,13 +37,24 @@ Python\n pipx install sherlock-project\n ```\n \n-### Build python package from source (useful for contributors)\n+### Build live package from source (useful for contributors)\n+\n+Building an editable (or live) package links the entry point to your current directory, rather than to the standard install location. This is often useful when working with the code base, as changes are reflected immediately without reinstallation.\n+\n+Note that the version number will be 0.0.0 for pipx local builds unless manually changed in the pyproject file (it will prompt the user for an update).\n \n ```bash\n-# pipx is recommended, but pip may suffice if pipx is unavailable\n-git clone https://github.com/sherlock-project/sherlock.git\n-cd sherlock\n-pipx install .\n+# Assumes repository cloned, and pwd is repository root\n+pipx install -e .\n+```\n+\n+### Run package from source (no install)\n+\n+If you'd rather not install directly to your system, you can import the module at runtime with `-m`.\n+\n+```bash\n+# Assumes repository cloned, and pwd is repository root\n+python3 -m sherlock user123 user789\n ```\n \n <h2>\ndiff --git a/docs/README.md b/docs/README.md\nindex 9df30261d..9b6237a85 100644\n--- a/docs/README.md\n+++ b/docs/README.md\n@@ -27,11 +27,11 @@\n [![PyPI - Version](https://img.shields.io/pypi/v/sherlock-project?logo=PyPi&label=PyPI&color=darkgreen)][ext_pypi] [![Docker Image Version](https://img.shields.io/docker/v/sherlock/sherlock?sort=semver&logo=docker&label=Docker&color=darkgreen)][docs_docker] [![homebrew version](https://img.shields.io/homebrew/v/sherlock?logo=Homebrew&color=darkgreen)][ext_brew]\n \n \n-| Method | Command | Notes |\n+| | Command | Notes |\n | - | - | - |\n-| pypi | `pipx install sherlock-project` | `pip` may be used in place of `pipx` |\n-| brew | `brew install sherlock` | Community supported |\n-| docker | `docker pull sherlock/sherlock` | |\n+| PyPI | `pipx install sherlock-project` | `pip` may be used in place of `pipx` |\n+| Homebrew | `brew install sherlock` | Community supported |\n+| Docker | `docker pull sherlock/sherlock` | |\n \n ### Alternative guides and methods\n \n@@ -133,15 +133,10 @@ Original Creator - [Siddharth Dushantha](https://github.com/sdushantha)\n \n [docs_install]: /docs/INSTALL.md\n [docs_docker]: /docs/INSTALL.md#docker\n-[docs_docker_dockerhub]: /docs/INSTALL.md#docker\n-[docs_docker_compose]: /docs/INSTALL.md#using-compose\n-[docs_docker_source]: /docs/INSTALL.md#build-image-from-source-useful-for-contributors\n [docs_py]: /docs/INSTALL.md#python\n-[docs_py_build]: /docs/INSTALL.md#build-python-package-from-source-useful-for-contributors\n [docs_contrib]: /docs/CONTRIBUTING.md\n [docs_contrib_adding_targets]: /docs/CONTRIBUTING.md#adding-targets\n [docs_contrib_removing_targets]: /docs/CONTRIBUTING.md#removing-targets\n [docs_contrib_restoring_targets]: /docs/CONTRIBUTING.md#restoring-targets\n [ext_pypi]: https://pypi.org/project/sherlock-project/\n [ext_brew]: https://formulae.brew.sh/formula/sherlock\n-\ndiff --git a/docs/pyproj/README.md b/docs/pyproj/README.md\nindex 446382f5f..f33358a55 100644\n--- a/docs/pyproj/README.md\n+++ b/docs/pyproj/README.md\n@@ -2,17 +2,12 @@\n \n <p align=center>\n   <br>\n-  <a href=\"https://sherlock-project.github.io/\" target=\"_blank\"><img src=\"https://user-images.githubusercontent.com/27065646/53551960-ae4dff80-3b3a-11e9-9075-cef786c69364.png\"/></a>\n+  <a href=\"https://sherlock-project.github.io/\" target=\"_blank\"><img src=\"https://www.kali.org/tools/sherlock/images/sherlock-logo.svg\" width=\"25%\"/></a>\n   <br>\n-  <span>Hunt down social media accounts by username across <a href=\"https://github.com/sherlock-project/sherlock/blob/master/sites.md\">social networks</a></span>\n+  <strong><span>Hunt down social media accounts by username across <a href=\"https://github.com/sherlock-project/sherlock/blob/master/sites.md\">400+ social networks</a></span></strong>\n+  <br><br>\n+  <span>Additional documentation can be found at our <a href=\"https://github.com/sherlock-project/sherlock/\">GitHub repository</a></span>\n   <br>\n-  <span>Additional documentation can be found on our <a href=\"https://github.com/sherlock-project/sherlock/\">GitHub repository</a></span>\n-  <br>\n-</p>\n-\n-<p align=\"center\">\n-<img width=\"70%\" height=\"70%\" src=\"https://user-images.githubusercontent.com/27065646/219638267-a5e11090-aa6e-4e77-87f7-0e95f6ad5978.png\"/>\n-</a>\n </p>\n \n ## Usage\n@@ -36,11 +31,12 @@ To search for more than one user:\n ```bash\n $ sherlock user1 user2 user3\n ```\n+<br>\n \n-## Star History\n+___\n \n-<picture>\n-  <source media=\"(prefers-color-scheme: dark)\" srcset=\"https://api.star-history.com/svg?repos=sherlock-project/sherlock&type=Date&theme=dark\" />\n-  <source media=\"(prefers-color-scheme: light)\" srcset=\"https://api.star-history.com/svg?repos=sherlock-project/sherlock&type=Date\" />\n-  <img alt=\"Sherlock Project Star History Chart\" src=\"https://api.star-history.com/svg?repos=sherlock-project/sherlock&type=Date\" />\n-</picture>\n+<br>\n+<p align=\"center\">\n+<img width=\"70%\" height=\"70%\" src=\"https://user-images.githubusercontent.com/27065646/219638267-a5e11090-aa6e-4e77-87f7-0e95f6ad5978.png\"/>\n+</a>\n+</p>\ndiff --git a/pyproject.toml b/pyproject.toml\nindex 7356c0d11..c91b92261 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -1,48 +1,57 @@\n [build-system]\n-requires = [\"setuptools >= 61.0\"]\n-build-backend = \"setuptools.build_meta\"\n+requires = [ \"poetry-core>=1.2.0\" ]\n+build-backend = \"poetry.core.masonry.api\"\n+# poetry-core 1.8 not available in .fc39. Can upgrade to 1.8.0 at .fc39 EOL\n \n-[project.scripts]\n-sherlock = \"sherlock:main\"\n+[tool.poetry-version-plugin]\n+source = \"init\"\n \n-[project.urls]\n-Homepage = \"http://sherlock-project.github.io/\"\n-Repository = \"https://github.com/sherlock-project/sherlock.git\"\n-Issues = \"https://github.com/sherlock-project/sherlock/issues\"\n-\n-[project]\n+[tool.poetry]\n name = \"sherlock-project\"\n+# single source of truth for version is __init__.py\n+version = \"0\"\n+description = \"Hunt down social media accounts by username across social networks\"\n+license = \"MIT\"\n authors = [\n-    { name = \"Siddharth Dushantha\" }\n+    \"Siddharth Dushantha <siddharth.dushantha@gmail.com>\"\n ]\n maintainers = [\n-    { name = \"Matheus Felipe\" },\n-    { name = \"Sondre Karlsen Dyrnes\" },\n-    { name = \"Paul Pfeister\" }\n+    \"Paul Pfeister <code@pfeister.dev>\",\n+    \"Matheus Felipe <matheusfelipeog@protonmail.com>\",\n+    \"Sondre Karlsen Dyrnes <sondre@villdyr.no>\"\n ]\n-description = \"Hunt down social media accounts by username across social networks\"\n readme = \"docs/pyproj/README.md\"\n-# Do not set license to file. Causes issues with rpm packaging for some reason.\n-license = {text = \"MIT\"}\n-dynamic = [\"dependencies\", \"version\"]\n+packages = [ { include = \"sherlock\"} ]\n keywords = [ \"osint\", \"reconnaissance\", \"information gathering\" ]\n classifiers = [\n     \"Development Status :: 5 - Production/Stable\",\n     \"Intended Audience :: Developers\",\n     \"Intended Audience :: Information Technology\",\n-    \"License :: OSI Approved :: MIT License\",\n     \"Natural Language :: English\",\n     \"Operating System :: OS Independent\",\n     \"Programming Language :: Python :: 3\",\n     \"Topic :: Security\"\n ]\n+homepage = \"https://sherlock-project.github.io/\"\n+repository = \"https://github.com/sherlock-project/sherlock\"\n+\n \n-[tool.setuptools.dynamic]\n-dependencies = { file = [ \"requirements.txt\" ] }\n-version = { attr = \"sherlock.__version__\" }\n+[tool.poetry.urls]\n+\"Bug Tracker\" = \"https://github.com/sherlock-project/sherlock/issues\"\n \n-[tool.setuptools]\n-package-dir = {\"\" = \"sherlock\"}\n+[tool.poetry.dependencies]\n+python = \"^3.8\"\n+certifi = \">=2019.6.16\"\n+colorama = \"^0.4.1\"\n+PySocks = \"^1.7.0\"\n+requests = \"^2.22.0\"\n+requests-futures = \"^1.0.0\"\n+stem = \"^1.8.0\"\n+torrequest = \"^0.1.0\"\n+# pandas can likely be bumped up to ^2.0.0 after fc39 EOL\n+pandas = \">=1.0.0,<3.0.0\"\n+openpyxl = \"^3.0.10\"\n+exrex = \"^0.11.0\"\n \n-[tool.setuptools.package-data]\n-\"*\" = [\"*.json\"]\n+[tool.poetry.scripts]\n+sherlock = 'sherlock.sherlock:main'\ndiff --git a/requirements.txt b/requirements.txt\ndeleted file mode 100644\nindex b1dd62522..000000000\n--- a/requirements.txt\n+++ /dev/null\n@@ -1,10 +0,0 @@\n-certifi>=2019.6.16\n-colorama>=0.4.1\n-PySocks>=1.7.0\n-requests>=2.22.0\n-requests-futures>=1.0.0\n-stem>=1.8.0 \n-torrequest>=0.1.0\n-pandas>=1.0.0\n-openpyxl>=3.0.10\n-exrex>=0.11.0\ndiff --git a/setup.cfg b/setup.cfg\ndeleted file mode 100644\nindex 8929bbae7..000000000\n--- a/setup.cfg\n+++ /dev/null\n@@ -1,4 +0,0 @@\n-[metadata]\n-name = Sherlock\n-author = Sherlock Project\n-url = http://sherlock-project.github.io/\ndiff --git a/setup.py b/setup.py\ndeleted file mode 100644\nindex 434d3f95e..000000000\n--- a/setup.py\n+++ /dev/null\n@@ -1,8 +0,0 @@\n-#!/usr/bin/env python3\n-\n-\"\"\"Sometimes required for rpm spec - particularly when using pyp2rpm\n-\"\"\"\n-\n-from setuptools import setup\n-\n-setup()\ndiff --git a/sherlock-project.spec b/sherlock-project.spec\ndeleted file mode 100644\nindex b07dded1a..000000000\n--- a/sherlock-project.spec\n+++ /dev/null\n@@ -1,71 +0,0 @@\n-# Packager: Paul Pfeister <rh-bugzilla@pfeister.dev> (GitHub @ppfeister)\n-%global source_ref master\n-\n-Name:           sherlock-project\n-Version:        0.14.4\n-Release:        %autorelease\n-Summary:        Hunt down social media accounts by username across social networks\n-\n-License:        MIT\n-URL:            https://github.com/sherlock-project/sherlock\n-Source:         %{url}/archive/%{source_ref}.tar.gz\n-# Switch to new Source URL after adoption of tagged releases\n-\n-BuildArch:      noarch\n-BuildRequires:  python3-devel\n-BuildRequires:  help2man\n-\n-%global _description %{expand:\n-Hunt down social media accounts by username across 400+ social networks and\n-websites. New targets are tested and implemented regularly.\n-}\n-\n-%description %{_description}\n-\n-\n-%prep\n-%autosetup -n sherlock-%{source_ref}\n-\n-\n-%generate_buildrequires\n-%pyproject_buildrequires\n-\n-\n-%build\n-%pyproject_wheel\n-\n-\n-%install\n-%pyproject_install\n-%pyproject_save_files -l sherlock sites result notify __init__ __main__\n-\n-sed -r -i '1{/^#!/d}' '%{buildroot}%{python3_sitelib}/__main__.py'\n-sed -r -i '1{/^#!/d}' '%{buildroot}%{python3_sitelib}/sherlock.py'\n-\n-install -d '%{buildroot}%{_mandir}/man1'\n-PYTHONPATH='%{buildroot}%{python3_sitelib}' help2man \\\n-    --no-info \\\n-    --version-string='%{version}' \\\n-    --name='%{summary}' \\\n-    --output='%{buildroot}%{_mandir}/man1/sherlock.1' \\\n-    '%{buildroot}%{_bindir}/sherlock'\n-\n-\n-%check\n-# Tests fail when pwd isn't sherlock. Relative pathing need fix upstream.\n-cd sherlock\n-%{py3_test_envvars} %{python3} -m unittest tests.all --verbose\n-cd ..\n-\n-\n-%files -f %{pyproject_files}\n-%doc README.md\n-%{_bindir}/sherlock\n-%{python3_sitelib}/resources\n-%pycached %{python3_sitelib}/tests/*.py\n-%{_mandir}/man1/sherlock.1*\n-\n-\n-%changelog\n-* Tue May 14 2024 Paul Pfeister <rh-bugzilla@pfeister.dev> 0.14.4-1\n-- Initial package.\ndiff --git a/sherlock/__init__.py b/sherlock/__init__.py\nindex 219dcaec7..5bf79e243 100644\n--- a/sherlock/__init__.py\n+++ b/sherlock/__init__.py\n@@ -4,3 +4,7 @@\n networks.\n \n \"\"\"\n+\n+__shortname__   = \"Sherlock\"\n+__longname__    = \"Sherlock: Find Usernames Across Social Networks\"\n+__version__     = \"0.14.4\"\ndiff --git a/sherlock/__main__.py b/sherlock/__main__.py\nindex b10bd6aef..014d8b353 100644\n--- a/sherlock/__main__.py\n+++ b/sherlock/__main__.py\n@@ -14,9 +14,9 @@\n     # Check if the user is using the correct version of Python\n     python_version = sys.version.split()[0]\n \n-    if sys.version_info < (3, 6):\n-        print(f\"Sherlock requires Python 3.6+\\nYou are using Python {python_version}, which is not supported by Sherlock.\")\n+    if sys.version_info < (3, 8):\n+        print(f\"Sherlock requires Python 3.8+\\nYou are using Python {python_version}, which is not supported by Sherlock.\")\n         sys.exit(1)\n \n-    import sherlock\n+    from sherlock import sherlock\n     sherlock.main()\ndiff --git a/sherlock/notify.py b/sherlock/notify.py\nindex 4af1ff18e..c198fe620 100644\n--- a/sherlock/notify.py\n+++ b/sherlock/notify.py\n@@ -3,7 +3,7 @@\n This module defines the objects for notifying the caller about the\n results of queries.\n \"\"\"\n-from result import QueryStatus\n+from sherlock.result import QueryStatus\n from colorama import Fore, Style\n import webbrowser\n \ndiff --git a/sherlock/sherlock.py b/sherlock/sherlock.py\nindex 3f7a93391..e029a59da 100644\n--- a/sherlock/sherlock.py\n+++ b/sherlock/sherlock.py\n@@ -19,18 +19,26 @@\n \n import requests\n \n+# Removing __version__ here will trigger update message for users\n+# Do not remove until ready to trigger that message\n+__version__ = \"0.14.4\"\n+del __version__\n+\n+from .__init__ import (\n+    __shortname__,\n+    __longname__,\n+    __version__\n+)\n+\n from requests_futures.sessions import FuturesSession\n from torrequest import TorRequest\n-from result import QueryStatus\n-from result import QueryResult\n-from notify import QueryNotifyPrint\n-from sites import SitesInformation\n+from sherlock.result import QueryStatus\n+from sherlock.result import QueryResult\n+from sherlock.notify import QueryNotifyPrint\n+from sherlock.sites import SitesInformation\n from colorama import init\n from argparse import ArgumentTypeError\n \n-module_name = \"Sherlock: Find Usernames Across Social Networks\"\n-__version__ = \"0.14.4\"\n-\n \n class SherlockFuturesSession(FuturesSession):\n     def request(self, method, url, hooks=None, *args, **kwargs):\n@@ -510,14 +518,14 @@ def handler(signal_received, frame):\n \n def main():\n     version_string = (\n-        f\"%(prog)s {__version__}\\n\"\n-        + f\"{requests.__description__}:  {requests.__version__}\\n\"\n-        + f\"Python:  {platform.python_version()}\"\n+        f\"{__shortname__}  {__version__}\\n\"\n+        + f\"Requests  {requests.__version__}\\n\"\n+        + f\"Python  {platform.python_version()}\"\n     )\n \n     parser = ArgumentParser(\n         formatter_class=RawDescriptionHelpFormatter,\n-        description=f\"{module_name} (Version {__version__})\",\n+        description=f\"{__longname__} (Version {__version__})\",\n     )\n     parser.add_argument(\n         \"--version\",\n@@ -671,10 +679,10 @@ def main():\n     # Check for newer version of Sherlock. If it exists, let the user know about it\n     try:\n         r = requests.get(\n-            \"https://raw.githubusercontent.com/sherlock-project/sherlock/master/sherlock/sherlock.py\"\n+            \"https://raw.githubusercontent.com/sherlock-project/sherlock/master/sherlock/__init__.py\"\n         )\n \n-        remote_version = str(re.findall('__version__ = \"(.*)\"', r.text)[0])\n+        remote_version = str(re.findall('__version__ *= *\"(.*)\"', r.text)[0])\n         local_version = __version__\n \n         if remote_version != local_version:\ndiff --git a/sherlock/tests/__init__.py b/tests/__init__.py\nsimilarity index 100%\nrename from sherlock/tests/__init__.py\nrename to tests/__init__.py\ndiff --git a/sherlock/tests/all.py b/tests/all.py\nsimilarity index 100%\nrename from sherlock/tests/all.py\nrename to tests/all.py\ndiff --git a/sherlock/tests/base.py b/tests/base.py\nsimilarity index 97%\nrename from sherlock/tests/base.py\nrename to tests/base.py\nindex de958b9db..2146b88b2 100644\n--- a/sherlock/tests/base.py\n+++ b/tests/base.py\n@@ -5,10 +5,10 @@\n import os\n import os.path\n import unittest\n-import sherlock\n-from result import QueryStatus\n-from notify import QueryNotify\n-from sites import SitesInformation\n+from sherlock import sherlock\n+from sherlock.result import QueryStatus\n+from sherlock.notify import QueryNotify\n+from sherlock.sites import SitesInformation\n import warnings\n \n \n@@ -30,7 +30,7 @@ def setUp(self):\n         warnings.simplefilter(\"ignore\", ResourceWarning)\n \n         # Create object with all information about sites we are aware of.\n-        sites = SitesInformation(data_file_path=os.path.join(os.path.dirname(__file__), \"../resources/data.json\"))\n+        sites = SitesInformation(data_file_path=os.path.join(os.path.dirname(__file__), \"../sherlock/resources/data.json\"))\n \n         # Create original dictionary from SitesInformation() object.\n         # Eventually, the rest of the code will be updated to use the new object\ndiff --git a/sherlock/tests/test_multiple_usernames.py b/tests/test_multiple_usernames.py\nsimilarity index 95%\nrename from sherlock/tests/test_multiple_usernames.py\nrename to tests/test_multiple_usernames.py\nindex 418110877..3e8a307ee 100644\n--- a/sherlock/tests/test_multiple_usernames.py\n+++ b/tests/test_multiple_usernames.py\n@@ -1,8 +1,7 @@\n-import importlib\n import unittest\n import sys\n sys.path.append('../')\n-import sherlock as sh\n+from sherlock import sherlock as sh\n \n checksymbols = []\n checksymbols = [\"_\", \"-\", \".\"]\n",
+  "pre_commit": "b38faf7dcf24cf669ffd80b48b0a2ec21697f070",
+  "post_commit": "b8ca8aade48dd4b6497ef114e41067aac476da65",
+  "merge_type": "squash"
+}

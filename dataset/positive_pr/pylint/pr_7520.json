@@ -1,0 +1,396 @@
+{
+  "pr_number": 7520,
+  "title": "Detect unreachable code after sys.exit, quit, exit, and os._exit",
+  "url": "https://github.com/pylint-dev/pylint/pull/7520",
+  "description": "<!--\r\nThank you for submitting a PR to pylint!\r\n\r\nTo ease the process of reviewing your PR, do make sure to complete the following boxes.\r\n\r\n- [ ] Write a good description on what the PR does.\r\n- [ ] Create a news fragment with `towncrier create <IssueNumber>.<type>` which will be\r\n  included in the changelog. `<type>` can be one of: new_check, removed_check, extension,\r\n  false_positive, false_negative, bugfix, other, internal. If necessary you can write\r\n  details or offer examples on how the new change is supposed to work.\r\n- [ ] If you used multiple emails or multiple names when contributing, add your mails\r\n      and preferred name in ``script/.contributors_aliases.json``\r\n-->\r\n\r\n## Type of Changes\r\n\r\n<!-- Leave the corresponding lines for the applicable type of change: -->\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :sparkles: New feature |\r\n\r\n## Description\r\n\r\nPylint can now detect unreachable code for any code that follows a sys.exit call\r\n\r\nRefs #519\r\n\r\n\r\n",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 3457101611](https://coveralls.io/builds/54166121)\n\n* **16** of **16**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* No unchanged relevant lines lost coverage.\n* Overall coverage increased (+**0.004%**) to **95.408%**\n\n---\n\n\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/54166121/badge)](https://coveralls.io/builds/54166121) |\n| :-- | --: |\n| Change from base [Build 3456941332](https://coveralls.io/builds/54165857): |  0.004% |\n| Covered Lines: | 17347 |\n| Relevant Lines: | 18182 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-09-23T15:35:48Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [django](https://github.com/django/django):**\nThe following messages are now emitted:\n\n<details>\n\n1) unreachable:\n*Unreachable code*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/utils/autoreload.py#L665\n\n</details>\n\n\n</details>\n\n*This comment was generated for commit f085811b8a4a6250bd5b323b54eff1e49fa54652*",
+      "created_at": "2022-09-23T16:36:20Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Thanks for tackling this @clavedeluna!\r\n\r\nI think the Django primer result shows that some control flow is needed since the message shouldn't emit in this case in the `else` block. ",
+      "created_at": "2022-09-23T19:23:15Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [django](https://github.com/django/django):**\nThe following messages are now emitted:\n\n<details>\n\n1) no-self-argument:\n*Method 'live_server_url' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/selenium.py#L105\n2) no-self-argument:\n*Method 'allowed_host' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/selenium.py#L109\n3) no-self-argument:\n*Method 'log_message' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1657\n4) no-self-argument:\n*Method 'live_server_url' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1810\n5) no-self-argument:\n*Method 'allowed_host' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1814\n6) no-self-argument:\n*Method 'view_is_async' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/views/generic/base.py#L63\n7) no-self-argument:\n*Method '_router_func' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/utils.py#L217\n8) no-self-argument:\n*Method 'Migration' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/migrations/recorder.py#L25\n9) no-self-argument:\n*Method '_generate_next_value_' should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/models/enums.py#L91\n10) unreachable:\n*Unreachable code*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/utils/autoreload.py#L665\n\n</details>\n\nThe following messages are no longer emitted:\n\n<details>\n\n1) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/selenium.py#L105\n2) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/selenium.py#L109\n3) no-method-argument:\n*Method has no argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1657\n4) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1810\n5) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/test/testcases.py#L1814\n6) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/views/generic/base.py#L63\n7) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/utils.py#L217\n8) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/migrations/recorder.py#L25\n9) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/django/django/blob/37a13cc92d51d5a57b42240b9a5dd250648efa24/django/db/models/enums.py#L91\n\n</details>\n\n\n\n**Effect on [pandas](https://github.com/pandas-dev/pandas):**\nThe following messages are now emitted:\n\n<details>\n\n1) no-self-argument:\n*Method '_from_sequence' should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/extension/decimal/test_decimal.py#L287\n2) no-self-argument:\n*Method '_period_constructor' should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/scalar/period/test_period.py#L843\n3) no-self-argument:\n*Method 'open' should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/io/test_gcs.py#L36\n4) no-self-argument:\n*Method 'setup_class' should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/io/test_sql.py#L1609\n\n</details>\n\nThe following messages are no longer emitted:\n\n<details>\n\n1) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/extension/decimal/test_decimal.py#L287\n2) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/scalar/period/test_period.py#L843\n3) no-method-argument:\n*Method has no argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/io/test_gcs.py#L36\n4) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/pandas-dev/pandas/blob/cda0f6bee2a6520729247f92eef9f722ad2487ec/pandas/tests/io/test_sql.py#L1609\n\n</details>\n\n\n\n**Effect on [pytest](https://github.com/pytest-dev/pytest):**\nThe following messages are now emitted:\n\n<details>\n\n1) no-self-argument:\n*Method 'pytest_configure' should have \"self\" as first argument*\nhttps://github.com/pytest-dev/pytest/blob/59b8ec3ce11f8e94d924dc97bc1e14f380824b54/src/_pytest/pytester.py#L1131\n\n</details>\n\nThe following messages are no longer emitted:\n\n<details>\n\n1) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/pytest-dev/pytest/blob/59b8ec3ce11f8e94d924dc97bc1e14f380824b54/src/_pytest/pytester.py#L1131\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) no-self-argument:\n*Method 'merge_to' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/models/user.py#L300\n2) no-self-argument:\n*Method 'merge_to' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/models/organization.py#L285\n3) no-self-argument:\n*Method 'path' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/interfaces/base.py#L80\n4) no-self-argument:\n*Method 'external_type' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/interfaces/base.py#L85\n5) no-self-argument:\n*Method 'is_available' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/sms.py#L39\n6) no-self-argument:\n*Method 'u2f_app_id' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L65\n7) no-self-argument:\n*Method 'u2f_facets' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L70\n8) no-self-argument:\n*Method 'is_available' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L77\n9) no-self-argument:\n*Method 'rate_limits' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/api/endpoints/organization_events.py#L108\n10) no-self-argument:\n*Method 'use_email_scope' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/integrations/jira_server/integration.py#L277\n11) no-self-argument:\n*Method 'use_email_scope' should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/integrations/jira/integration.py#L126\n\n</details>\n\nThe following messages are no longer emitted:\n\n<details>\n\n1) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/models/user.py#L300\n2) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/models/organization.py#L285\n3) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/interfaces/base.py#L80\n4) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/interfaces/base.py#L85\n5) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/sms.py#L39\n6) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L65\n7) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L70\n8) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/auth/authenticators/u2f.py#L77\n9) no-method-argument:\n*Method has no argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/api/endpoints/organization_events.py#L108\n10) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/integrations/jira_server/integration.py#L277\n11) no-self-argument:\n*Method should have \"self\" as first argument*\nhttps://github.com/getsentry/sentry/blob/48eb9791a9561abf2bad91f25d48950731feaf09/src/sentry/integrations/jira/integration.py#L126\n\n</details>\n\n*This comment was generated for commit 16e3f2e3f86643b6dfd92a2892acedf304507775*",
+      "created_at": "2022-09-23T20:09:18Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "I'm still trying to figure out how to use the primer results, it's confusing because the run hasn't finished but there's an output above in the PR",
+      "created_at": "2022-09-23T20:46:43Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "> it's confusing because the run hasn't finished but there's an output above in the PR\r\n\r\nThere's a new comment each time the primer is run, the new one should appear shortly.",
+      "created_at": "2022-09-23T21:08:55Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 724ac12c0f7c1dffcb7fcf68fc8632b6a881a005*",
+      "created_at": "2022-09-27T13:05:30Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [pandas](https://github.com/pandas-dev/pandas):**\nThe following messages are no longer emitted:\n\n<details>\n\n1) unexpected-keyword-arg:\n*Unexpected keyword argument 'where' in method call*\nhttps://github.com/pandas-dev/pandas/blob/b3552c54be2d49d52e6c0ae90db23ccb13bbfe0d/pandas/tests/io/pytables/test_read.py#L83\n\n</details>\n\n*This comment was generated for commit 1da6196a7e39a587ae88b25688f90609c60672bc*",
+      "created_at": "2022-09-27T14:59:28Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit ea422c2060c7a0deb08df8ed3b03cd94d3deb61e*",
+      "created_at": "2022-09-28T15:24:04Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> I think we should also handle `quit()`, `exit()`, and `os._exit()`, what do you think ?\r\n\r\nI was able to easily add `quit` and `exit` but `os._exit` is trickier bc it doesn't follow the same pattern. safe_infer doesn't return anything useful\r\n\r\n```\r\n(Pdb) [x for x in node.func.infer()]\r\n[<FunctionDef._exit l.None at 0x1121f0eb0>, Uninferable]\r\n\r\n(Pdb) [x for x in node.func.infer()][0].__dict__\r\n{'name': '_exit', '_doc': 'Exit to the system with specified status, without normal exit processing.', 'doc_node': <Const.str l.None at 0x1121f0df0>, 'instance_attrs': {'__class__': [<ClassDef.builtin_function_or_method l.None at 0x1121f0e20>]}, 'locals': {}, 'body': [], 'lineno': None, 'col_offset': None, 'parent': <Module.posix l.0 at 0x11201e790>, 'end_lineno': None, 'end_col_offset': None, 'position': None, 'args': <Arguments l.0 at 0x1121f0dc0>, 'decorators': None, 'returns': None, 'type_comment_returns': None, 'type_comment_args': None, 'extra_decorators': [], 'type': 'function', 'fromlineno': None}\r\n```\r\n\r\nI left the functional test but I think we can leave it for now.",
+      "created_at": "2022-09-29T11:59:35Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "> > I think we should also handle `quit()`, `exit()`, and `os._exit()`, what do you think ?\r\n> \r\n> I was able to easily add `quit` and `exit` but `os._exit` is trickier bc it doesn't follow the same pattern. safe_infer doesn't return anything useful\r\n> \r\n> ```\r\n> (Pdb) [x for x in node.func.infer()]\r\n> [<FunctionDef._exit l.None at 0x1121f0eb0>, Uninferable]\r\n> \r\n> (Pdb) [x for x in node.func.infer()][0].__dict__\r\n> {'name': '_exit', '_doc': 'Exit to the system with specified status, without normal exit processing.', 'doc_node': <Const.str l.None at 0x1121f0df0>, 'instance_attrs': {'__class__': [<ClassDef.builtin_function_or_method l.None at 0x1121f0e20>]}, 'locals': {}, 'body': [], 'lineno': None, 'col_offset': None, 'parent': <Module.posix l.0 at 0x11201e790>, 'end_lineno': None, 'end_col_offset': None, 'position': None, 'args': <Arguments l.0 at 0x1121f0dc0>, 'decorators': None, 'returns': None, 'type_comment_returns': None, 'type_comment_args': None, 'extra_decorators': [], 'type': 'function', 'fromlineno': None}\r\n> ```\r\n> \r\n> I left the functional test but I think we can leave it for now.\r\n\r\nThis is a good example where using `infer()` can make sense. You could do `node.func.infer()[0].qname()` and see if that returns something usable.",
+      "created_at": "2022-09-29T12:00:59Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> You could do `node.func.infer()[0].qname()` and see if that returns something usable.\r\n\r\nOh good catch! I initially did `.name` which only returned `_exit` but `posix._exit` returns `posix._exit` so that's way more useful.",
+      "created_at": "2022-09-29T12:04:44Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "> > You could do `node.func.infer()[0].qname()` and see if that returns something usable.\r\n> \r\n> Oh good catch! I initially did `.name` which only returned `_exit` but `posix._exit` returns `posix._exit` so that's way more useful.\r\n\r\nThat seems like it would break on Windows... I guess we'll see what the CI thinks about it 😄 ",
+      "created_at": "2022-09-29T12:05:47Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> That seems like it would break on Windows... I guess we'll see what the CI thinks about it\r\n\r\nimplemented, let's see 🤞 ",
+      "created_at": "2022-09-29T12:17:08Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> > That seems like it would break on Windows... I guess we'll see what the CI thinks about it\r\n> \r\n> implemented, let's see 🤞\r\n\r\nas predicted, windows isn't happy about the check for os._exit. Should I remove it for now? I'm not going to be able to reproduce it locally to debug.",
+      "created_at": "2022-09-29T12:34:26Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 27a15f3cc9fdbbe00e2b166d9a0b935f3bbf92a8*",
+      "created_at": "2022-09-29T12:54:21Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> > > That seems like it would break on Windows... I guess we'll see what the CI thinks about it\r\n> > \r\n> > \r\n> > implemented, let's see 🤞\r\n> \r\n> as predicted, windows isn't happy about the check for os._exit. Should I remove it for now? I'm not going to be able to reproduce it locally to debug.\r\n\r\n@DanielNoord @Pierre-Sassoulas what decision should we take here to have the functional tests for Windows passing? I don't want to make the other PR suggestions until we reach a conclusion on Windows.",
+      "created_at": "2022-09-30T12:14:14Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "> what decision should we take here to have the functional tests for Windows passing? \r\n\r\nI did not follow the full discussion but in last resort we can exclude windows from the functional test for ``os._exit`` by creating a test file specific to it with its own config file.",
+      "created_at": "2022-10-01T17:57:06Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "> > what decision should we take here to have the functional tests for Windows passing?\r\n\r\nWe should figure out what the `qname()` on Windows is and use that. You could probably find that online or use your own local fork on Github + it's CI with some print statements to do so.",
+      "created_at": "2022-10-01T17:58:29Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "FYI, I was able to get a windows instance via AWS and figured out that edge case, here's some sample code\r\n```\r\n>>> import os\r\n>>> import astroid\r\n>>> node = astroid.extract_node(\"\"\"import os;os._exit()\"\"\")\r\n>>> inferred = next(node.func.infer())\r\n>>> inferred.qname()\r\nUninferable\r\n>>> inferred\r\nUninferable\r\n>>> node\r\n<Call l.1 at 0x252d479f070>\r\n>>> node.func\r\n<Attribute._exit l.1 at 0x252d479f0a0>\r\n>>> node.func.infer()\r\n<generator object NodeNG.infer at 0x00000252D46CE7B0>\r\n>>> [x for x in node.func.infer()]\r\n[Uninferable, <FunctionDef._exit l.None at 0x252d47b0a00>]\r\n>>> [x for x in node.func.infer()][1]\r\n<FunctionDef._exit l.None at 0x252d47b0a00>\r\n>>> [x for x in node.func.infer()][1].qname()\r\n'nt._exit'\r\n```",
+      "created_at": "2022-10-03T12:39:16Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "This relatively small PR has had quite a bit of back and forth. I think it's finally ready to be merged. Maintainers, please feel free to update any code yourselves and merge!",
+      "created_at": "2022-10-04T12:09:36Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "I think there was a point made in https://github.com/PyCQA/pylint/issues/7563#issuecomment-1266281773 that could be applied here.",
+      "created_at": "2022-10-04T15:31:41Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "@DanielNoord @Pierre-Sassoulas I've reached my capacity with this PR. The back and forth and amount of conflicting suggestions has been really frustrating. It's best if you can provide exact code and test cases that you're suggesting, instead of very general advice that you later disagree with. Don't expect us contributors to be able to read your mind.\r\n\r\nPlease feel free to take over this PR.",
+      "created_at": "2022-10-11T11:45:59Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "> @DanielNoord @Pierre-Sassoulas I've reached my capacity with this PR. The back and forth and amount of conflicting suggestions has been really frustrating. It's best if you can provide exact code and test cases that you're suggesting, instead of very general advice that you later disagree with. Don't expect us contributors to be able to read your mind.\r\n\r\nThere is always a little risk of maintainers have different opinions about certain topics in open source projects.\r\n\r\nI think in this case the different opinions where actually the result of the PR slowly growing in size and scope along the way. This causes different concerns to be raised. For example, the `infer()` call was \"incorrect\" when we didn't need the sub-results but when it then turned out that `sys.exit` is different on different platforms we had to use it again in order not to pay additional performance costs. I don't think maintainers can foresee such issues when reviewing.\r\n\r\nThat said I will take care to make sure I don't conflict other maintainers without discussion in future reviews.\r\n\r\n> Please feel free to take over this PR.\r\n\r\nThat's too bad. I think we're nearing completion on this PR. I'm sorry you feel this way.",
+      "created_at": "2022-10-11T12:00:07Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Sorry about that @clavedeluna, we have a lot of code to review each week and mistake can happen when we do not have the time to read other maintainers review. Please do point us to the contradiction so we can discuss it between disagreeing maintainers when that happen.",
+      "created_at": "2022-10-16T12:04:50Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [django](https://github.com/django/django):**\nThe following messages are no longer emitted:\n\n<details>\n\n1) invalid-name:\n*Attribute name \"ALLOWED_HOSTS\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/django/django/blob/7c884afe5acc00d1df83390848227f42918ec0d4/django/test/utils.py#L138\n2) invalid-name:\n*Attribute name \"DEBUG\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/django/django/blob/7c884afe5acc00d1df83390848227f42918ec0d4/django/test/utils.py#L141\n3) invalid-name:\n*Attribute name \"EMAIL_BACKEND\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/django/django/blob/7c884afe5acc00d1df83390848227f42918ec0d4/django/test/utils.py#L144\n4) invalid-name:\n*Attribute name \"MIGRATION_MODULES\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/django/django/blob/7c884afe5acc00d1df83390848227f42918ec0d4/django/db/backends/base/creation.py#L72\n\n</details>\n\n\n\n**Effect on [pandas](https://github.com/pandas-dev/pandas):**\nThe following messages are now emitted:\n\n<details>\n\n1) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.numpy_.PandasArray to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/_testing/__init__.py#L300\n2) redefined-variable-type:\n*Redefinition of expected type from .ndarray to pandas.core.arrays.period.PeriodArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/string_/test_string.py#L215\n3) redefined-variable-type:\n*Redefinition of expected type from .ndarray to pandas.core.arrays.period.PeriodArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/string_/test_string.py#L256\n4) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_function.py#L21\n5) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_function.py#L36\n6) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.arrays.floating.FloatingArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_arithmetic.py#L68\n7) redefined-variable-type:\n*Redefinition of res type from pandas.core.arrays.period.PeriodArray to pandas.core.arrays.floating.FloatingArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_construction.py#L142\n8) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/integer/test_function.py#L20\n9) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.arrays.floating.FloatingArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/integer/test_arithmetic.py#L117\n10) redefined-variable-type:\n*Redefinition of other type from pandas.core.arrays.period.PeriodArray to .ndarray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_comparison.py#L32\n11) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_function.py#L21\n12) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_function.py#L64\n13) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_function.py#L125\n14) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_ops.py#L11\n15) redefined-variable-type:\n*Redefinition of result type from pandas.core.indexes.datetimes.DatetimeIndex to pandas.core.indexes.multi.MultiIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/indexes/multi/test_reshape.py#L126\n16) redefined-variable-type:\n*Redefinition of expected type from list to pandas.core.arrays.period.PeriodArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arithmetic/test_datetime64.py#L239\n17) redefined-variable-type:\n*Redefinition of indexer type from pandas.core.indexes.numeric.Int64Index to pandas.core.indexes.datetimes.DatetimeIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/algorithms.py#L1428\n18) redefined-variable-type:\n*Redefinition of index type from pandas.core.indexes.base.Index to pandas.core.indexes.range.RangeIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/series.py#L468\n19) invalid-name:\n*Attribute name \"y\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/reshape/test_pivot.py#L1772\n20) redefined-variable-type:\n*Redefinition of columns type from pandas.core.indexes.base.Index to pandas.core.indexes.range.RangeIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/internals/construction.py#L851\n21) redefined-variable-type:\n*Redefinition of other type from pandas.core.arrays.period.PeriodArray to pandas.core.arrays.interval.IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/arrays/interval.py#L736\n22) redefined-variable-type:\n*Redefinition of new_target type from pandas.core.indexes.base.Index to pandas.core.indexes.category.CategoricalIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/indexes/category.py#L443\n\n</details>\n\nThe following messages are no longer emitted:\n\n<details>\n\n1) redefined-variable-type:\n*Redefinition of result type from pandas.core.indexes.base.Index to pandas.core.indexes.multi.MultiIndex*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/indexes/multi/test_reshape.py#L126\n2) no-member:\n*Instance of 'Index' has no 'day_name' member*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/indexes/datetimes/test_misc.py#L249\n3) no-member:\n*Instance of 'Index' has no 'month_name' member*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/indexes/datetimes/test_misc.py#L274\n4) redefined-variable-type:\n*Redefinition of dti type from pandas.core.indexes.datetimes.DatetimeIndex to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/indexes/datetimes/test_misc.py#L248\n5) redefined-variable-type:\n*Redefinition of idx1 type from pandas.core.indexes.period.PeriodIndex to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/frame/methods/test_set_index.py#L497\n6) invalid-unary-operand-type:\n*bad operand type for unary -: IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_arithmetic.py#L213\n7) invalid-unary-operand-type:\n*bad operand type for unary +: IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/floating/test_arithmetic.py#L213\n8) invalid-unary-operand-type:\n*bad operand type for unary -: IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/integer/test_arithmetic.py#L324\n9) invalid-unary-operand-type:\n*bad operand type for unary +: IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/integer/test_arithmetic.py#L324\n10) redefined-variable-type:\n*Redefinition of expected type from pandas.core.series.Series to pandas.core.arrays.period.PeriodArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_function.py#L28\n11) invalid-unary-operand-type:\n*bad operand type for unary ~: IntervalArray*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_ops.py#L9\n12) redefined-variable-type:\n*Redefinition of expected type from pandas.core.series.Series to pandas.core.frame.DataFrame*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_ops.py#L17\n13) redefined-variable-type:\n*Redefinition of other type from .ndarray to pandas.core.series.Series*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/arrays/boolean/test_comparison.py#L34\n14) redefined-variable-type:\n*Redefinition of expected type from pandas.core.arrays.period.PeriodArray to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/_testing/__init__.py#L300\n15) invalid-name:\n*Attribute name \"y\" doesn't conform to '[a-z_][a-z0-9_]{2,}$' pattern*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/tests/generic/test_frame.py#L136\n16) redefined-variable-type:\n*Redefinition of indexer type from pandas.core.indexes.numeric.Int64Index to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/algorithms.py#L1414\n17) redefined-variable-type:\n*Redefinition of new_target type from pandas.core.indexes.category.CategoricalIndex to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/indexes/category.py#L456\n18) redefined-variable-type:\n*Redefinition of columns type from pandas.core.indexes.range.RangeIndex to pandas.core.indexes.base.Index*\nhttps://github.com/pandas-dev/pandas/blob/c671f6ca3dba3f4e6f3077c00c1ff773d1ef7f45/pandas/core/internals/construction.py#L861\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) redefined-variable-type:\n*Redefinition of orgs type from list to dict*\nhttps://github.com/getsentry/sentry/blob/af2b4f91b6895b2a09682dabf2d5ff5b40bb4062/src/sentry/api/endpoints/relay/project_configs.py#L242\n\n</details>\n\n\n</details>\n\n*This comment was generated for commit 4affbb88f77807a0074b7244a0062315a0880ff4*",
+      "created_at": "2022-10-16T12:43:13Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "Reviewers, I'm finishing this PR up with what I believe were the last comments.",
+      "created_at": "2022-11-13T14:42:11Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 **Effect of this PR on checked open source code:** 🤖\n\n\n\n**Effect on [django](https://github.com/django/django):**\nThe following messages are now emitted:\n\n<details>\n\n1) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/django/django/blob/1be7e36f85c927560e8c3c1eda05a7e43a66cd22/django/contrib/admin/helpers.py#L156\n\n</details>\n\n\n</details>\n\n\n\n**Effect on [music21](https://github.com/cuthbertLab/music21):**\nThe following messages are now emitted:\n\n<details>\n\n1) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/tempo.py#L1266\n2) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/tablature.py#L242\n3) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/voiceLeading.py#L192\n4) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/roman.py#L1031\n5) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/roman.py#L3141\n6) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/roman.py#L3455\n7) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/musicxml/test_xmlToM21.py#L1281\n8) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/musicxml/m21ToXml.py#L3557\n9) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/musicxml/m21ToXml.py#L3800\n10) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/musicxml/m21ToXml.py#L4635\n11) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/musicxml/test_m21ToXml.py#L65\n12) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/chord/tables.py#L550\n13) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/stream/base.py#L4626\n14) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/midi/__init__.py#L821\n15) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/test/commonTest.py#L112\n16) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/test/testSingleCoreAll.py#L103\n17) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/alpha/analysis/hasher.py#L436\n18) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/braille/test.py#L1157\n19) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/graph/primitives.py#L1006\n20) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/figuredBass/segment.py#L425\n21) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/figuredBass/segment.py#L426\n22) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/romanText/translate.py#L543\n23) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/romanText/translate.py#L696\n24) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/analysis/reduction.py#L600\n25) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/analysis/reduction.py#L855\n26) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/meter/base.py#L558\n27) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/meter/base.py#L1368\n28) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/meter/base.py#L1369\n29) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/cuthbertLab/music21/blob/6c1e5705b2140443b27cebfaa75826fde9dfe870/music21/meter/base.py#L1682\n\n</details>\n\n\n</details>\n\n\n\n**Effect on [pandas](https://github.com/pandas-dev/pandas):**\nThe following messages are now emitted:\n\n<details>\n\n1) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/_testing/__init__.py#L341\n2) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/strings/test_extract.py#L555\n3) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/reshape/concat/test_append.py#L94\n4) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/reshape/concat/test_append.py#L97\n5) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/frame/constructors/test_from_records.py#L252\n6) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/arrays/categorical/test_operators.py#L329\n7) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/plotting/test_series.py#L840\n8) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/test_html.py#L255\n9) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L452\n10) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L457\n11) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L494\n12) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L499\n13) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L743\n14) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L865\n15) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L1078\n16) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L1107\n17) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_to_xml.py#L1127\n18) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L545\n19) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L556\n20) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L573\n21) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L672\n22) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L678\n23) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L687\n24) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L950\n25) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L957\n26) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L966\n27) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L984\n28) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L990\n29) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L1192\n30) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L1254\n31) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml.py#L1276\n32) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml_dtypes.py#L284\n33) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml_dtypes.py#L290\n34) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/tests/io/xml/test_xml_dtypes.py#L298\n35) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/pandas-dev/pandas/blob/e7b044c558c7f763055b8ac1be359dcf787712bf/pandas/io/stata.py#L328\n\n</details>\n\n\n</details>\n\n\n\n**Effect on [sentry](https://github.com/getsentry/sentry):**\nThe following messages are now emitted:\n\n<details>\n\n1) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/getsentry/sentry/blob/b5ff5b6e8a24f4e7af273f0fa0f9274f205f21d0/src/sentry/tasks/integrations/migrate_issues.py#L22\n2) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/getsentry/sentry/blob/b5ff5b6e8a24f4e7af273f0fa0f9274f205f21d0/src/sentry/tasks/integrations/create_comment.py#L15\n3) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/getsentry/sentry/blob/b5ff5b6e8a24f4e7af273f0fa0f9274f205f21d0/src/sentry/tasks/integrations/update_comment.py#L15\n4) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/getsentry/sentry/blob/b5ff5b6e8a24f4e7af273f0fa0f9274f205f21d0/src/sentry/runner/commands/cleanup.py#L249\n\n</details>\n\n\n</details>\n\n\n\n**Effect on [coverage](https://github.com/nedbat/coveragepy):**\nThe following messages are now emitted:\n\n<details>\n\n1) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L16\n2) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L17\n3) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L18\n4) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L19\n5) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L69\n6) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L85\n7) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L108\n8) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L111\n9) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L114\n10) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/env.py#L118\n11) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/summary.py#L247\n12) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/summary.py#L248\n13) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/config.py#L518\n14) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/templite.py#L160\n15) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/html.py#L288\n16) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/html.py#L289\n17) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/pytracer.py#L188\n18) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/pytracer.py#L190\n19) superfluous-parens:\n*Unnecessary parens after '=' keyword*\nhttps://github.com/nedbat/coveragepy/blob/bb5935b2845d80d26b62eaa0dc6eed4f0470ba22/coverage/pytracer.py#L219\n\n</details>\n\n\n</details>\n\n*This comment was generated for commit 6b49d705f6d7056a0b8809905423430a3cdff1ab*",
+      "created_at": "2022-11-13T15:54:05Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Rebased on upstream/main so the pipeline can run properly.",
+      "created_at": "2022-11-13T22:02:25Z"
+    },
+    {
+      "author": "github-actions[bot]",
+      "body": "🤖 According to the primer, this change has **no effect** on the checked open source code. 🤖🎉\n\n*This comment was generated for commit 6857803fdab0d47dfaa48b5c0bd8a0cd2d4f15c2*",
+      "created_at": "2022-11-13T22:34:14Z"
+    }
+  ],
+  "diff": "diff --git a/doc/whatsnew/fragments/519.false_negative b/doc/whatsnew/fragments/519.false_negative\nnew file mode 100644\nindex 0000000000..7c8a0f45ce\n--- /dev/null\n+++ b/doc/whatsnew/fragments/519.false_negative\n@@ -0,0 +1,3 @@\n+Code following a call to  ``quit``,  ``exit``, ``sys.exit`` or ``os._exit`` will be marked as `unreachable`.\n+\n+Refs #519\ndiff --git a/pylint/checkers/base/basic_checker.py b/pylint/checkers/base/basic_checker.py\nindex 6ea7197b30..077fc37513 100644\n--- a/pylint/checkers/base/basic_checker.py\n+++ b/pylint/checkers/base/basic_checker.py\n@@ -17,7 +17,7 @@\n \n from pylint import utils as lint_utils\n from pylint.checkers import BaseChecker, utils\n-from pylint.interfaces import HIGH, INFERENCE\n+from pylint.interfaces import HIGH, INFERENCE, Confidence\n from pylint.reporters.ureports import nodes as reporter_nodes\n from pylint.utils import LinterStats\n \n@@ -657,13 +657,38 @@ def _check_misplaced_format_function(self, call_node: nodes.Call) -> None:\n             ):\n                 self.add_message(\"misplaced-format-function\", node=call_node)\n \n+    @staticmethod\n+    def _is_terminating_func(node: nodes.Call) -> bool:\n+        \"\"\"Detect call to exit(), quit(), os._exit(), or sys.exit().\"\"\"\n+        if (\n+            not isinstance(node.func, nodes.Attribute)\n+            and not (isinstance(node.func, nodes.Name))\n+            or isinstance(node.parent, nodes.Lambda)\n+        ):\n+            return False\n+\n+        qnames = {\"_sitebuiltins.Quitter\", \"sys.exit\", \"posix._exit\", \"nt._exit\"}\n+\n+        try:\n+            for inferred in node.func.infer():\n+                if hasattr(inferred, \"qname\") and inferred.qname() in qnames:\n+                    return True\n+        except (StopIteration, astroid.InferenceError):\n+            pass\n+\n+        return False\n+\n     @utils.only_required_for_messages(\n-        \"eval-used\", \"exec-used\", \"bad-reversed-sequence\", \"misplaced-format-function\"\n+        \"eval-used\",\n+        \"exec-used\",\n+        \"bad-reversed-sequence\",\n+        \"misplaced-format-function\",\n+        \"unreachable\",\n     )\n     def visit_call(self, node: nodes.Call) -> None:\n-        \"\"\"Visit a Call node -> check if this is not a disallowed builtin\n-        call and check for * or ** use.\n-        \"\"\"\n+        \"\"\"Visit a Call node.\"\"\"\n+        if self._is_terminating_func(node):\n+            self._check_unreachable(node, confidence=INFERENCE)\n         self._check_misplaced_format_function(node)\n         if isinstance(node.func, nodes.Name):\n             name = node.func.name\n@@ -731,7 +756,9 @@ def leave_tryfinally(self, _: nodes.TryFinally) -> None:\n         self._tryfinallys.pop()\n \n     def _check_unreachable(\n-        self, node: nodes.Return | nodes.Continue | nodes.Break | nodes.Raise\n+        self,\n+        node: nodes.Return | nodes.Continue | nodes.Break | nodes.Raise | nodes.Call,\n+        confidence: Confidence = HIGH,\n     ) -> None:\n         \"\"\"Check unreachable code.\"\"\"\n         unreachable_statement = node.next_sibling()\n@@ -746,7 +773,9 @@ def _check_unreachable(\n                 unreachable_statement = unreachable_statement.next_sibling()\n                 if unreachable_statement is None:\n                     return\n-            self.add_message(\"unreachable\", node=unreachable_statement, confidence=HIGH)\n+            self.add_message(\n+                \"unreachable\", node=unreachable_statement, confidence=confidence\n+            )\n \n     def _check_not_in_finally(\n         self,\ndiff --git a/tests/functional/u/unreachable.py b/tests/functional/u/unreachable.py\nindex 0bb35b20d4..0211a61366 100644\n--- a/tests/functional/u/unreachable.py\n+++ b/tests/functional/u/unreachable.py\n@@ -1,5 +1,9 @@\n-# pylint: disable=missing-docstring, broad-exception-raised\n+# pylint: disable=missing-docstring, broad-exception-raised, too-few-public-methods, redefined-outer-name\n+# pylint: disable=consider-using-sys-exit, protected-access\n \n+import os\n+import signal\n+import sys\n \n def func1():\n     return 1\n@@ -32,3 +36,46 @@ def func6():\n     return\n     yield\n     print(\"unreachable\")  # [unreachable]\n+\n+def func7():\n+    sys.exit(1)\n+    var = 2 + 2  # [unreachable]\n+    print(var)\n+\n+def func8():\n+    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))\n+    try:\n+        print(1)\n+    except KeyboardInterrupt:\n+        pass\n+\n+class FalseExit:\n+    def exit(self, number):\n+        print(f\"False positive this is not sys.exit({number})\")\n+\n+def func_false_exit():\n+    sys  = FalseExit()\n+    sys.exit(1)\n+    var = 2 + 2\n+    print(var)\n+\n+def func9():\n+    os._exit()\n+    var = 2 + 2  # [unreachable]\n+    print(var)\n+\n+def func10():\n+    exit()\n+    var = 2 + 2  # [unreachable]\n+    print(var)\n+\n+def func11():\n+    quit()\n+    var = 2 + 2  # [unreachable]\n+    print(var)\n+\n+incognito_function = sys.exit\n+def func12():\n+    incognito_function()\n+    var = 2 + 2  # [unreachable]\n+    print(var)\ndiff --git a/tests/functional/u/unreachable.txt b/tests/functional/u/unreachable.txt\nindex 491912d99c..82f9797aa1 100644\n--- a/tests/functional/u/unreachable.txt\n+++ b/tests/functional/u/unreachable.txt\n@@ -1,5 +1,10 @@\n-unreachable:6:4:6:24:func1:Unreachable code:HIGH\n-unreachable:11:8:11:28:func2:Unreachable code:HIGH\n-unreachable:17:8:17:28:func3:Unreachable code:HIGH\n-unreachable:21:4:21:16:func4:Unreachable code:HIGH\n-unreachable:34:4:34:24:func6:Unreachable code:HIGH\n+unreachable:10:4:10:24:func1:Unreachable code:HIGH\n+unreachable:15:8:15:28:func2:Unreachable code:HIGH\n+unreachable:21:8:21:28:func3:Unreachable code:HIGH\n+unreachable:25:4:25:16:func4:Unreachable code:HIGH\n+unreachable:38:4:38:24:func6:Unreachable code:HIGH\n+unreachable:42:4:42:15:func7:Unreachable code:INFERENCE\n+unreachable:64:4:64:15:func9:Unreachable code:INFERENCE\n+unreachable:69:4:69:15:func10:Unreachable code:INFERENCE\n+unreachable:74:4:74:15:func11:Unreachable code:INFERENCE\n+unreachable:80:4:80:15:func12:Unreachable code:INFERENCE\n",
+  "changed_files": [
+    "doc/whatsnew/fragments/519.false_negative",
+    "pylint/checkers/base/basic_checker.py",
+    "tests/functional/u/unreachable.py",
+    "tests/functional/u/unreachable.txt"
+  ],
+  "changed_functions": [
+    "_is_terminating_func",
+    "func7",
+    "func8",
+    "exit",
+    "func_false_exit",
+    "func9",
+    "func10",
+    "func11",
+    "func12"
+  ],
+  "pre_commit": "435a5a1d8e542d1240b8a66985feb8950fb6d739",
+  "post_commit": "bed42badfe6be6317e6dc6406433218287ded3b9",
+  "merged_at": "2022-11-13T22:35:30Z",
+  "review_comments": [
+    {
+      "author": "mbyrnepr2",
+      "body": "```suggestion\r\nCode following call to ``sys.exit`` will be marked as `unreachable`. \r\n```",
+      "path": "doc/whatsnew/fragments/519.other",
+      "line": null,
+      "created_at": "2022-09-23T19:24:49Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Won't this catch `other_module.exit()`?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-24T01:51:54Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Yes, we need to use inference for this kind of thing.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-24T06:29:43Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n\r\n\r\nclass FalseExit:\r\n    def exit(number):\r\n        print(f\"False positive this is not sys.exit({number})\")\r\n\r\ndef func_false_exit():\r\n    sys  = FalseExit()\r\n    sys.exit(1)\r\n    var = 2 + 2\r\n    print(var)\r\n\r\n```\r\nFollowing @jacobtylerwalls comment.",
+      "path": "tests/functional/u/unreachable.py",
+      "line": 44,
+      "created_at": "2022-09-24T06:58:51Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "Exactly the feedback I was looking for. Pierre, can you explain what you mean by use inference? Do you mean the INFERENCE confidence level?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-27T11:46:49Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Well yes, but when we use the inference confidence level it means we used inference to come to a conclusion. Here's an example of inference (notice the ``infer()`` call) :\r\n```python\r\n>>> import astroid\r\n>>> a = astroid.extract_node('''\r\n... import argparse\r\n... \r\n... parser = argparse.ArgumentParser()\r\n... parser.add_argument(\r\n...     \"config_folder\", help=\"Path to the project configuration folder\"\r\n... )\r\n... args = parser.parse_args()\r\n... try:\r\n...     int(args.config_folder) / 0\r\n... except:\r\n...     parser.error(\r\n...         f\"Your configuration folder can't be divided by zero, use something else !\"\r\n...     )\r\n... ''')\r\n>>> list(a.handlers[0].body[0].value.func.infer())[0]\r\n<BoundMethod error of argparse.ArgumentParser at 0x140506382647696>\r\n```\r\nIn this example we can check that the parser.error is argparse parsing and not a call to logging.error.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-27T11:51:07Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "AHA! You just answered one of my top questions about pylint / astroid. I couldn't figure out how the code would distinguish between a call to `method_a` if this method name could be defined in `module1.method_a` and `module2.method_a` looks like a call to `infer` is the way!",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-27T12:13:36Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "The confidence need to be INFERENCE in this case, but it should still be HIGH when we don't need inference.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T11:51:36Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "What happen if the call to next raise a ``StopIteration`` ?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T11:52:07Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Why not use `safe_infer`?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T11:53:55Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "> Why not use `safe_infer`?\r\n\r\nbecause I'm just hearing about it 🤣 \r\n\r\nJoking aside, I took the example from the many other uses of this pattern in the repo\r\n```\r\n        try:\r\n            inferred = list(node....infer())\r\n        except astroid.InferenceError:\r\n            return\r\n```\r\nso should these examples also be moved to use safe_infer which seems to do all the catching we need? (separate issue)",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T12:27:08Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Some... \n\nSometimes we want to iterate over all inference results and just handle the exceptions. For example, for file wrappers the inference is flaky as the `io` module does things we don't understand. However, because we know this we don't want to focus on the flaky total result but focus on the first sub-result as we can determine whether we are looking at an `io` object from it. I know that that is not the best explanation, but I can't think of a better example right now.\n\nThat said, if you're looking to contribute checking all `infer()` calls and seeing whether their exception branched are covered would be a good way to start removing some of them. I think there is actually an issue in `astroid` about doing the same there.\n\n_For a future project we could even look at something like `safe_iterating_infer` to catch some but not all exceptions and return an iterator, but that's not something we should look at right now_",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T12:32:41Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "```suggestion\r\nRefs #519\r\n```",
+      "path": "doc/whatsnew/fragments/519.other",
+      "line": null,
+      "created_at": "2022-09-28T15:18:56Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "Can remove empty line between 1. and 2.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T15:21:15Z"
+    },
+    {
+      "author": "mbyrnepr2",
+      "body": "```suggestion\r\n        node: nodes.Return | nodes.Continue | nodes.Break | nodes.Raise | nodes.Call,\r\n```\r\n\r\nSince visit_call is also using this fn. ",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-28T15:27:29Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "This was actually done by the [pre-commit ci](https://github.com/PyCQA/pylint/pull/7520/commits/f085811b8a4a6250bd5b323b54eff1e49fa54652) and I'm not sure how to undo it without it doing it again",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-29T11:25:52Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "You need a summary for the docstring at the beggining for pep257, the following text won't be modified.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-29T11:30:02Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "@clavedeluna You might want to install `pre-commit` locally. Although it runs automatically in CI, all the CI jobs that start on the commit that is then rejected by `pre-commit` (in this case https://github.com/PyCQA/pylint/pull/7520/commits/59feeaeae8fdebacd878b197c8ae6a2c995e98b5) do take up a \"runner\" and some minutes of our CI. When there are multiple people working on various PRs this can block our CI a bit, especially since the Primer jobs block runners for 30+ min. Running `pre-commit` locally prevents taking up those initial runners.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-29T12:21:48Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "I was just looking into this bc the number of pre-commit commits is getting annoying. I can run `black` locally, but what's the procedure for using .pre-commit-comfig.yaml locally?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-29T12:28:11Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Check out https://pre-commit.com 😄 ",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-29T12:28:57Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\nCode following call to ``sys.exit``,  ``quit`` or  ``exit`` will be marked as `unreachable`.\r\n```",
+      "path": "doc/whatsnew/fragments/519.other",
+      "line": null,
+      "created_at": "2022-09-29T12:50:05Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Why do we need a default value here? Can't we just make this be required?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 761,
+      "created_at": "2022-09-30T10:45:22Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n        \"\"\"Visit a Call node.\"\"\"\r\n```\r\n\r\nThis was out of date, we don't do 2 anymore and we do more than 1 + 3. Let's just remove this as it has a high risk of becoming out of date again.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-30T10:46:44Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Let's just use the `try...except` for all of the inference. This is making two calls to `infer()` which are costly and I'm not sure this is cached correctly if `safe_infer` returns `Uninferable`.",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": null,
+      "created_at": "2022-09-30T10:48:36Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Do we need this call? Or can we just call `add_message` directly in `is_termaniting_func`?",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 691,
+      "created_at": "2022-09-30T10:49:44Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "```suggestion\r\n\r\nimport os\r\n```",
+      "path": "tests/functional/u/unreachable.py",
+      "line": 4,
+      "created_at": "2022-09-30T10:50:11Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "Because in the terminating func case (what I've added in this PR), the confidence is INFERENCE, but in every other case, it's HIGH",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 761,
+      "created_at": "2022-09-30T12:15:35Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Let's make that explicit in all calling functions. ",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 761,
+      "created_at": "2022-09-30T12:20:54Z"
+    },
+    {
+      "author": "clavedeluna",
+      "body": "Not to push back and be annoying, but isn't that the point of default values, to not have to define at every call location? ",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 761,
+      "created_at": "2022-09-30T12:25:50Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Yeah, you're right. I should have checked. I thought the other calls to `_check_unreachable` included similar checks like `is_terminating` but they don't. They just directly call.\r\n\r\nNever mind this comment, and good call on pushing back 😄 ",
+      "path": "pylint/checkers/base/basic_checker.py",
+      "line": 761,
+      "created_at": "2022-09-30T12:28:24Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 97,
+  "deletions": 13,
+  "changed_files_count": 4
+}

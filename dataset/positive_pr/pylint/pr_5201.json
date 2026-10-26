@@ -1,0 +1,107 @@
+{
+  "pr_number": 5201,
+  "title": "Normalize input of ``ignore-paths`` for all path types",
+  "url": "https://github.com/pylint-dev/pylint/pull/5201",
+  "description": "- [x] Add yourself to CONTRIBUTORS if you are a new contributor.\r\n- [x] Add a ChangeLog entry describing what your PR does.\r\n- [x] If it's a new feature, or an important bug fix, add a What's New entry in\r\n      `doc/whatsnew/<current release.rst>`.\r\n- [x] Write a good description on what the PR does.\r\n\r\n## Type of Changes\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :bug: Bug fix          |\r\n| ✓   | :sparkles: New feature |\r\n\r\n## Description\r\n\r\nThis normalises the input to the `ignore-paths` config option by creating both a Posix and Windows path from the provided regex pattern.\r\nIt does so by adding a new validator called `_regexp_paths_csv_validator` which creates a list of `path regex`s.\r\n\r\nFurthermore, it adds a new overload to `get_global_option` for `List[Pattern[str]]` return types, as we did not have that yet.\r\n\r\nCloses #5194",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 1376349524](https://coveralls.io/builds/43720913)\n\n* **11** of **11**   **(100.0%)**  changed or added relevant lines in **3** files are covered.\n* **36** unchanged lines in **1** file lost coverage.\n* Overall coverage increased (+**0.05%**) to **93.295%**\n\n---\n\n\n|  Files with Coverage Reduction | New Missed Lines | % |\n| :-----|--------------|--: |\n| [pylint/checkers/variables.py](https://coveralls.io/builds/43720913/source?filename=pylint%2Fcheckers%2Fvariables.py#L159) | 36 | 95.53% |\n<!-- | **Total:** | **36** |  | -->\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/43720913/badge)](https://coveralls.io/builds/43720913) |\n| :-- | --: |\n| Change from base [Build 1373933286](https://coveralls.io/builds/43712520): |  0.05% |\n| Covered Lines: | 13678 |\n| Relevant Lines: | 14661 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2021-10-23T10:15:42Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex 634e887b64..b680311724 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -77,6 +77,11 @@ Release date: TBA\n \n   Closes #3031\n \n+* Normalize the input to the ``ignore-paths`` option to allow both Posix and\n+  Windows paths\n+\n+  Closes #5194\n+\n * Fix double emitting of ``not-callable`` on inferrable ``properties``\n \n   Closes #4426\ndiff --git a/doc/whatsnew/2.12.rst b/doc/whatsnew/2.12.rst\nindex f984068002..e510f00113 100644\n--- a/doc/whatsnew/2.12.rst\n+++ b/doc/whatsnew/2.12.rst\n@@ -81,6 +81,11 @@ Other Changes\n \n   Closes #4426\n \n+* Normalize the input to the ``ignore-paths`` option to allow both Posix and\n+  Windows paths\n+\n+  Closes #5194\n+\n * ``mising-param-doc`` now correctly parses asterisks for variable length and\n   keyword parameters\n \ndiff --git a/pylint/config/option.py b/pylint/config/option.py\nindex 0a9a37069b..7b3e3b1b14 100644\n--- a/pylint/config/option.py\n+++ b/pylint/config/option.py\n@@ -3,7 +3,9 @@\n \n import copy\n import optparse  # pylint: disable=deprecated-module\n+import pathlib\n import re\n+from typing import List, Pattern\n \n from pylint import utils\n \n@@ -25,6 +27,19 @@ def _regexp_csv_validator(_, name, value):\n     return [_regexp_validator(_, name, val) for val in _csv_validator(_, name, value)]\n \n \n+def _regexp_paths_csv_validator(_, name: str, value: str) -> List[Pattern[str]]:\n+    patterns = []\n+    for val in _csv_validator(_, name, value):\n+        patterns.append(\n+            re.compile(\n+                str(pathlib.PureWindowsPath(val)).replace(\"\\\\\", \"\\\\\\\\\")\n+                + \"|\"\n+                + pathlib.PureWindowsPath(val).as_posix()\n+            )\n+        )\n+    return patterns\n+\n+\n def _choice_validator(choices, name, value):\n     if value not in choices:\n         msg = \"option %s: invalid value: %r, should be in %s\"\n@@ -80,6 +95,7 @@ def _py_version_validator(_, name, value):\n     \"float\": float,\n     \"regexp\": lambda pattern: re.compile(pattern or \"\"),\n     \"regexp_csv\": _regexp_csv_validator,\n+    \"regexp_paths_csv\": _regexp_paths_csv_validator,\n     \"csv\": _csv_validator,\n     \"yn\": _yn_validator,\n     \"choice\": lambda opt, name, value: _choice_validator(opt[\"choices\"], name, value),\n@@ -122,6 +138,7 @@ class Option(optparse.Option):\n     TYPES = optparse.Option.TYPES + (\n         \"regexp\",\n         \"regexp_csv\",\n+        \"regexp_paths_csv\",\n         \"csv\",\n         \"yn\",\n         \"multiple_choice\",\n@@ -132,6 +149,7 @@ class Option(optparse.Option):\n     TYPE_CHECKER = copy.copy(optparse.Option.TYPE_CHECKER)\n     TYPE_CHECKER[\"regexp\"] = _regexp_validator\n     TYPE_CHECKER[\"regexp_csv\"] = _regexp_csv_validator\n+    TYPE_CHECKER[\"regexp_paths_csv\"] = _regexp_paths_csv_validator\n     TYPE_CHECKER[\"csv\"] = _csv_validator\n     TYPE_CHECKER[\"yn\"] = _yn_validator\n     TYPE_CHECKER[\"multiple_choice\"] = _multiple_choices_validating_option\ndiff --git a/pylint/lint/expand_modules.py b/pylint/lint/expand_modules.py\nindex 1d4432322b..cea4b5c177 100644\n--- a/pylint/lint/expand_modules.py\n+++ b/pylint/lint/expand_modules.py\n@@ -43,7 +43,7 @@ def expand_modules(\n     files_or_modules: List[str],\n     ignore_list: List[str],\n     ignore_list_re: List[Pattern],\n-    ignore_list_paths_re: List[Pattern],\n+    ignore_list_paths_re: List[Pattern[str]],\n ) -> Tuple[List[ModuleDescriptionDict], List[ErrorDescriptionDict]]:\n     \"\"\"take a list of files/modules/packages and return the list of tuple\n     (file, module name) which have to be actually checked\ndiff --git a/pylint/lint/pylinter.py b/pylint/lint/pylinter.py\nindex 6e6ccd59b3..3be78c46cb 100644\n--- a/pylint/lint/pylinter.py\n+++ b/pylint/lint/pylinter.py\n@@ -46,7 +46,14 @@\n     MessageLocationTuple,\n     ModuleDescriptionDict,\n )\n-from pylint.utils import ASTWalker, FileState, LinterStats, ModuleStats, utils\n+from pylint.utils import (\n+    ASTWalker,\n+    FileState,\n+    LinterStats,\n+    ModuleStats,\n+    get_global_option,\n+    utils,\n+)\n from pylint.utils.pragma_parser import (\n     OPTION_PO,\n     InvalidPragmaError,\n@@ -220,12 +227,12 @@ def make_options():\n             (\n                 \"ignore-paths\",\n                 {\n-                    \"type\": \"regexp_csv\",\n+                    \"type\": \"regexp_paths_csv\",\n                     \"metavar\": \"<pattern>[,<pattern>...]\",\n-                    \"dest\": \"ignore_list_paths_re\",\n-                    \"default\": (),\n-                    \"help\": \"Add files or directories matching the regex patterns to the\"\n-                    \" ignore-list. The regex matches against paths.\",\n+                    \"default\": [],\n+                    \"help\": \"Add files or directories matching the regex patterns to the \"\n+                    \"ignore-list. The regex matches against paths and can be in \"\n+                    \"Posix or Windows format.\",\n                 },\n             ),\n             (\n@@ -1101,7 +1108,7 @@ def _expand_files(self, modules) -> List[ModuleDescriptionDict]:\n             modules,\n             self.config.black_list,\n             self.config.black_list_re,\n-            self.config.ignore_list_paths_re,\n+            self._ignore_paths,\n         )\n         for error in errors:\n             message = modname = error[\"mod\"]\n@@ -1259,6 +1266,7 @@ def open(self):\n                 self.config.extension_pkg_whitelist\n             )\n         self.stats.reset_message_count()\n+        self._ignore_paths = get_global_option(self, \"ignore-paths\")\n \n     def generate_reports(self):\n         \"\"\"close the whole package /module, it's time to make reports !\ndiff --git a/pylint/utils/utils.py b/pylint/utils/utils.py\nindex 96f8a6acc1..6c9f112982 100644\n--- a/pylint/utils/utils.py\n+++ b/pylint/utils/utils.py\n@@ -56,16 +56,24 @@\n GLOBAL_OPTION_PATTERN = Literal[\n     \"no-docstring-rgx\", \"dummy-variables-rgx\", \"ignored-argument-names\"\n ]\n+GLOBAL_OPTION_PATTERN_LIST = Literal[\"ignore-paths\"]\n GLOBAL_OPTION_TUPLE_INT = Literal[\"py-version\"]\n GLOBAL_OPTION_NAMES = Union[\n     GLOBAL_OPTION_BOOL,\n     GLOBAL_OPTION_INT,\n     GLOBAL_OPTION_LIST,\n     GLOBAL_OPTION_PATTERN,\n+    GLOBAL_OPTION_PATTERN_LIST,\n     GLOBAL_OPTION_TUPLE_INT,\n ]\n T_GlobalOptionReturnTypes = TypeVar(\n-    \"T_GlobalOptionReturnTypes\", bool, int, List[str], Pattern[str], Tuple[int, ...]\n+    \"T_GlobalOptionReturnTypes\",\n+    bool,\n+    int,\n+    List[str],\n+    Pattern[str],\n+    List[Pattern[str]],\n+    Tuple[int, ...],\n )\n \n \n@@ -220,6 +228,15 @@ def get_global_option(\n     ...\n \n \n+@overload\n+def get_global_option(\n+    checker: \"BaseChecker\",\n+    option: GLOBAL_OPTION_PATTERN_LIST,\n+    default: Optional[List[Pattern[str]]] = None,\n+) -> List[Pattern[str]]:\n+    ...\n+\n+\n @overload\n def get_global_option(\n     checker: \"BaseChecker\",\ndiff --git a/tests/lint/unittest_expand_modules.py b/tests/lint/unittest_expand_modules.py\nindex ef98cf575b..4d679ad641 100644\n--- a/tests/lint/unittest_expand_modules.py\n+++ b/tests/lint/unittest_expand_modules.py\n@@ -4,10 +4,14 @@\n \n import re\n from pathlib import Path\n+from typing import Dict, Tuple, Type\n \n import pytest\n \n+from pylint.checkers import BaseChecker\n from pylint.lint.expand_modules import _is_in_ignore_list_re, expand_modules\n+from pylint.testutils import CheckerTestCase, set_config\n+from pylint.utils.utils import get_global_option\n \n \n def test__is_in_ignore_list_re_match() -> None:\n@@ -21,17 +25,6 @@ def test__is_in_ignore_list_re_match() -> None:\n     assert _is_in_ignore_list_re(\"src/tests/whatever.xml\", patterns)\n \n \n-def test__is_in_ignore_list_re_nomatch() -> None:\n-    patterns = [\n-        re.compile(\".*enchilada.*\"),\n-        re.compile(\"unittest_.*\"),\n-        re.compile(\".*tests/.*\"),\n-    ]\n-    assert not _is_in_ignore_list_re(\"test_utils.py\", patterns)\n-    assert not _is_in_ignore_list_re(\"enchilad.py\", patterns)\n-    assert not _is_in_ignore_list_re(\"src/tests.py\", patterns)\n-\n-\n TEST_DIRECTORY = Path(__file__).parent.parent\n INIT_PATH = str(TEST_DIRECTORY / \"lint/__init__.py\")\n EXPAND_MODULES = str(TEST_DIRECTORY / \"lint/unittest_expand_modules.py\")\n@@ -84,27 +77,70 @@ def test__is_in_ignore_list_re_nomatch() -> None:\n }\n \n \n-@pytest.mark.parametrize(\n-    \"files_or_modules,expected\",\n-    [\n-        ([__file__], [this_file]),\n-        (\n-            [Path(__file__).parent],\n-            [\n-                init_of_package,\n-                test_pylinter,\n-                test_utils,\n-                this_file_from_init,\n-                unittest_lint,\n-            ],\n-        ),\n-    ],\n-)\n-def test_expand_modules(files_or_modules, expected):\n-    ignore_list, ignore_list_re, ignore_list_paths_re = [], [], []\n-    modules, errors = expand_modules(\n-        files_or_modules, ignore_list, ignore_list_re, ignore_list_paths_re\n+class TestExpandModules(CheckerTestCase):\n+    \"\"\"Test the expand_modules function while allowing options to be set\"\"\"\n+\n+    class Checker(BaseChecker):\n+        \"\"\"This dummy checker is needed to allow options to be set\"\"\"\n+\n+        name = \"checker\"\n+        msgs: Dict[str, Tuple[str, ...]] = {}\n+        options = ((\"An option\", {\"An option\": \"dict\"}),)\n+\n+    CHECKER_CLASS: Type = Checker\n+\n+    @pytest.mark.parametrize(\n+        \"files_or_modules,expected\",\n+        [\n+            ([__file__], [this_file]),\n+            (\n+                [str(Path(__file__).parent)],\n+                [\n+                    init_of_package,\n+                    test_pylinter,\n+                    test_utils,\n+                    this_file_from_init,\n+                    unittest_lint,\n+                ],\n+            ),\n+        ],\n+    )\n+    @set_config(ignore_paths=\"\")\n+    def test_expand_modules(self, files_or_modules, expected):\n+        \"\"\"Test expand_modules with the default value of ignore-paths\"\"\"\n+        ignore_list, ignore_list_re = [], []\n+        modules, errors = expand_modules(\n+            files_or_modules,\n+            ignore_list,\n+            ignore_list_re,\n+            get_global_option(self, \"ignore-paths\"),\n+        )\n+        modules.sort(key=lambda d: d[\"name\"])\n+        assert modules == expected\n+        assert not errors\n+\n+    @pytest.mark.parametrize(\n+        \"files_or_modules,expected\",\n+        [\n+            ([__file__], []),\n+            (\n+                [str(Path(__file__).parent)],\n+                [\n+                    init_of_package,\n+                ],\n+            ),\n+        ],\n     )\n-    modules.sort(key=lambda d: d[\"name\"])\n-    assert modules == expected\n-    assert not errors\n+    @set_config(ignore_paths=\".*/lint/.*\")\n+    def test_expand_modules_with_ignore(self, files_or_modules, expected):\n+        \"\"\"Test expand_modules with a non-default value of ignore-paths\"\"\"\n+        ignore_list, ignore_list_re = [], []\n+        modules, errors = expand_modules(\n+            files_or_modules,\n+            ignore_list,\n+            ignore_list_re,\n+            get_global_option(self.checker, \"ignore-paths\"),\n+        )\n+        modules.sort(key=lambda d: d[\"name\"])\n+        assert modules == expected\n+        assert not errors\ndiff --git a/tests/unittest_config.py b/tests/unittest_config.py\nindex 9be02fc4c2..9979aa41ba 100644\n--- a/tests/unittest_config.py\n+++ b/tests/unittest_config.py\n@@ -16,10 +16,14 @@\n \n import re\n import sre_constants\n+from typing import Dict, Tuple, Type\n \n import pytest\n \n from pylint import config\n+from pylint.checkers import BaseChecker\n+from pylint.testutils import CheckerTestCase, set_config\n+from pylint.utils.utils import get_global_option\n \n RE_PATTERN_TYPE = getattr(re, \"Pattern\", getattr(re, \"_pattern_type\", None))\n \n@@ -65,3 +69,33 @@ def test__regexp_csv_validator_invalid() -> None:\n     pattern_strings = [\"test_.*\", \"foo\\\\.bar\", \"^baz)$\"]\n     with pytest.raises(sre_constants.error):\n         config.option._regexp_csv_validator(None, None, \",\".join(pattern_strings))\n+\n+\n+class TestPyLinterOptionSetters(CheckerTestCase):\n+    \"\"\"Class to check the set_config decorator and get_global_option util\n+    for options declared in PyLinter.\"\"\"\n+\n+    class Checker(BaseChecker):\n+        name = \"checker\"\n+        msgs: Dict[str, Tuple[str, ...]] = {}\n+        options = ((\"An option\", {\"An option\": \"dict\"}),)\n+\n+    CHECKER_CLASS: Type = Checker\n+\n+    @set_config(ignore_paths=\".*/tests/.*,.*\\\\ignore\\\\.*\")\n+    def test_ignore_paths_with_value(self) -> None:\n+        \"\"\"Test ignore-paths option with value\"\"\"\n+        options = get_global_option(self.checker, \"ignore-paths\")\n+\n+        assert any(i.match(\"dir/tests/file.py\") for i in options)\n+        assert any(i.match(\"dir\\\\tests\\\\file.py\") for i in options)\n+        assert any(i.match(\"dir/ignore/file.py\") for i in options)\n+        assert any(i.match(\"dir\\\\ignore\\\\file.py\") for i in options)\n+\n+    def test_ignore_paths_with_no_value(self) -> None:\n+        \"\"\"Test ignore-paths option with no value.\n+        Compare against actual list to see if validator works.\"\"\"\n+        options = get_global_option(self.checker, \"ignore-paths\")\n+\n+        # pylint: disable-next=use-implicit-booleaness-not-comparison\n+        assert options == []\n",
+  "changed_files": [
+    "ChangeLog",
+    "doc/whatsnew/2.12.rst",
+    "pylint/config/option.py",
+    "pylint/lint/expand_modules.py",
+    "pylint/lint/pylinter.py",
+    "pylint/utils/utils.py",
+    "tests/lint/unittest_expand_modules.py",
+    "tests/unittest_config.py"
+  ],
+  "changed_functions": [
+    "_regexp_paths_csv_validator",
+    "_choice_validator",
+    "get_global_option",
+    "test__is_in_ignore_list_re_nomatch",
+    "test_expand_modules",
+    "test_expand_modules_with_ignore",
+    "test_ignore_paths_with_value",
+    "test_ignore_paths_with_no_value"
+  ],
+  "pre_commit": "8eb7ff153e951f69b4d1ff3cbddc367c797c0aa4",
+  "post_commit": "bfc8d32273102495ee1cfd8daa14d9b6693b11f7",
+  "merged_at": "2021-10-24T10:48:20Z",
+  "review_comments": [
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Why disable here ? Do you think ``use-implicit-booleaness-not-comparison`` is a false positive for assert and tests ? I was wondering too, we changed a lot of existing test when implementing ``use-implicit-booleaness-not-comparison``, but I thought it made sense at the time because the fact it's an empty list and not an empty set is an implementation detail.",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T19:19:16Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n        patterns.append(\r\n            re.compile(\r\n                str(pathlib.PureWindowsPath(val)).replace(\"\\\\\", \"\\\\\\\\\")\r\n                + '|' \r\n                + pathlib.PureWindowsPath(val).as_posix()\r\n            )\r\n        )\r\n```\r\nI think it would permit regex engine to do internal optimization because the two string are relatively close. Maybe it's premature optimization ?",
+      "path": "pylint/config/option.py",
+      "line": null,
+      "created_at": "2021-10-23T19:25:05Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I want to check the validator here. Both `None` and `[]` would pass a `assert not` but are functionally different. I can't iterate over `None` without crashing, which normally I would do because I know this should return a list. \n\nI have not looked at the changes you mentioned but this might actually be a real problem for tests..",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T20:39:29Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "This should be possible indeed. Will make a commit in a second!",
+      "path": "pylint/config/option.py",
+      "line": null,
+      "created_at": "2021-10-23T20:40:38Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Shouldn't ``None``, 0 or ``\"\"`` be handled by typing and mypy though ? Change are [here](https://github.com/PyCQA/pylint/pull/5120/files#diff-aaad72c33b51517ac27fc355b2918789fad5b2a3d74c45a67a87c78ca1522848R138) (and below)",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T20:54:27Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "They should, but `mypy` does not always run if it doesn't consider the \"scope to be typed\" (or something worded similarly). It think it would be good to explicitly tests for this being a list instead of `None`.\r\n\r\nThe changes in that PR do not seem to be particularly troublesome, as they just test that \"nothing\" should have been returned or put into the messages.\r\n\r\nTLDR: If `mypy` was invoked with `-strict` this shouldn't be a problem, but in the meantime I think it is good to test for `[]` specifically because `None` would lead to a crash.",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T21:17:42Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Right, we're not quite at the point where we can use mypy with strict. And we have a lot of ``Optional[x]`` anyway.",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T21:27:42Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Last time I checked I got `mypy --strict pylint` under 2000 errors :) `Optional[x]` shouldn't be a problem (I think) although I did at some point consider making a PR with `no-implicit-optional` turned on. But that PR got a little bit too large to be easily reviewable.\r\n\r\nIn the meantime, I think disabling here is the best way forward.",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T21:48:17Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "Agreed ! We'll get there eventually 💪",
+      "path": "tests/unittest_config.py",
+      "line": 100,
+      "created_at": "2021-10-23T21:57:41Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 166,
+  "deletions": 43,
+  "changed_files_count": 8
+}

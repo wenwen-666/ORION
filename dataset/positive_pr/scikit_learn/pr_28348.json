@@ -1,0 +1,107 @@
+{
+  "pr_number": 28348,
+  "title": "CI Fix pandas copy-on-write issues in scipy-dev",
+  "url": "https://github.com/scikit-learn/scikit-learn/pull/28348",
+  "description": "It seems the 2 remaining errors are due to a change in pandas dev that makes `np.asarray(dataframe)` read-only:\r\n\r\nThis passes in pandas 2.2 and fails on pandas dev:\r\n```py\r\nimport pandas as pd\r\ndf = pd.DataFrame({'col': [1, 2, 3]})\r\n\r\nfrom sklearn.utils import check_array\r\nassert check_array(df).flags.writeable\r\n```\r\n\r\nThey are actually related to copy-on-write in pandas dev that started to be enabled by default recently in https://github.com/pandas-dev/pandas/pull/56633. \r\n\r\nThe reason it was not caught in common tests seems to be https://github.com/scikit-learn/scikit-learn/pull/26272. It is not clear whether estimator_checks is non-test code:\r\n- it is non-test code if you are a 3rd party library that uses `check_estimator`\r\n- it is test code if you are a scikit-learn developer running the common tests\r\n\r\nBy the way these two remaining errors were exactly the same ones as noted some time ago in https://github.com/scikit-learn/scikit-learn/issues/27879#issuecomment-1841266926.",
+  "comments": [
+    {
+      "author": "github-actions[bot]",
+      "body": "## ✔️ Linting Passed\nAll linting checks passed. Your pull request is in excellent shape! ☀️\n\n<sub> _Generated for commit: [4ab3f24](https://github.com/scikit-learn/scikit-learn/pull/28348/commits/4ab3f24548114081943a1aee9ab8fc8469980707). Link to the linter CI: [here](https://github.com/scikit-learn/scikit-learn/actions/runs/7791116261)_ </sub>",
+      "created_at": "2024-02-02T05:32:59Z"
+    },
+    {
+      "author": "lesteve",
+      "body": "> But I guess I'm losing this one.\r\n\r\nI need to test a few things, but there is probably a way to put all the warnings definition in `sklearn/conftest.py` and either do something like `SKLEARN_CHECK_WARNINGS=true pytest` or maybe something like `pytest --check-warnings`. Not sure that would make you perfectly happy, but that would at least make it easier to run locally with the same \"warnings as errors\" settings as in the CI.\r\n",
+      "created_at": "2024-02-02T19:06:28Z"
+    },
+    {
+      "author": "lesteve",
+      "body": "CI is green, but `filter` argument to `tarfile.TarFile.extractall` has been added in 3.9.17 see https://docs.python.org/3.9/library/tarfile.html#tarfile.TarFile.extractall. I guess we need a fixes for this since we support Python 3.9 so we can not make assumptions about `x` in `3.9.x`.\r\n\r\nAlso for some weird unknown reasons the scipy-dev CI in this PR takes a lot longer than usual (~50 minutes instead of ~25 minutes). This seems to be mostly the datasets download before tests actually run but I am not 100% sure ... and I don't know how the changes in this PR could cause this.",
+      "created_at": "2024-02-05T07:23:16Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "> Also for some weird unknown reasons the scipy-dev CI in this PR takes a lot longer than usual (~50 minutes instead of ~25 minutes). This seems to be mostly the datasets download before tests actually run but I am not 100% sure ... and I don't know how the changes in this PR could cause this.\r\n\r\nMaybe this is related to the failing codecov uploads (e.g. network issue maybe?). Can you try to trigger the scipy-dev CI on more time on this PR to check if it's resolved?",
+      "created_at": "2024-02-05T08:45:07Z"
+    },
+    {
+      "author": "lesteve",
+      "body": "> Maybe this is related to the failing codecov uploads (e.g. network issue maybe?). Can you try to trigger the scipy-dev CI on more time on this PR to check if it's resolved?\r\n\r\nI don't think so, looking at the raw log for example of this [build log](https://dev.azure.com/scikit-learn/scikit-learn/_build/results?buildId=63499&view=logs&jobId=dfe99b15-50db-5d7b-b1e9-4105c42527cf&j=dfe99b15-50db-5d7b-b1e9-4105c42527cf&t=ef785ae2-496b-5b02-9f0e-07a6c3ab3081) you have timestamps for each line of output and somehow there is 15 minutes between the time pytest is executed until the \"Downloading the file 'face.dat'\". Since `SKLEARN_SKIP_NETWORK_TESTS=0` in this build, datasets are downloaded in `sklearn/conftest.py`. Locally this takes ~10 minutes so maybe part of the reason? The test run itself from the \"test session starts\" takes about ~20 minutes.\r\n\r\n```\r\n2024-02-03T10:28:59.3787629Z + eval 'python -m pytest --showlocals --durations=20 --junitxml=test-data.xml --cov-config='\\''/home/vsts/work/1/s/.coveragerc'\\'' --cov sklearn --cov-report= -Werror::DeprecationWarning -Werror::FutureWarning -Werror::sklearn.utils.fixes.VisibleDeprecationWarning -W '\\''ignore:pkg_resources is deprecated as an API:DeprecationWarning'\\'' -W '\\''ignore:Deprecated call to `pkg_resources:DeprecationWarning'\\'' -W '\\''ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning'\\'' -Werror::pytest.PytestUnraisableExceptionWarning -Wignore:datetime.datetime.utcfromtimestamp:DeprecationWarning -W '\\''ignore:ast.Num is deprecated:DeprecationWarning'\\'' -W '\\''ignore:Attribute n is deprecated:DeprecationWarning'\\'' -n2 --maxfail=10 --pyargs sklearn'\r\n2024-02-03T10:28:59.3791897Z ++ python -m pytest --showlocals --durations=20 --junitxml=test-data.xml --cov-config=/home/vsts/work/1/s/.coveragerc --cov sklearn --cov-report= -Werror::DeprecationWarning -Werror::FutureWarning -Werror::sklearn.utils.fixes.VisibleDeprecationWarning -W 'ignore:pkg_resources is deprecated as an API:DeprecationWarning' -W 'ignore:Deprecated call to `pkg_resources:DeprecationWarning' -W 'ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning' -Werror::pytest.PytestUnraisableExceptionWarning -Wignore:datetime.datetime.utcfromtimestamp:DeprecationWarning -W 'ignore:ast.Num is deprecated:DeprecationWarning' -W 'ignore:Attribute n is deprecated:DeprecationWarning' -n2 --maxfail=10 --pyargs sklearn\r\n2024-02-03T10:43:28.6573448Z Downloading file 'face.dat' from 'https://raw.githubusercontent.com/scipy/dataset-face/main/face.dat' to '/home/vsts/.cache/scipy-data'.\r\n2024-02-03T10:48:19.4658006Z \u001b[1m============================= test session starts ==============================\u001b[0m\r\n2024-02-03T10:48:19.4712683Z platform linux -- Python 3.12.1, pytest-8.0.0, pluggy-1.4.0\r\n2024-02-03T10:48:19.4713193Z rootdir: /home/vsts/work/tmp_folder\r\n2024-02-03T10:48:19.4713491Z configfile: setup.cfg\r\n2024-02-03T10:48:19.4713806Z plugins: xdist-3.5.0, cov-4.1.0\r\n2024-02-03T10:48:19.4714061Z created: 2/2 workers\r\n2024-02-03T10:48:19.4714339Z 2 workers [35953 items]\r\n2024-02-03T10:48:19.4714598Z \r\n2024-02-03T10:48:19.7751336Z \u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[32m.\u001b[0m\u001b[33m [  0%]\r\n.\r\n.\r\n.\r\n2024-02-03T11:09:53.2867063Z \u001b[31m= \u001b[31m\u001b[1m21 failed\u001b[0m, \u001b[32m33072 passed\u001b[0m, \u001b[33m2600 skipped\u001b[0m, \u001b[33m92 xfailed\u001b[0m, \u001b[33m47 xpassed\u001b[0m, \u001b[33m3666 warnings\u001b[0m\u001b[31m in 2452.71s (0:40:52)\u001b[0m\u001b[31m =\u001b[0m\r\n```\r\n\r\nCompare this to a scipy-dev in main [build log](https://dev.azure.com/scikit-learn/scikit-learn/_build/results?buildId=63512&view=logs&j=dfe99b15-50db-5d7b-b1e9-4105c42527cf&t=ef785ae2-496b-5b02-9f0e-07a6c3ab3081). There is about 45s between the pytest launch and the Downloading face.dat line. The test run itself from the \"test session starts\" to the end takes about ~12 minutes.\r\n\r\n```\r\n2024-02-04T02:39:03.9678190Z + eval 'python -m pytest --showlocals --durations=20 --junitxml=test-data.xml --cov-config='\\''/home/vsts/work/1/s/.coveragerc'\\'' --cov sklearn --cov-report= -Werror::DeprecationWarning -Werror::FutureWarning -Werror::sklearn.utils.fixes.VisibleDeprecationWarning -W '\\''ignore:pkg_resources is deprecated as an API:DeprecationWarning'\\'' -W '\\''ignore:Deprecated call to `pkg_resources:DeprecationWarning'\\'' -W '\\''ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning'\\'' -Werror::pytest.PytestUnraisableExceptionWarning -n2 --maxfail=10 --pyargs sklearn'\r\n2024-02-04T02:39:03.9681406Z ++ python -m pytest --showlocals --durations=20 --junitxml=test-data.xml --cov-config=/home/vsts/work/1/s/.coveragerc --cov sklearn --cov-report= -Werror::DeprecationWarning -Werror::FutureWarning -Werror::sklearn.utils.fixes.VisibleDeprecationWarning -W 'ignore:pkg_resources is deprecated as an API:DeprecationWarning' -W 'ignore:Deprecated call to `pkg_resources:DeprecationWarning' -W 'ignore:The --rsyncdir command line argument and rsyncdirs config variable are deprecated.:DeprecationWarning' -Werror::pytest.PytestUnraisableExceptionWarning -n2 --maxfail=10 --pyargs sklearn\r\n2024-02-04T02:39:48.0536940Z Downloading file 'face.dat' from 'https://raw.githubusercontent.com/scipy/dataset-face/main/face.dat' to '/home/vsts/.cache/scipy-data'.\r\n2024-02-04T02:44:29.0459575Z \u001b[1m============================= test session starts ==============================\u001b[0m\r\n2024-02-04T02:44:29.0577313Z platform linux -- Python 3.11.7, pytest-8.0.0, pluggy-1.4.0\r\n2024-02-04T02:44:29.0578169Z To reproduce this test run, set the following environment variable:\r\n2024-02-04T02:44:29.0578506Z     SKLEARN_TESTS_GLOBAL_RANDOM_SEED=\"70\"\r\n2024-02-04T02:44:29.0578988Z See: https://scikit-learn.org/dev/computing/parallelism.html#sklearn-tests-global-random-seed\r\n2024-02-04T02:44:29.0579339Z rootdir: /home/vsts/work/tmp_folder\r\n2024-02-04T02:44:29.0579623Z configfile: setup.cfg\r\n2024-02-04T02:44:29.0579969Z plugins: xdist-3.5.0, cov-4.1.0\r\n2024-02-04T02:44:29.0580229Z created: 2/2 workers\r\n2024-02-04T02:44:29.0580484Z 2 workers [35954 items]\r\n2024-02-04T02:44:29.0580647Z \r\n2024-02-04T02:44:29.2534268Z \u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[33ms\u001b[0m\u001b[32m.\u001b\r\n.\r\n.\r\n.\r\n2024-02-04T02:56:24.0518797Z \u001b[31m= \u001b[31m\u001b[1m2 failed\u001b[0m, \u001b[32m33910 passed\u001b[0m, \u001b[33m1903 skipped\u001b[0m, \u001b[33m92 xfailed\u001b[0m, \u001b[33m47 xpassed\u001b[0m, \u001b[33m4011 warnings\u001b[0m\u001b[31m in 1039.15s (0:17:19)\u001b[0m\u001b[31m =\u001b[0m\r\n\r\n```",
+      "created_at": "2024-02-05T09:18:19Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "The `[scipy-dev]` tests are still very slow on the last commit. I opened #28363 to check if this is really related to a change in this PR or not.\r\n\r\nEDIT: `[scipy-dev]` tests are still much faster to run on `main` so there is definitely something wrong in this PR. ",
+      "created_at": "2024-02-05T13:30:39Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "By looking at the diff of the PR one could have expected the change to use `filter=\"data\"` to be the culprit but it's not consistent with the fact that the non scipy-dev jobs do not seem to have slowed down (even those running Python > 3.9).\r\n\r\nSo maybe this is related to the use of the change from Python 3.11 to Python 3.12 from the defaults channel?\r\n\r\nLet me push a commit to check if we can still observe this problem by using conda-forge to install Python 3.12.",
+      "created_at": "2024-02-05T14:04:58Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "Oops, I forgot to update the lock file, let me do that now.",
+      "created_at": "2024-02-05T14:08:26Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "It's still very slow to run the tests for the scipy-dev job...",
+      "created_at": "2024-02-05T15:06:08Z"
+    },
+    {
+      "author": "glemaitre",
+      "body": "Regarding the timing, did we by hazard cached already the dataset in the past and the modification of `extract_all` invalidate the cache somehow?",
+      "created_at": "2024-02-05T15:42:50Z"
+    },
+    {
+      "author": "lesteve",
+      "body": "> Regarding the timing, did we by hazard cached already the dataset in the past and the modification of extract_all invalidate the cache somehow?\r\n\r\nI don't think there is a cache for `~/scikit_learn_data` in the tests (at least I looked and I have not found it in configuration files). There is a cache for `~/scikit_learn_data` for doc builds.",
+      "created_at": "2024-02-05T15:48:56Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "Maybe we can split this PR in two: one for Python 3.12 / tarball filtering and another for pandas' CoW update?\r\n\r\nThis way, merge at least one incremental fix and narrow down on the cause of the slowdown.",
+      "created_at": "2024-02-05T17:06:34Z"
+    },
+    {
+      "author": "lesteve",
+      "body": "I reverted the Python 3.12 changes, scipy-dev tests take ~24 minutes which seems in the same ball-park as some builds in main for example this [build](https://dev.azure.com/scikit-learn/scikit-learn/_build/results?buildId=63570&view=logs&j=dfe99b15-50db-5d7b-b1e9-4105c42527cf&t=ef785ae2-496b-5b02-9f0e-07a6c3ab3081) and this [build](https://dev.azure.com/scikit-learn/scikit-learn/_build/results?buildId=63498&view=logs&j=dfe99b15-50db-5d7b-b1e9-4105c42527cf&t=ef785ae2-496b-5b02-9f0e-07a6c3ab3081).",
+      "created_at": "2024-02-06T06:06:58Z"
+    }
+  ],
+  "diff": "diff --git a/sklearn/neighbors/_binary_tree.pxi.tp b/sklearn/neighbors/_binary_tree.pxi.tp\nindex dd77bcbdfb3d6..5cf7b0ad99990 100644\n--- a/sklearn/neighbors/_binary_tree.pxi.tp\n+++ b/sklearn/neighbors/_binary_tree.pxi.tp\n@@ -1482,7 +1482,7 @@ cdef class BinaryTree{{name_suffix}}:\n             raise ValueError(\"query data dimension must \"\n                              \"match training data dimension\")\n         Xarr_np = X.reshape((-1, n_features))\n-        cdef {{INPUT_DTYPE_t}}[:, ::1] Xarr = Xarr_np\n+        cdef const {{INPUT_DTYPE_t}}[:, ::1] Xarr = Xarr_np\n \n         log_density_arr = np.zeros(Xarr.shape[0], dtype={{INPUT_DTYPE}})\n         cdef {{INPUT_DTYPE_t}}[::1] log_density = log_density_arr\ndiff --git a/sklearn/utils/tests/test_utils.py b/sklearn/utils/tests/test_utils.py\nindex a1ed6b21a2219..20b3fdc600a8c 100644\n--- a/sklearn/utils/tests/test_utils.py\n+++ b/sklearn/utils/tests/test_utils.py\n@@ -3,11 +3,13 @@\n import warnings\n from copy import copy\n from itertools import chain\n+from unittest import SkipTest\n \n import numpy as np\n import pytest\n \n from sklearn import config_context\n+from sklearn.externals._packaging.version import parse as parse_version\n from sklearn.utils import (\n     _approximate_mode,\n     _determine_key_type,\n@@ -461,6 +463,12 @@ def test_safe_indexing_pandas_no_settingwithcopy_warning():\n     # DataFrame -> ensure it doesn't raise a warning if modified\n     pd = pytest.importorskip(\"pandas\")\n \n+    pd_version = parse_version(pd.__version__)\n+    pd_base_version = parse_version(pd_version.base_version)\n+\n+    if pd_base_version >= parse_version(\"3\"):\n+        raise SkipTest(\"SettingWithCopyWarning has been removed in pandas 3.0.0.dev\")\n+\n     X = pd.DataFrame({\"a\": [1, 2, 3], \"b\": [3, 4, 5]})\n     subset = _safe_indexing(X, [0, 1], axis=0)\n     if hasattr(pd.errors, \"SettingWithCopyWarning\"):\ndiff --git a/sklearn/utils/validation.py b/sklearn/utils/validation.py\nindex 7bbb7b753a1ba..a5c84ecf6411c 100644\n--- a/sklearn/utils/validation.py\n+++ b/sklearn/utils/validation.py\n@@ -1084,6 +1084,18 @@ def is_sparse(dtype):\n                 % (n_features, array.shape, ensure_min_features, context)\n             )\n \n+    # With an input pandas dataframe or series, we know we can always make the\n+    # resulting array writeable:\n+    # - if copy=True, we have already made a copy so it is fine to make the\n+    #   array writeable\n+    # - if copy=False, the caller is telling us explicitly that we can do\n+    #   in-place modifications\n+    # See https://pandas.pydata.org/docs/dev/user_guide/copy_on_write.html#read-only-numpy-arrays\n+    # for more details about pandas copy-on-write mechanism, that is enabled by\n+    # default in pandas 3.0.0.dev.\n+    if _is_pandas_df_or_series(array_orig) and hasattr(array, \"flags\"):\n+        array.flags.writeable = True\n+\n     return array\n \n \n@@ -2140,6 +2152,15 @@ def _check_method_params(X, params, indices=None):\n     return method_params_validated\n \n \n+def _is_pandas_df_or_series(X):\n+    \"\"\"Return True if the X is a pandas dataframe or series.\"\"\"\n+    try:\n+        pd = sys.modules[\"pandas\"]\n+    except KeyError:\n+        return False\n+    return isinstance(X, (pd.DataFrame, pd.Series))\n+\n+\n def _is_pandas_df(X):\n     \"\"\"Return True if the X is a pandas dataframe.\"\"\"\n     try:\n",
+  "changed_files": [
+    "sklearn/neighbors/_binary_tree.pxi.tp",
+    "sklearn/utils/tests/test_utils.py",
+    "sklearn/utils/validation.py"
+  ],
+  "changed_functions": [
+    "_is_pandas_df_or_series",
+    "_is_pandas_df"
+  ],
+  "pre_commit": "7d8a9de3511014684129e02c727a5d8d6ce6211c",
+  "post_commit": "b0edfdfd22237b62f9fa3327edd31a6d1336190e",
+  "merged_at": "2024-02-06T09:14:20Z",
+  "review_comments": [
+    {
+      "author": "ogrisel",
+      "body": "```suggestion\r\n    if _is_pandas_df_or_series(array_orig):\r\n```\r\n\r\nIf the user has set `copy=False` explicitly in the estimator, we also have his/her permission to write to the original dataframe as well via the numpy view.",
+      "path": "sklearn/utils/validation.py",
+      "line": null,
+      "created_at": "2024-02-02T19:50:58Z"
+    },
+    {
+      "author": "ogrisel",
+      "body": "```suggestion\r\n    # With an input pandas dataframe or series, we know we can always make the\r\n```",
+      "path": "sklearn/utils/validation.py",
+      "line": null,
+      "created_at": "2024-02-05T08:46:22Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 30,
+  "deletions": 1,
+  "changed_files_count": 3
+}

@@ -1,0 +1,106 @@
+{
+  "pr_number": 1617,
+  "title": "Infer modulo operations on strings",
+  "url": "https://github.com/pylint-dev/astroid/pull/1617",
+  "description": "## Steps\r\n\r\n- [x] For new features or bug fixes, add a ChangeLog entry describing what your PR does.\r\n- [x] Write a good description on what the PR does.\r\n\r\n## Description\r\n\r\nCloses #151\r\n\r\n## Type of Changes\r\n\r\n|     | Type                   |\r\n| --- | ---------------------- |\r\n| ✓   | :sparkles: New feature |",
+  "comments": [
+    {
+      "author": "coveralls",
+      "body": "## Pull Request Test Coverage Report for [Build 2517492739](https://coveralls.io/builds/50139738)\n\n* **25** of **25**   **(100.0%)**  changed or added relevant lines in **1** file are covered.\n* **41** unchanged lines in **2** files lost coverage.\n* Overall coverage increased (+**0.009%**) to **92.216%**\n\n---\n\n\n|  Files with Coverage Reduction | New Missed Lines | % |\n| :-----|--------------|--: |\n| [astroid/protocols.py](https://coveralls.io/builds/50139738/source?filename=astroid%2Fprotocols.py#L129) | 1 | 91.61% |\n| [astroid/bases.py](https://coveralls.io/builds/50139738/source?filename=astroid%2Fbases.py#L179) | 40 | 86.67% |\n<!-- | **Total:** | **41** |  | -->\n\n|  Totals | [![Coverage Status](https://coveralls.io/builds/50139738/badge)](https://coveralls.io/builds/50139738) |\n| :-- | --: |\n| Change from base [Build 2516320134](https://coveralls.io/builds/50132096): |  0.009% |\n| Covered Lines: | 9383 |\n| Relevant Lines: | 10175 |\n\n---\n##### 💛  - [Coveralls](https://coveralls.io)\n",
+      "created_at": "2022-06-17T17:04:52Z"
+    }
+  ],
+  "diff": "diff --git a/ChangeLog b/ChangeLog\nindex a8ab199373..b1f9af8f11 100644\n--- a/ChangeLog\n+++ b/ChangeLog\n@@ -26,6 +26,10 @@ Release date: TBA\n \n   Closes #104, Closes #1611\n \n+* Old style string formatting (using ``%`` operators) is now correctly inferred.\n+\n+  Closes #151\n+\n * Adds missing enums from ``ssl`` module.\n \n   Closes PyCQA/pylint#3691\ndiff --git a/astroid/inference.py b/astroid/inference.py\nindex 61b46e10dd..6b7694df4b 100644\n--- a/astroid/inference.py\n+++ b/astroid/inference.py\n@@ -562,12 +562,50 @@ def _is_not_implemented(const):\n     return isinstance(const, nodes.Const) and const.value is NotImplemented\n \n \n+def _infer_old_style_string_formatting(\n+    instance: nodes.Const, other: nodes.NodeNG, context: InferenceContext\n+) -> tuple[type[util.Uninferable] | nodes.Const]:\n+    \"\"\"Infer the result of '\"string\" % ...'.\n+\n+    TODO: Instead of returning Uninferable we should rely\n+    on the call to '%' to see if the result is actually uninferable.\n+    \"\"\"\n+    values = None\n+    if isinstance(other, nodes.Tuple):\n+        inferred_positional = [helpers.safe_infer(i, context) for i in other.elts]\n+        if all(isinstance(i, nodes.Const) for i in inferred_positional):\n+            values = tuple(i.value for i in inferred_positional)\n+    elif isinstance(other, nodes.Dict):\n+        values: dict[Any, Any] = {}\n+        for pair in other.items:\n+            key = helpers.safe_infer(pair[0], context)\n+            if not isinstance(key, nodes.Const):\n+                return (util.Uninferable,)\n+            value = helpers.safe_infer(pair[1], context)\n+            if not isinstance(value, nodes.Const):\n+                return (util.Uninferable,)\n+            values[key.value] = value.value\n+    elif isinstance(other, nodes.Const):\n+        values = other.value\n+    else:\n+        return (util.Uninferable,)\n+\n+    try:\n+        return (nodes.const_factory(instance.value % values),)\n+    except (TypeError, KeyError):\n+        return (util.Uninferable,)\n+\n+\n def _invoke_binop_inference(instance, opnode, op, other, context, method_name):\n     \"\"\"Invoke binary operation inference on the given instance.\"\"\"\n     methods = dunder_lookup.lookup(instance, method_name)\n     context = bind_context_to_node(context, instance)\n     method = methods[0]\n     context.callcontext.callee = method\n+\n+    if isinstance(instance, nodes.Const) and op == \"%\":\n+        return iter(_infer_old_style_string_formatting(instance, other, context))\n+\n     try:\n         inferred = next(method.infer(context=context))\n     except StopIteration as e:\ndiff --git a/tests/unittest_inference.py b/tests/unittest_inference.py\nindex cb808df7bb..59344b8524 100644\n--- a/tests/unittest_inference.py\n+++ b/tests/unittest_inference.py\n@@ -22,7 +22,7 @@\n from astroid import helpers, nodes, objects, test_utils, util\n from astroid.arguments import CallSite\n from astroid.bases import BoundMethod, Instance, UnboundMethod\n-from astroid.builder import AstroidBuilder, extract_node, parse\n+from astroid.builder import AstroidBuilder, _extract_single_node, extract_node, parse\n from astroid.const import PY38_PLUS, PY39_PLUS\n from astroid.context import InferenceContext\n from astroid.exceptions import (\n@@ -6797,5 +6797,116 @@ def test_function_def_cached_generator() -> None:\n     next(funcdef._infer())\n \n \n+class TestOldStyleStringFormatting:\n+    @pytest.mark.parametrize(\n+        \"format_string\",\n+        [\n+            pytest.param(\n+                \"\"\"\"My name is %s, I'm %s\" % (\"Daniel\", 12)\"\"\", id=\"empty-indexes\"\n+            ),\n+            pytest.param(\n+                \"\"\"\"My name is %0s, I'm %1s\" % (\"Daniel\", 12)\"\"\",\n+                id=\"numbered-indexes\",\n+            ),\n+            pytest.param(\n+                \"\"\"\n+        fname = \"Daniel\"\n+        age = 12\n+        \"My name is %s, I'm %s\" % (fname, age)\n+        \"\"\",\n+                id=\"empty-indexes-from-positional\",\n+            ),\n+            pytest.param(\n+                \"\"\"\n+        fname = \"Daniel\"\n+        age = 12\n+        \"My name is %0s, I'm %1s\" % (fname, age)\n+        \"\"\",\n+                id=\"numbered-indexes-from-positionl\",\n+            ),\n+            pytest.param(\n+                \"\"\"\n+        fname = \"Daniel\"\n+        age = 12\n+        \"My name is %(fname)s, I'm %(age)s\" % {\"fname\": fname, \"age\": age}\n+        \"\"\",\n+                id=\"named-indexes-from-keyword\",\n+            ),\n+            pytest.param(\n+                \"\"\"\n+        string = \"My name is %s, I'm %s\"\n+        string % (\"Daniel\", 12)\n+        \"\"\",\n+                id=\"empty-indexes-on-variable\",\n+            ),\n+            pytest.param(\n+                \"\"\"\"My name is Daniel, I'm %s\" % 12\"\"\", id=\"empty-indexes-from-variable\"\n+            ),\n+            pytest.param(\n+                \"\"\"\n+                age = 12\n+                \"My name is Daniel, I'm %s\" % age\n+                \"\"\",\n+                id=\"empty-indexes-from-variable\",\n+            ),\n+        ],\n+    )\n+    def test_old_style_string_formatting(self, format_string: str) -> None:\n+        node: nodes.Call = _extract_single_node(format_string)\n+        inferred = next(node.infer())\n+        assert isinstance(inferred, nodes.Const)\n+        assert inferred.value == \"My name is Daniel, I'm 12\"\n+\n+    @pytest.mark.parametrize(\n+        \"format_string\",\n+        [\n+            \"\"\"\n+            from missing import Unknown\n+            fname = Unknown\n+            age = 12\n+            \"My name is %(fname)s, I'm %(age)s\" % {\"fname\": fname, \"age\": age}\n+            \"\"\",\n+            \"\"\"\n+            from missing import fname\n+            age = 12\n+            \"My name is %(fname)s, I'm %(age)s\" % {\"fname\": fname, \"age\": age}\n+            \"\"\",\n+            \"\"\"\n+            from missing import fname\n+            \"My name is %s, I'm %s\" % (fname, 12)\n+            \"\"\",\n+            \"\"\"\n+            \"My name is %0s, I'm %1s\" % (\"Daniel\")\n+            \"\"\",\n+            \"\"\"\"I am %s\" % ()\"\"\",\n+            \"\"\"\"I am %s\" % Exception()\"\"\",\n+            \"\"\"\n+            fsname = \"Daniel\"\n+            \"My name is %(fname)s, I'm %(age)s\" % {\"fsname\": fsname, \"age\": age}\n+            \"\"\",\n+            \"\"\"\n+            \"My name is %(fname)s, I'm %(age)s\" % {Exception(): \"Daniel\", \"age\": age}\n+            \"\"\",\n+            \"\"\"\n+            fname = \"Daniel\"\n+            age = 12\n+            \"My name is %0s, I'm %(age)s\" % (fname, age)\n+            \"\"\",\n+        ],\n+    )\n+    def test_old_style_string_formatting_uninferable(self, format_string: str) -> None:\n+        node: nodes.Call = _extract_single_node(format_string)\n+        inferred = next(node.infer())\n+        assert inferred is util.Uninferable\n+\n+    def test_old_style_string_formatting_with_specs(self) -> None:\n+        node: nodes.Call = _extract_single_node(\n+            \"\"\"\"My name is %s, I'm %.2f\" % (\"Daniel\", 12)\"\"\"\n+        )\n+        inferred = next(node.infer())\n+        assert isinstance(inferred, nodes.Const)\n+        assert inferred.value == \"My name is Daniel, I'm 12.00\"\n+\n+\n if __name__ == \"__main__\":\n     unittest.main()\n",
+  "changed_files": [
+    "ChangeLog",
+    "astroid/inference.py",
+    "tests/unittest_inference.py"
+  ],
+  "changed_functions": [
+    "_infer_old_style_string_formatting",
+    "_invoke_binop_inference",
+    "test_old_style_string_formatting",
+    "test_old_style_string_formatting_uninferable",
+    "test_old_style_string_formatting_with_specs"
+  ],
+  "pre_commit": "1b7e1be203c588cf32a7b8a28dc68bf364a66cdb",
+  "post_commit": "957d3d686879c1775e3e257955ba3b5eb929ec6c",
+  "merged_at": "2022-06-17T19:34:25Z",
+  "review_comments": [
+    {
+      "author": "jacobtylerwalls",
+      "body": "I think we should call it `%-formatting` to avoid sounding like the mathematical modulo operator.",
+      "path": "ChangeLog",
+      "line": null,
+      "created_at": "2022-06-14T01:10:30Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "Same",
+      "path": "tests/unittest_inference.py",
+      "line": null,
+      "created_at": "2022-06-14T01:12:53Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "I can't use `%` in a function name. So `percentage_formatting` then?",
+      "path": "tests/unittest_inference.py",
+      "line": null,
+      "created_at": "2022-06-14T08:29:58Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "How about ``c_style_formatting`` ``old_string_formatting``, ``printf_style_formatting`` or ``interpolation_formatting`` ? (I checked the python doc to see how it's called : https://docs.python.org/3/tutorial/inputoutput.html#old-string-formatting)",
+      "path": "tests/unittest_inference.py",
+      "line": null,
+      "created_at": "2022-06-14T08:38:09Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "```suggestion\r\n        return (nodes.const_factory(instance.value % values),)\r\n    except (TypeError, KeyError):\r\n        return (util.Uninferable,)\r\n```",
+      "path": "astroid/inference.py",
+      "line": null,
+      "created_at": "2022-06-17T17:05:35Z"
+    },
+    {
+      "author": "Pierre-Sassoulas",
+      "body": "This line is not covered, I guess it's not worth it ?",
+      "path": "astroid/inference.py",
+      "line": 583,
+      "created_at": "2022-06-17T17:07:19Z"
+    },
+    {
+      "author": "jacobtylerwalls",
+      "body": "I thought InferenceContext was usually optional.",
+      "path": "astroid/inference.py",
+      "line": 566,
+      "created_at": "2022-06-17T17:29:19Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Covered now!",
+      "path": "astroid/inference.py",
+      "line": 583,
+      "created_at": "2022-06-17T19:12:09Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Due to `callee` this is not the case. See L602 just before the `isinstance`. Such operations can't happen when `context` is `None`.",
+      "path": "astroid/inference.py",
+      "line": 566,
+      "created_at": "2022-06-17T19:13:05Z"
+    },
+    {
+      "author": "DanielNoord",
+      "body": "Done!",
+      "path": "astroid/inference.py",
+      "line": null,
+      "created_at": "2022-06-17T19:13:31Z"
+    }
+  ],
+  "state": "closed",
+  "merged": true,
+  "additions": 154,
+  "deletions": 1,
+  "changed_files_count": 3
+}

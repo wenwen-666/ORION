@@ -1,0 +1,852 @@
+{
+  "pr_number": 1004,
+  "title": "Add support for Hewlett Packard 8753E VNA",
+  "url": "https://github.com/pymeasure/pymeasure/pull/1004",
+  "description": "# I would like to add a basic HP8753E VNA support to pymeasure.\r\n\r\nThe functionality is not ready but I would like feedback as I go and there are some specifics for coding I would like assistance with finding documentation on how to handle these.\r\n\r\n1. How do I handle default Prologix GPIB-USB adapter parameters to work with this device?\r\n\r\n      I found these pages that address how to handle read/write terminations and other parameters for the various adapters but I am unsure how to apply this to the prologix gpib-usb adapter I utilize.\r\n      \r\n      * This issue states I shouldn't set specific adapter settings to make the instrument work:\r\n        - https://github.com/pymeasure/pymeasure/issues/815\r\n      * These pages makes it look like I should be configuring adapter settings:\r\n        - https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/instrument.html#defining-default-connection-settings\r\n        - https://pyvisa.readthedocs.io/en/latest/api/constants.html#pyvisa.constants.InterfaceType\r\n      \r\n      I am not sure if I should be using `asrl` or `gpib` for `pyvisa.constants.InterfaceType` since its a serial device connecting to GPIB.\r\n      \r\n      Unfortunately, it seems like if I am not defining the Prologix settings and commanding them when using the VNA, there will be unexpected behavior or it will timeout/error out.\r\n      \r\n      It looks like it is addressed here but not implemented here https://github.com/pyvisa/pyvisa/issues/112\r\n\r\n2. If I utilize default Prologix GPIB-USB adapter parameters for one instrument, is the functionality to change these parameters on the fly for other instruments in place? IE, if I need '++auto 1' for one instrument but not another, with pymeasure send the command to the adapter if I communicate to alternating instruments and remember when it needs to change it?\r\n\r\n      The #112 issue makes it look like different parameters needed with the Prologix adapter for multiple instruments are not handled yet with pymeasure or pyvisa.\r\n\r\n3. Are we allowed to utilize cached properties to save time on communicating?\r\n\r\n## My to-do list of actions still needed to polish this for others to use is: \r\n\r\n- [x] Need unit tests for this class that don't rely on having the instrument. Currently my unit tests rely on having the instrument on the bench and connected. I know there is some functionality at [Adding Instruments->Writing tests->Protocol tests->Test generator](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/tests.html) to create tests that don't demand the instrument be attached to the computer.\r\n- [x] Remove adapter specific commands like my workarounds using the Prologix adapter from the class or be able to toggle the Prologix specific functions on/off when initializing the class.\r\n- [x] Write comments for each of the functions clarifying them \r\n- [x] Start the comments for properties with ['Get', 'Measure', 'Set', or 'Control']\r\n- [x] May need to move the `__init__` block to `__new__`?\r\n- [x] Exceptions may need to use more specific exceptions from the pymeasure library\r\n- [x] Probably need to remove the `__version` and `if __name__==\"__main__\":` blocks\r\n- [x] Address other code style issues I am undoubtedly not adhering to.\r\n",
+  "state": "closed",
+  "merged": true,
+  "merge_commit_sha": "711a85ca81b746745820e8a426e0f4df39e8dcc9",
+  "merged_at": "2024-06-06T05:43:28+00:00",
+  "created_at": "2023-12-19T21:35:01+00:00",
+  "closed_at": "2024-06-06T05:43:28+00:00",
+  "user": "Sionwage",
+  "additions": 968,
+  "deletions": 1,
+  "changed_files_count": 7,
+  "labels": [],
+  "comments": [
+    {
+      "author": "Sionwage",
+      "body": "Is there a way to change the branch to merge from? I have somehow completely hosed my git clone and cannot update/sync my copied repo with the changes made in pymeasure:master since opening this.\r\n\r\nOtherwise I'll just copy out my code, nuke my fork repo, refork the repo and create a branch before putting my code back in so I can sync upstream changes.",
+      "created_at": "2024-02-13T15:51:12+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You cannot change the branch **name** to be merged from.\r\n\r\nYou can, however use different commits in the branch:\r\n1. create a temporary branch, where you are at right now (and maybe the files)\r\n2. delete your current branch\r\n3. create a new branch with the name of the current branch (for example on the current master)\r\n4. Do the changes you want (e.g. copying the files)\r\n5. Push your changes to your github repo (using push force)",
+      "created_at": "2024-02-13T18:22:00+00:00"
+    },
+    {
+      "author": "codecov[bot]",
+      "body": "## [Codecov](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004?dropdown=coverage&src=pr&el=h1&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) Report\nAttention: Patch coverage is `61.78344%` with `60 lines` in your changes missing coverage. Please review.\n> Project coverage is 58.51%. Comparing base [(`4846672`)](https://app.codecov.io/gh/pymeasure/pymeasure/commit/484667208df570849418f8e6bb988ac464ab1cd8?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) to head [(`99b724d`)](https://app.codecov.io/gh/pymeasure/pymeasure/commit/99b724d27ab1a3776ab9d9cd8a9fa5f2fd1fc1fe?dropdown=coverage&el=desc&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).\n\n| [Files](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004?dropdown=coverage&src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | Patch % | Lines |\n|---|---|---|\n| [pymeasure/instruments/hp/hp8753e.py](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004?src=pr&el=tree&filepath=pymeasure%2Finstruments%2Fhp%2Fhp8753e.py&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure#diff-cHltZWFzdXJlL2luc3RydW1lbnRzL2hwL2hwODc1M2UucHk=) | 61.53% | [60 Missing :warning: ](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004?src=pr&el=tree&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) |\n\n<details><summary>Additional details and impacted files</summary>\n\n\n```diff\n@@            Coverage Diff             @@\n##           master    #1004      +/-   ##\n==========================================\n+ Coverage   58.48%   58.51%   +0.02%     \n==========================================\n  Files         262      263       +1     \n  Lines       18198    18355     +157     \n==========================================\n+ Hits        10643    10740      +97     \n- Misses       7555     7615      +60     \n```\n\n| [Flag](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004/flags?src=pr&el=flags&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | Coverage Δ | |\n|---|---|---|\n| [unittests](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004/flags?src=pr&el=flag&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure) | `58.51% <61.78%> (+0.02%)` | :arrow_up: |\n\nFlags with carried forward coverage won't be shown. [Click here](https://docs.codecov.io/docs/carryforward-flags?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure#carryforward-flags-in-the-pull-request-comment) to find out more.\n\n\n</details>\n\n[:umbrella: View full report in Codecov by Sentry](https://app.codecov.io/gh/pymeasure/pymeasure/pull/1004?dropdown=coverage&src=pr&el=continue&utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).   \n:loudspeaker: Have feedback on the report? [Share it here](https://about.codecov.io/codecov-pr-comment-feedback/?utm_medium=referral&utm_source=github&utm_content=comment&utm_campaign=pr+comments&utm_term=pymeasure).\n",
+      "created_at": "2024-04-03T18:33:25+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "As I see it, I think there are two/three items still needing to get addressed before you would accept this pull request.\r\n\r\n* PrologixAdapter fixture for unit-testing the HP8753E needs to be resolved\r\n* May need more unit tests to cover the 40% or so of instrument code that isn't in a unit-test.\r\n* May need to rewrite the measurement_parameter property to use `Instrument.control`",
+      "created_at": "2024-04-03T19:41:36+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "> May need more unit tests to cover the 40% or so of instrument code that isn't in a unit-test.\r\n\r\nDon't worry about less than 100% patch coverage.\r\nTests are good, but we do not have any limit for merging pull requests. ",
+      "created_at": "2024-04-05T12:46:32+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I think I am close to done with all the requests made and just need answers to the last 3 unresolved conversations to finish.",
+      "created_at": "2024-04-18T23:06:59+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Hey @Sionwage,\r\nI'm in the process of reviewing, but I'll need some time, due to time constraints.\r\nI ask for your patience. ",
+      "created_at": "2024-04-24T05:45:12+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "> Thanks for your contribution.\r\n> \r\n> I mentioned some incosistencies and mainly documentation issues. The instrument looks already good.\r\n> \r\n> I noticed quite a lot dynamic properties. Do you intend to use them as dynamic properties or is it \"just in case\"?\r\n\r\nThere are different configurations for the 8753E so this allows others to override the defaults set for their instrument.",
+      "created_at": "2024-05-13T16:11:45+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Not sure how to resolve `WARNING: Field list ends without a blank line; unexpected unindent.`\r\n\r\nOtherwise I think everything has been addressed now.",
+      "created_at": "2024-05-13T16:13:54+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Thank you for contributing! ",
+      "created_at": "2024-06-06T05:43:47+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "> Thank you for contributing!\r\n\r\nThank you for your patience!",
+      "created_at": "2024-06-06T15:12:10+00:00"
+    }
+  ],
+  "review_comments": [
+    {
+      "author": "BenediktBurger",
+      "body": "As you said, we do not use file version strings.\r\n```suggestion\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:11:22+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "What do you want to tell with this line?\r\n\r\nIf the code is quite similar to the Agilent8722, could you inherit from the other one and just implement the changes?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:12:20+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Regarding the docstrings see the [documentation](https://pymeasure.readthedocs.io/en/latest/dev/coding_standards.html#docstrings), especially:\r\n\r\nSpecific to properties, start them with “Control”, “Get”, “Measure”, or “Set” to indicate the kind of property, as it is not visible after import, whether a property is gettable (“Get” or “Measure”), settable (“Set”), or both (“Control”). In addition, it is useful to add type and information about [Restricting values with validators](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/properties.html#validators) (if applicable) at the end of the summary line, see the docstrings shown in examples throughout the [Adding instruments](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/index.html#adding-instruments) section. For example a docstring could be `\"\"\"Control the voltage in Volts (float strictly from -1 to 1).\"\"\"`.\r\n\r\nPlease note, that not all instruments in our library adhere to that rule yet.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:14:20+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "`lambda x: float(x)` is exactly the same as `float`, which is the default value for the `cast` parameter, such that you do not have to use it at all.\r\n```suggestion\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:16:43+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please place the init at the top of the class.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:17:05+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "No, normally you do not use `__new__`, init is correct.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:17:29+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please provide an information, whether the device uses SCPI or not (`includeSCPI` parameter).",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:18:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You asked, how to define the connection settings:\r\n\r\n- First, the driver (this class) should define the communication expected from the computer without any Adapter in between, therefore you should define the GPIB parameters in the `super().__init__` call, see the [documentation](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/instrument.html#defining-default-connection-settings).\r\n- If you use a non default adapter (for example Prologix instead of the default VISAAdapter), you have to set up that adapter outside of this file, that is, in your personal code.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:21:51+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "you should know, whether your instrument implements SCPI or not.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:23:23+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "What is your goal here? Making readout of the id faster? But how often do you read the id?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:24:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Can't you do that with our property creators (`Instrument.control`)?\r\n",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:25:57+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "I figure you copied these methods from the other driver.\r\n\r\nAs they are deprecated, remove them, please.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:27:23+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "As you said, we do not use this code block, as everyone has his own configuration.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T11:28:30+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Thank you so much for the quick feedback! I'll work on implementing your feedback in addition to my other to-do items.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-20T18:36:50+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I could look to see if the commands are compatible or even close.\r\n\r\nI think I need to import hplegacyinstrument at least as well.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-21T18:12:19+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Removed `__version__`",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-26T17:33:27+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Honestly the Agilent8722 class could have been imported but all of the exceptions would need to be rewritten to reflect the proper VNA model being controlled.\r\n\r\n",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2023-12-26T20:28:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "What exceptions would have to be changed?\r\nWouldn't that be a lot less work now (creating the new driver and tests) and later on (maintaining one instead of two drivers)?\r\n\r\nYou could do all your work changing the docstrings to the original driver (if they are the same) and thus improve the codebase while adding your own instrument.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-04T10:32:36+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "The equipment name \"Agilent 8722ES\" is written into all of the exceptions. Not a big deal but I rewrote my class to all the manufacturer and model to be written as a class parameter to use f-strings to convey that information. Example to correct this: `f\"Invalid value '{value}' scattering parameter requested for {self._manu} {self._model}. Valid values are: {SCATTERING_PARAMETERS}\"`. This should allow another instrument to reuse the `HP8753E` class.\r\n\r\nAlso the `data_complex` method within that instrument always times out and fails to retrieve the data when I was first trying it. More specifically, `self.ask('FORM4;OUTPDATA')` only returns the first point of the VNA sweep which is why I run `self.read_bytes(50).decode(\"utf-8\").strip(\"\\n\").split(\",\")` until the number of points are read. I am guessing this is a NI Visa adapter vs Prologix adapter difference. I believe that using the `read_bytes` function instead should be interface agnostic.\r\n\r\nFull disclosure, this has been a learning experience trying to follow correct practices instead of just hacking something together. The Agilent 8722 doesn't have any unit tests and I have device and interface dependent unit tests written and hope to figure out how to convert them all into tests that doesn't need the VNA or Prologix adapter connected.\r\n\r\nAfter converting unit tests to be capable of running without the instrument, I just need to fix my linting errors like \r\n\r\n```\r\nError: ./tests/instruments/hp/test_hp8753e_with_device.py:309:42: E712 comparison to False should be 'if cond is False:' or 'if not cond:'\r\n    assert hp8753e.averaging_enabled == False\r\n```\r\n\r\nIf you want to merge my additional code into the Agilent 8722ES class and have the HP8753E inherit it I can do that too. I believe my code does build on what the 8722ES class started by adding min/max bounds to the instrument properties and a timeout to prevent an instrument lockup causing an infinite delay loop with the `NOOP?` loop.\r\n",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-04T17:17:14+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You have put a lot of limits in your code.\r\nHow confident are you, that your code (and the limits) apply to that other driver as well?\r\n\r\nOne approach would be to compare the settings in both manuals and decide on that base to use your driver for both instruments (maintaining the old, deprecated code in the agilent, though, for backward compatibility). \r\n\r\nI don't know whether you have the time for that work.\r\n\r\nThe backup solution is to add some line in each docstring, stating that the other device is quite similar.\r\nThat way someone, who knows the agilent could check whether your driver fits to the agilent and update the agilent one.\r\nIf you choose this way, you should probably open an issue as well.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-04T22:33:42+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Actually I first tried to set those limits on initialization but it would error out. I now realize I would need to redefine those properties in the `__init__` function or initialize them to default values and override them in the `__init__` function if not using the default values.\r\n\r\nI want the doc strings and exceptions to spell out the limits for what gets defined when the class is run and not the hard-coded values I currently have written. I know for a fact that both the 8722 and 8753 have a plethora of frequency ranges they can cover based on options purchased for the instrument.\r\n\r\nI would prefer if there was a GPIB command to ask the instrument what the Min/Max value limits are but I don't know if a command exists for the 8722 or 8753 to do that like more modern instruments can with various SCPI commands. I might be able to program the limits based on the options reported using a lookup table instead.\r\n\r\nTo start, I'll just work on allowing for configuring the limits to all of the properties I have limits defined.\r\n\r\nSince I don't have a 8722 to test against, I would rather not depreciate that code since it probably works for those that do and I can't ensure my code would too. If I can figure out how to make the Bytesio function the 8722ES class uses in `data_complex` work with my Prologix I would probably be a little less hesitant. ",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T00:02:10+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Ok, let us not mix those two instruments (for this PR), so this PR touches only your new instrument.\r\n\r\n> Actually I first tried to set those limits on initialization but it would error out. I now realize I would need to redefine those properties in the __init__ function or initialize them to default values and override them in the __init__ function if not using the default values.\r\n\r\nFor setting values later on, you could use `dynamic=True` in the properties, see [dynamic-properties documentation](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/properties.html#dynamic-properties).\r\n\r\n> I want the doc strings and exceptions to spell out the limits for what gets defined when the class is run and not the hard-coded values I currently have written. I know for a fact that both the 8722 and 8753 have a plethora of frequency ranges they can cover based on options purchased for the instrument.\r\n\r\nOur properties do not allow to change the documentation dynamically (see aforementioned documentation), however, if you use a `strict_range` validator, the error message will return the currently active limits.\r\nIn fact, in most cases a `strict` validator is better than a `truncated` one, as the latter does not give a feedback about the truncation, such that the user might erroneously think, that the value is valid.\r\n\r\n> Since I don't have a 8722 to test against, I would rather not depreciate that code since it probably works for those that do and I can't ensure my code would too.\r\n\r\nI did not mean to deprecate the whole 8722, but keep the methods of the 8722, which are already deprecated. As we do not combine those two instruments (at the moment). Don't worry about it anymore.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T08:58:44+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You reordered them by numbers, didn't you?",
+      "path": "pymeasure/instruments/hp/__init__.py",
+      "line": null,
+      "created_at": "2024-01-05T09:12:20+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You do not use that line.\r\n\r\nIf you look in the github code page (here) you see the linting issues marked.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:13:13+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "As said in the other comment, `strict` is better than truncated, as the user will know, when the result differs from the input. With truncation, a user might give `start_frequency=10_000` and believe, that it worked.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:14:41+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "maybe \"scattering_parameter\" or even \"active_scattering_parameter\".\r\n\r\nCould you do it with a property creator (`Instrument.control`)?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:16:12+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "We use sphinx style to indicate parameters:\r\n```suggestion\r\n        :param timeout: timeout of the function in seconds\r\n```\r\nbetween \":param\" and the parameter name, you can add the type, if you wish: \":param float timeout:\".",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:19:01+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "We use sphinx notation for the parameters (for the documentation page):\r\n\r\n```suggestion\r\n    :param adapter: A string, integer, or :py:class:`~pymeasure.adapters.Adapter` subclass object\r\n    :param str name: Name of the instrument\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:20:45+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Normally, the default name is the model of the instrument, in this case for example \"HP8753E VNA\" or just \"HP8753E\", but I see your idea here.\r\n\r\nThe idea is, that a user can give a name to all his instruments, even though they might be of the same model (therefore instruments must have a \"name\" parameter).\r\n\r\nIf you wish to know the serial number etc. you can always use the `id` method.\r\n\r\nTherefore the `name` is user defined, while the `id` is device defined.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:21:54+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "We haven't used poetry.\r\n\r\nI'd rather not have another list of dependencies in another file. Therefore I'd like to exclude this file from your PR.\r\n\r\nWhat do you think @bilderbuchi , @msmttchr , @CasperSchippers ?",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-01-05T09:26:19+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Why do you change this file?\r\n\r\nIf it does not work, we should tackle it in another issue and PR.",
+      "path": "pymeasure/instruments/ni/daqmx.py",
+      "line": null,
+      "created_at": "2024-01-05T09:27:32+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "These [protocol tests](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/tests.html#protocol-tests) are quite easy:\r\n\r\nbase structure is:\r\n~~~python\r\nimport pytest\r\n\r\nfrom pymeasure.test import expected_protocol\r\n\r\nfrom pymeasure.instruments.extreme5000 import Extreme5000\r\n\r\ndef test_voltage():\r\n    \"\"\"Verify the communication of the voltage getter.\"\"\"\r\n    with expected_protocol(\r\n        Extreme5000,\r\n        [(\":VOLT 0.345\", None),\r\n         (\":VOLT?\", \"0.3000\")],\r\n    ) as inst:\r\n        inst.voltage = 0.345\r\n        assert inst.voltage == 0.3\r\n~~~\r\n\r\nHere you send first \":VOLT 0.345\" to the device, without reading (None), afterwards you send \":VOLT?\", and read \"0.3000\" from the device. These strings might come from the manual as examples for setting the voltage to 0.345 V and reading the voltage of 0.3 V.\r\n\r\nIf you have questions, don't hesitate to ask.",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:36:32+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Here an example, which should work:\r\n```suggestion\r\nfrom pymeasure.test import expected_protocol\r\n\r\ndef test_start_frequency_setter():\r\n    with expected_protocol(\r\n        HP8753E,\r\n        [(\"STAR 1.2345e6 Hz\", None)],\r\n        name=\"test\",  # in order to not trigger reading the id.\r\n    ) as inst:\r\n        inst.start_frequency = 123_456\r\n\r\n\r\ndef test_start_frequency_getter():\r\n    with expected_protocol(\r\n        HP8753E,\r\n        [(\"STAR?\", \"123456\")],\r\n        name=\"test\",  # in order to not trigger reading the id.\r\n    ) as inst:\r\n        assert inst.start_frequency == 123_456\r\n```",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-05T09:41:36+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Instead of hardcoding the resource_name, we have a fixture ready, see the [device-tests documentation](https://pymeasure.readthedocs.io/en/latest/dev/adding_instruments/tests.html#device-tests).",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-01-05T09:43:53+00:00"
+    },
+    {
+      "author": "bilderbuchi",
+      "body": "I agree with dropping that change. \r\n\r\nIf poetry cannot pull the project metadata from `setup.cfg`, where it currently lives, we could (finally) migrate these to `pyproject.toml` -- we ned to make sure that all our supported Python and (especially) pip versions can deal with that, first. The reason we have not switched a long time ago was compatibility with old pip versions in use out in the \"wild\".\r\nIn any case, such a change should be a separate issue/PR.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-01-08T09:27:52+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I only uploaded the poetry dependencies in the `pyproject.toml` because I was sloppy with git and poetry is so easy to use.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-01-08T15:28:37+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I think this is Python 3.12 issue when importing which is why I changed it for testing my PR. I created https://github.com/pymeasure/pymeasure/issues/1008 identifying this issue.",
+      "path": "pymeasure/instruments/ni/daqmx.py",
+      "line": null,
+      "created_at": "2024-01-08T15:30:31+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "It is best to keep different issues separate. Therefore, this change should not enter this PR.",
+      "path": "pymeasure/instruments/ni/daqmx.py",
+      "line": null,
+      "created_at": "2024-01-08T18:23:51+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I can switch to \"measurement_parameter\" to allow both scattering parameters and absolute measurements like A, B, C, D, R1, R2, R3, R4 as used in other VNAs like the E5061/E5071.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-26T21:08:48+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Measurement parameter sounds fine too. ",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-01-27T10:28:21+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I'm not sure how to use that to pass both the PrologixAdapter address as well as the GPIB address.\r\n\r\nWorking on creating unit tests for my Agilent E4418B I kludged this workaround:\r\n\r\n    # use this command to run the test without editing it\r\n    # for prologix adapters\r\n    # pytest '.\\tests\\instruments\\agilent\\test_agilentE4418B_with_device.py' --device-address=\"PrologixAdapter,ASRL4::INSTR,13\"\r\n    # everyone else, the `--device-address` flag works normally\r\n    # pytest '.\\tests\\instruments\\agilent\\test_agilentE4418B_with_device.py' --device-address=\"GPIB::whatever::your::visa::says\"\r\n    \r\n    \r\n    @pytest.fixture(scope=\"module\")\r\n    def power_meter(connected_device_address):\r\n        try:\r\n            if \"PrologixAdapter\" not in connected_device_address:\r\n                power_meter = AgilentE4418B(connected_device_address)\r\n            else:\r\n                _, prologix_address, gpib_address, *other_address_info = connected_device_address.split(\",\")\r\n                prologix = PrologixAdapter(resource_name=prologix_address, visa_library=\"@py\", auto=1)\r\n                # need to ensure `eot_enable` is set to zero otherwise you will have to read twice to\r\n                # get rid of the extra new line character\r\n                prologix.write(\"++eot_enable 0\")\r\n                power_meter = AgilentE4418B(adapter=prologix.gpib(int(gpib_address)))\r\n        except IOError:\r\n            print(\"Not able to connect to power meter\")\r\n            assert False\r\n    \r\n        yield power_meter\r\n\r\n",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-01T20:12:06+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "`BytesIO` import line removed.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:38:22+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I did but now the `__init__.py` is based on the state of the master branch with my insertion.",
+      "path": "pymeasure/instruments/hp/__init__.py",
+      "line": null,
+      "created_at": "2024-04-05T14:39:27+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Switched validator to use `strict_range` instead.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:40:09+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I'll wait for feedback on how to read the value from `pytest --device-address` and see if there is an appropriate way to pass all of the necessary information to use the `PrologixAdapter` in the fixture.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-05T14:42:54+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I used this method to get _some_ code coverage but I will have to work on improving it in the future. One of the biggest issues I have encountered is the instrument having an apparent non-deterministic delay on completing the same commands in the same sequence.",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:45:11+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I used this method to get some code coverage.",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:45:55+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "File is left as is but the NI devices do cause trouble when trying to run pytest without having their drivers or python module installed which causes me to need to comment out NI instruments when trying to test offline.",
+      "path": "pymeasure/instruments/ni/daqmx.py",
+      "line": null,
+      "created_at": "2024-04-05T14:47:10+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I finally figured how to setup the test environment without poetry while creating this PR. It might be of value for me to type it up and add a section for more obtuse programmers like me to get up to speed on contributing.\r\n\r\nPoetry and pyenv are so convenient for creating the necessary virtual environments and I feel like the barrier to entry are lower with those.",
+      "path": "pyproject.toml",
+      "line": null,
+      "created_at": "2024-04-05T14:50:01+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Fixed doc string to use the sphinx style.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:51:12+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I switched the name but it still isn't using `Instrument.control`. I will need to experiment to make sure I can still use these measurement_parameter strings `\"S11\", \"S12\", \"S21\", \"S22\", \"A/R\", \"B/R\", \"A/B\", \"A\", \"B\", \"R\"` but map the ones not starting with 'S' to the actual command.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:54:03+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Marking this one as resolved since there is another request higher in the comments requesting the implimentation gets changed to `Instrument.control`",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:55:31+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I still have to implement this.\r\n\r\nI switched the name but it still isn't using Instrument.control. I will need to experiment to make sure I can still use these measurement_parameter strings \"S11\", \"S12\", \"S21\", \"S22\", \"A/R\", \"B/R\", \"A/B\", \"A\", \"B\", \"R\" but map the ones not starting with 'S' to the actual command.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:55:48+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I added dynamic properties where appropriate. Otherwise I think everything in this conversation has been resolved.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:56:48+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I need to add this to the class docstring still!",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-05T14:58:18+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "There is no support (yet) to use a prologix adapter in these tests.\r\n\r\nWe could modify the fixture to generate a prologix adapter if needed.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-08T16:25:08+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I don't know how to rewrite this property to query the instrument for each possible measurement parameter and break when one of the properties finally responds with a '1'.\r\n\r\nSo if the instrument was set to \"S22\", I would need to ask it \"S11?\" which it will reply with \"0\". Same for \"S12\" and \"S21\". Once it gets asked \"S22\" and gets the '1' it should break. I wouldn't want to ask it \"AR?\" \"BR?\", \"AB?\", \"MEASA?\" etc for the other measurement parameters since that will just add time to complete the test.\r\n\r\nIt looks like `Instrument.control` doesn't have the hooks to iterate through asking the potentially 10 queries.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-18T22:49:44+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Let me know if this can stay as is or what to change it to. Since I have the Prologix adapter, I can't use the test fixture to code it.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-18T22:56:07+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "I can remove the extra fluff of querying the device to name it if it is desired for consistency. Let me know if you want to keep it or toss it.\r\n\r\nI'm inclined to keep it unless it would cause something to break by having two devices with the same name or something.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-18T22:59:48+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Yes the general \"Control\" does not do that. Therefore, it is fine to use your custom property. ",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-22T09:05:24+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please make the hashes as long as the text. ",
+      "path": "docs/api/instruments/hp/hp8753E.rst",
+      "line": null,
+      "created_at": "2024-04-22T09:08:38+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "What do you try to do with this test?\r\n\r\nPlease remove it. ",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-22T09:09:42+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please change the copyright year (in all the files)\r\n```suggestion\r\n# Copyright (c) 2013-2024 PyMeasure Developers\r\n```",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-22T09:11:05+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Afterwards it is deleted, why del?\r\nDo you want to shut down? Then call shutdown, please. ",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-22T09:12:33+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Why that code?",
+      "path": "tests/instruments/test_all_instruments.py",
+      "line": null,
+      "created_at": "2024-04-25T14:01:24+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You can either drop assigning something to name in the if clause, or you can drop the else clause:\r\n~~~\r\nif name is None:\r\n    self.name = \"abc\"\r\nelse:\r\n    self.name = name\r\n~~~\r\n\r\nor\r\n ~~~\r\nif name is None:\r\n    name = \"abc\"\r\nself.name = name",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:06:41+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You can keep it.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:07:11+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You do not truncate it (anymore) and the limit is 0.01 not 0:\r\n```suggestion\r\n        \"\"\"Control the sweep time in seconds. (float strictly from 0.01 to 36_400)\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:22:46+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Set the scan sweep time to the fastest time possible.\r\n\r\n```suggestion\r\n        \"\"\"Set the scan sweep time to the fastest time possible.\"\"\"\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:23:41+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "If it is a boolean, why do you allow the strings \"ON\", \"OFF\", etc. and why does \"1\" get converted to True? How does the device interpret the string \"True\", if you use `averaging_enabled = \"1\"`?\r\n\r\nNormally we only allow the booleans themselves as where do you draw the line? A user could supply \"On\" or \"on\" or \"True\" or \"1\"...\r\n\r\nI recommend:\r\n```suggestion\r\n        values={True: 1, False: 0},\r\n```\r\n\r\n\r\nmap_values works in two ways with the same dictionary:\r\n`averaging_enabled = True` writes 1\r\n`averaging_enabled` will return True, if the device responded \"1\".\r\n\r\n",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:26:55+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "See above: just True/False",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T14:28:40+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please make it to use the pymeasure fixture and that the test would work without a Prologix adapter.\r\n\r\nI understand that you cannot test it (you could state it in the beginning, that it was tested only with a Prologix Adapter), but in the current state, the tests are not as useful.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-25T17:42:14+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "```suggestion\r\n        \"\"\"Control the number of averages for a scan sweep. (int strict from 1 to 999).\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:13:34+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "```suggestion\r\n        \"\"\"Get the serial number of the instrument\"\"\",\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:14:47+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "```suggestion\r\n        \"\"\"Get the installed options of the instrument\"\"\",\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:14:58+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "What about \"set_single_frequency_scan\"?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:16:29+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Beware, the getter's docstring will be used for the whole property!\r\n\r\nTherefore, you should use \"Control\" here and add also the content of the setter's docstring, which will be invisible later (and you can remove it).",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:17:51+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Why sleep? Is the device unresponsive? If that's the case, please add a comment.\r\n\r\nShouldn't the user consider it?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:18:59+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Docstrings should be in imperative mode:\r\n```suggestion\r\n        \"\"\"Initiate a scan with the number of averages specified and\r\n        block until the operation is complete.\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:19:47+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Docstrings should also end with a period:\r\n```suggestion\r\n        \"\"\"Initiate a single scan or N scans averaged based on averaging.\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:20:21+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "```suggestion\r\n        \"\"\"Shutdown - Disable RF Output.\"\"\"\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-25T18:21:21+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Fixed",
+      "path": "docs/api/instruments/hp/hp8753E.rst",
+      "line": null,
+      "created_at": "2024-04-26T20:04:57+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Corrected",
+      "path": "tests/instruments/hp/test_hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T20:07:48+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "This was missed as I have to add this because of the NI / nicau.dll issue for not having National Instruments drivers or visa installed on my PC.\r\n\r\nThis at least allows me to verify my git clone locally is running all of the tests correctly including the linting before I push the committed changes. I wish the NI instruments modules didn't punish people that don't use them and I think its a Python 3.11->3.12 change that causes the issue.\r\n\r\nThese two lines are removed.",
+      "path": "tests/instruments/test_all_instruments.py",
+      "line": null,
+      "created_at": "2024-04-26T20:13:04+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Changed the docstring for measuring_parameter getter to use 'Control' and removed the docstring to the setter.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T20:15:08+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Fixed",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T20:18:44+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Added the `delay` parameter to the reset function with a default value of 0.25 seconds.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T21:35:50+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "switched to calling `vna.shutdown()`",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-04-26T21:37:51+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "dropped the else clause",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T21:39:30+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Using `values={True: 1, False: 0},`",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T21:45:44+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "changed it to `set_single_frequency_scan`",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T22:20:58+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Using `values={True: 1, False: 0},`",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-04-26T22:21:55+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "> I wish the NI instruments modules didn't punish people that don't use them and I think its a Python 3.11->3.12 change that causes the issue\r\n\r\nWe're trying to fix it with extra repositories (see #1058 ), which needs some time to implement.",
+      "path": "tests/instruments/test_all_instruments.py",
+      "line": null,
+      "created_at": "2024-04-29T09:56:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "By the way, you do not need to create a PrologixAdapter and then call `gpib`.\r\nThe following two options result in the same behavior:\r\n~~~python\r\ntemp_adapter = PrologixAdapter(resource_name)\r\nadapter = temp_adapter.gpib(gpib_address)\r\n\r\n# or\r\nadapter = PrologixAdapter(resource_name, gpib_address)\r\n~~~\r\n\r\n\r\n",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-05-14T12:59:51+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You can add a reason to the skip:\r\n```suggestion\r\n@pytest.mark.skip(reason=\"This test will wear out the mechanical relays and should be run only as necessary\")\r\n```",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-05-14T13:01:03+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Cool idea to use the Prologix in the resource-name!",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-05-14T13:03:21+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "I think that is the culprit for the warning.\r\nFor such a list, sphinx expects the last line to start with `:param` or an empty line, so you could do:\r\n- either move `(float ind dBm).` to the end of the previous line 53 (such that the last line starts with `:param...`\r\n- or add an empty line before the end of the docstring.\r\n\r\nWe have a line length limit of 100, so the first option should work.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-05-14T13:08:28+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Please revert the changes in this file.\r\n\r\nPRs should be based on the master branch and merge there.\r\n\r\nThe v0.14 branch is there to write the changelog for the next release.",
+      "path": "CHANGES.rst",
+      "line": null,
+      "created_at": "2024-05-14T13:11:37+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "You can give the gpib_address to the creator of the PrologixAdapter directly: `PrologixAdapter(resource_name=prologix_address, address=gpib_address,...)`",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-06-04T09:31:58+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Fixed. Thank you for being patient with me fixing the issues identified in my code. Hopefully the next instrument (Keysight E5071C) will go a bit smoother.\r\n\r\nI think the functionality you exposed with this PR will help me to utilize inheritance for the multitude of shared functionality of the 5061 and 5071 VNAs since they can be configured with 2 or 4 ports and a plethora of different frequency ranges.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-06-04T21:54:02+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Thanks for considering more instruments and thanks for your patience and working along with this review process.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-06-05T06:55:09+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "This is an interesting solution on how to use a prologix adapter for device tests.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-06-05T06:57:12+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "This comment is for creating an additional issue.",
+      "path": "tests/instruments/hp/test_hp8753e_with_device.py",
+      "line": null,
+      "created_at": "2024-06-05T06:59:53+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "One last comment:\r\nLooking at the dynamic properties, I noticed, that they add `(dynamic)` to the docstring, so you do not have to do it manually.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T07:01:28+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "```suggestion\r\n# Copyright (c) 2013-2024 PyMeasure Developers\r\n```",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T07:02:23+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Do you want me to remove the `Property is dynamic and allows remapping min/max limits.` lines from the dynamic properties?",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T14:59:58+00:00"
+    },
+    {
+      "author": "BenediktBurger",
+      "body": "Yes, please.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T15:01:38+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Fixed",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T21:55:58+00:00"
+    },
+    {
+      "author": "Sionwage",
+      "body": "Removed `Property is dynamic and allows remapping min/max limits.` Should be go now.",
+      "path": "pymeasure/instruments/hp/hp8753e.py",
+      "line": null,
+      "created_at": "2024-06-05T21:56:23+00:00"
+    }
+  ],
+  "changed_files": [
+    "AUTHORS.txt",
+    "docs/api/instruments/hp/hp8753E.rst",
+    "docs/api/instruments/hp/index.rst",
+    "pymeasure/instruments/hp/__init__.py",
+    "pymeasure/instruments/hp/hp8753e.py",
+    "tests/instruments/hp/test_hp8753e.py",
+    "tests/instruments/hp/test_hp8753e_with_device.py"
+  ],
+  "diff": "diff --git a/AUTHORS.txt b/AUTHORS.txt\nindex f848753bdf..4bda7f0101 100644\n--- a/AUTHORS.txt\n+++ b/AUTHORS.txt\n@@ -81,4 +81,5 @@ Douwe den Blanken\n Till Zürner\n J. A. Wilcox\n Nick James Kirkby\n-Konrad Gralher\n\\ No newline at end of file\n+Konrad Gralher\n+David Ziliak\n\\ No newline at end of file\ndiff --git a/docs/api/instruments/hp/hp8753E.rst b/docs/api/instruments/hp/hp8753E.rst\nnew file mode 100644\nindex 0000000000..c6a1a3856f\n--- /dev/null\n+++ b/docs/api/instruments/hp/hp8753E.rst\n@@ -0,0 +1,8 @@\n+################################\n+HP 8753E Vector Network Analyzer\n+################################\n+\n+\n+.. autoclass:: pymeasure.instruments.hp.HP8753E\n+    :members:\n+    :show-inheritance:\ndiff --git a/docs/api/instruments/hp/index.rst b/docs/api/instruments/hp/index.rst\nindex cf25d2001c..8a4a1223ed 100644\n--- a/docs/api/instruments/hp/index.rst\n+++ b/docs/api/instruments/hp/index.rst\n@@ -18,6 +18,7 @@ If the instrument you are looking for is not here, also check :doc:`Agilent<../a\n    hp8116A\n    hp856xx\n    hp8657B\n+   hp8753E\n    hp11713A\n    hp437B\n    hplegacyinstrument\ndiff --git a/pymeasure/instruments/hp/__init__.py b/pymeasure/instruments/hp/__init__.py\nindex 107f11f620..f6d545a61b 100644\n--- a/pymeasure/instruments/hp/__init__.py\n+++ b/pymeasure/instruments/hp/__init__.py\n@@ -30,6 +30,7 @@\n from .hp8657b import HP8657B\n from .hp856Xx import HP8560A\n from .hp856Xx import HP8561B\n+from .hp8753e import HP8753E\n from .hp11713a import HP11713A\n from .hp437b import HP437B\n from .hpsystempsu import HP6632A\ndiff --git a/pymeasure/instruments/hp/hp8753e.py b/pymeasure/instruments/hp/hp8753e.py\nnew file mode 100644\nindex 0000000000..88c3cf44f0\n--- /dev/null\n+++ b/pymeasure/instruments/hp/hp8753e.py\n@@ -0,0 +1,466 @@\n+#\n+# This file is part of the PyMeasure package.\n+#\n+# Copyright (c) 2013-2024 PyMeasure Developers\n+#\n+# Permission is hereby granted, free of charge, to any person obtaining a copy\n+# of this software and associated documentation files (the \"Software\"), to deal\n+# in the Software without restriction, including without limitation the rights\n+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n+# copies of the Software, and to permit persons to whom the Software is\n+# furnished to do so, subject to the following conditions:\n+#\n+# The above copyright notice and this permission notice shall be included in\n+# all copies or substantial portions of the Software.\n+#\n+# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n+# THE SOFTWARE.\n+#\n+\n+import logging\n+from time import sleep\n+from time import time as now\n+\n+import numpy as np\n+from pyvisa import VisaIOError\n+\n+from pymeasure.instruments import Instrument\n+from pymeasure.instruments.validators import strict_discrete_set, strict_range\n+\n+log = logging.getLogger(__name__)\n+log.addHandler(logging.NullHandler())\n+\n+\n+class HP8753E(Instrument):\n+    \"\"\"Represents the HP8753E Vector Network Analyzer\n+    and provides a high-level interface for taking sweeps of the\n+    scattering or measurement parameters.\n+\n+    :param name: Optional set the name of the instrument (str).\n+    :param min_frequency: Optional set the minimum validator for `HP8753E.start_frequency`,\n+        `HP8753E.stop_frequency`, `HP8753E.span_frequency`, `HP8753E.center_frequency`\n+        on initialization (float in Hz).\n+    :param max_frequency: Optional set the maximum validator for `HP8753E.start_frequency`,\n+        `HP8753E.stop_frequency`, `HP8753E.span_frequency`, `HP8753E.center_frequency`\n+        on initialization (float in Hz).\n+    :param min_power: Optional set the minimum validator for `HP8753E.power` on initialization\n+        (float in dBm).\n+    :param max_power: Optional set the maximum validator for `HP8753E.power` on initialization\n+        (float in dBm).\n+\n+\n+    \"\"\"\n+\n+    def __init__(\n+        self,\n+        adapter=None,\n+        name=None,\n+        min_frequency=30.0e3,\n+        max_frequency=6.0e9,\n+        min_power=-70,\n+        max_power=10,\n+        **kwargs,\n+    ):\n+        super().__init__(adapter=adapter, name=name, includeSCPI=False, **kwargs)\n+\n+        self._manu = \"\"\n+        self._model = \"\"\n+        self._fw = \"\"\n+        self._sn = \"\"\n+        self._options = \"\"\n+\n+        self.start_frequency_values = [min_frequency, max_frequency]\n+        self.stop_frequency_values = [min_frequency, max_frequency]\n+        self.center_frequency_values = [min_frequency, max_frequency]\n+        self.span_frequency_values = [0, max_frequency - min_frequency]\n+\n+        self.power_values = [min_power, max_power]\n+\n+        if name is None:\n+            # written this way to pass 'test_all_instruments.py' while allowing the\n+            # *IDN? to populate the name of the VNA\n+            try:\n+                self._manu, self._model, _, self._fw = self.id\n+            except ValueError:\n+                self._manu = \"Hewlett Packard\"\n+                self._model = \"8753E\"\n+            self._desc = \"Vector Network Analyzer\"\n+            name = self.name = f\"{self._manu} {self._model} {self._desc}\"\n+        else:\n+            self.name = name\n+\n+    ALLOWED_BANDWIDTH = [10, 30, 100, 300, 1000, 3000, 3700, 6000]\n+    SCAN_POINT_VALUES = [3, 11, 21, 26, 51, 101, 201, 401, 801, 1601]\n+    MEASURING_PARAMETERS = [\"S11\", \"S12\", \"S21\", \"S22\", \"A/R\", \"B/R\", \"A/B\", \"A\", \"B\", \"R\"]\n+    MEASURING_PARAMETER_MAP = {\n+        \"A/R\": \"AR\",\n+        \"B/R\": \"BR\",\n+        \"A/B\": \"AB\",\n+        \"A\": \"MEASA\",\n+        \"B\": \"MEASB\",\n+        \"R\": \"MEASR\",\n+    }\n+\n+    start_frequency = Instrument.control(\n+        \"STAR?\",\n+        \"STAR %e Hz\",\n+        \"\"\"Control the start frequency in Hz. (float).\"\"\",\n+        validator=strict_range,\n+        cast=float,\n+        dynamic=True,\n+        values=[30.0e3, 6.0e9],\n+    )\n+\n+    stop_frequency = Instrument.control(\n+        \"STOP?\",\n+        \"STOP %e Hz\",\n+        \"\"\"Control the stop frequency in Hz. (float).\"\"\",\n+        validator=strict_range,\n+        cast=float,\n+        dynamic=True,\n+        values=[30e3, 6e9],\n+    )\n+\n+    center_frequency = Instrument.control(\n+        \"CENT?\",\n+        \"CENT %e Hz\",\n+        \"\"\"Control the center frequency in Hz (float).\"\"\",\n+        cast=float,\n+        validator=strict_range,\n+        dynamic=True,\n+        values=[30e3, 6e9],\n+    )\n+\n+    span_frequency = Instrument.control(\n+        \"SPAN?\",\n+        \"SPAN %e Hz\",\n+        \"\"\"Control the span of the sweep frequency in Hz (float).\"\"\",\n+        cast=float,\n+        validator=strict_range,\n+        dynamic=True,\n+        values=[0, 6e9 - 30e3],\n+    )\n+\n+    sweep_time = Instrument.control(\n+        \"SWET?\",\n+        \"SWET%.2e\",\n+        \"\"\"Control the sweep time in seconds. (float truncated from 0.0 to 36_400.0)\n+        \"\"\",\n+        validator=strict_range,\n+        cast=float,\n+        values=[0.01, 36_400.0],\n+    )\n+\n+    def set_sweep_time_fastest(self):\n+        \"\"\"Set instrument scan sweep time to select fastest possible time.\"\"\"\n+        self.write(\"SWEA\")\n+\n+    averages = Instrument.control(\n+        \"AVERFACT?\",\n+        \"AVERFACT%d\",\n+        \"\"\"Control the number of averages for a scan sweep. (int truncated from 1 to 999).\n+        \"\"\",\n+        cast=lambda x: int(float(x)),  # need float() to convert scientific notation in strings\n+        validator=strict_range,\n+        values=[1, 999],\n+    )\n+\n+    averaging_enabled = Instrument.control(\n+        \"AVERO?\",\n+        \"AVERO%d\",\n+        \"\"\"Control whether or not averaging is enabled. (boolean)\"\"\",\n+        cast=bool,\n+        validator=strict_discrete_set,\n+        map_values=True,\n+        values={True: 1, False: 0, \"ON\": 1, \"OFF\": 0, \"1\": True, \"0\": False},\n+    )\n+\n+    correction_enabled = Instrument.control(\n+        \"CORR?\",\n+        \"CORR%d\",\n+        \"\"\"Control whether or not correction is enabled. (boolean)\"\"\",\n+        cast=bool,\n+        validator=strict_discrete_set,\n+        map_values=True,\n+        values={True: 1, False: 0, \"ON\": 1, \"OFF\": 0},\n+    )\n+\n+    def averaging_restart(self):\n+        \"\"\"Restart sweep averaging.\"\"\"\n+        self.write(\"AVERREST\")\n+\n+    def emit_beep(self):\n+        \"\"\"Make the VNA emit a beep\"\"\"\n+        self.write(\"EMIB\")\n+\n+    power = Instrument.control(\n+        \"POWE?\",\n+        \"POWE%.3e\",\n+        \"\"\"Control the output RF power of the instrument's active port. (float).\"\"\",\n+        cast=float,\n+        validator=strict_range,\n+        dynamic=True,\n+        values=[-70, 10],\n+    )\n+\n+    output_enabled = Instrument.control(\n+        \"SOUP?\",\n+        \"SOUP%s\",\n+        \"\"\"Control RF Output State (boolean)\"\"\",\n+        cast=bool,\n+        map_values=True,\n+        validator=strict_discrete_set,\n+        values={True: 1, False: 0, \"ON\": 1, \"OFF\": 0},\n+    )\n+\n+    trigger_hold = Instrument.control(\n+        \"HOLD?\",\n+        \"%s\",\n+        \"\"\"Control Sweep Scan Trigger State (boolean)\"\"\",\n+        cast=str,\n+        set_process=lambda x: \"HOLD\" if x else \"CONT\",\n+        get_process=lambda x: x == \"1\",\n+    )\n+\n+    trigger_continuous = Instrument.control(\n+        \"CONT?\",\n+        \"%s\",\n+        \"\"\"Control Sweep Scan Trigger State (boolean)\"\"\",\n+        cast=str,\n+        set_process=lambda x: \"CONT\" if x else \"HOLD\",\n+        get_process=lambda x: x == \"1\",\n+    )\n+\n+    scan_points = Instrument.control(\n+        \"POIN?\",\n+        \"POIN%d\",\n+        f\"\"\"Control the number of points used for a scan sweep.\n+        From the set {SCAN_POINT_VALUES}\"\"\",\n+        cast=lambda x: int(float(x)),\n+        validator=strict_discrete_set,\n+        values=SCAN_POINT_VALUES,\n+    )\n+\n+    id = Instrument.measurement(\n+        \"*IDN?\",\n+        \"\"\"Get the identification of the instrument (list of strings)\"\"\",\n+        cast=str,\n+    )\n+\n+    sn = Instrument.measurement(\n+        \"OUTPSERN\",\n+        \"\"\"Get the serial number for the instrument\"\"\",\n+    )\n+\n+    options = Instrument.measurement(\n+        \"OUTPOPTS\",\n+        \"\"\"Get the installed options for the instrument\"\"\",\n+    )\n+\n+    @property\n+    def manu(self):\n+        \"\"\"Get the manufacturer of the instrument.\"\"\"\n+        if self._manu == \"\":\n+            self._manu, self._model, _, self._fw = self.id\n+        return self._manu\n+\n+    @property\n+    def model(self):\n+        \"\"\"Get the model of the instrument.\"\"\"\n+        if self._model == \"\":\n+            self._manu, self._model, _, self._fw = self.id\n+        return self._model\n+\n+    @property\n+    def fw(self):\n+        \"\"\"Get the firmware of the instrument.\"\"\"\n+        if self._fw == \"\":\n+            self._manu, self._model, _, self._fw = self.id\n+        return self._fw\n+\n+    def set_fixed_frequency(self, frequency):\n+        \"\"\"Set the sweep to be a fixed frequency in Hz.\"\"\"\n+        self.start_frequency = frequency\n+        self.stop_frequency = frequency\n+        self.scan_points = 3\n+\n+    @property\n+    def measuring_parameter(self):\n+        \"\"\"Get the active Scattering or Measuring Parameter being measured.\n+        (str from ['S11', 'S21', 'S12', 'S22', 'A', 'B', 'R'])\"\"\"\n+        for parameter in self.MEASURING_PARAMETERS:\n+            if parameter in self.MEASURING_PARAMETER_MAP:\n+                if int(self.ask(f\"{self.MEASURING_PARAMETER_MAP[parameter]}?\")) == 1:\n+                    return parameter\n+            elif int(self.ask(f\"{parameter}?\")) == 1:\n+                return parameter\n+        return None\n+\n+    @measuring_parameter.setter\n+    def measuring_parameter(self, value):\n+        \"\"\"Set the active Measuring Parameter to be measured.\n+        (str from ['S11', 'S21', 'S12', 'S22', 'A', 'B', 'R'])\"\"\"\n+        if value in self.MEASURING_PARAMETERS:\n+            if value in self.MEASURING_PARAMETER_MAP:\n+                self.write(\"%s\" % self.MEASURING_PARAMETER_MAP[value])\n+            else:\n+                self.write(\"%s\" % value)\n+        else:\n+            raise ValueError(\n+                f\"Invalid value '{value}' scattering parameter requested for \\\n+                {self._manu} {self._model}. Valid values are: {self.MEASURING_PARAMETERS}\"\n+            )\n+\n+    IFBW = Instrument.control(\n+        \"IFBW?\",\n+        \"IFBW%d\",\n+        f\"\"\"Control the IF Bandwidth of the instrument for a scan sweep.\n+        (int from the set {ALLOWED_BANDWIDTH}).\"\"\",\n+        cast=lambda x: int(float(x)),\n+        validator=strict_discrete_set,\n+        values=ALLOWED_BANDWIDTH,\n+    )\n+\n+    def reset(self):\n+        \"\"\"Reset the instrument. May cause RF Output power to be enabled!\"\"\"\n+        self.write(\"*RST\")\n+        sleep(0.25)\n+\n+    def scan(self, timeout=10):\n+        \"\"\"Initiates a scan with the number of averages specified and\n+        blocks until the operation is complete.\n+\n+        :param timeout: Optional value in seconds to add to the sweep time before timeout occurs.\n+        :raise TimeoutError: If the VNA fails to complete the sweep before timeout occurs.\n+        :return: None.\n+        \"\"\"\n+\n+        # get time to perform sweep\n+        sweep_time = self.sweep_time + timeout\n+\n+        # get number of averages if enabled\n+        if self.averaging_enabled:\n+            sweep_time = sweep_time * self.averages\n+\n+        self.scan_single()\n+\n+        # create a time limit\n+        start = now()\n+\n+        # All queries will block until the scan is done, so use NOOP? to check.\n+        # These queries will time out after several seconds though,\n+        # so query repeatedly until the scan finishes.\n+        while True:\n+            try:\n+                # status = self.ask(\"NOOP?\")\n+                self.ask(\"NOOP?\")\n+                break\n+            except VisaIOError:\n+                pass\n+\n+            # calculate time sweep should be complete by\n+            if now() > (start + sweep_time):\n+                raise TimeoutError(\n+                    f\"VNA Scan took longer than {sweep_time} seconds to complete and timed out.\"\n+                )\n+\n+        sleep(0.5)\n+        while self.adapter.connection.bytes_in_buffer > 0:\n+            _ = self.read()\n+            sleep(0.25)\n+\n+    def scan_single(self):\n+        \"\"\"Initiates a single scan or N scans averaged based on averaging\n+        This function is not blocking.\n+        \"\"\"\n+        if self.averaging_enabled:\n+            self.write(f\"NUMG{self.averages}\")\n+        else:\n+            self.write(\"SING\")\n+\n+    @property\n+    def frequencies(self):\n+        \"\"\"\n+        Get a list of frequencies from the last scan.\n+\n+        :return: An array of frequencies sized by number of points in sweep)\n+        :rtype: numpy.ndarray\n+        \"\"\"\n+        return np.linspace(self.start_frequency, self.stop_frequency, num=self.scan_points)\n+\n+    @property\n+    def data_complex(self, timeout=10):\n+        \"\"\"\n+        Get the complex s-parameter measurements from the last scan.\n+        This function is blocking until it is completed.\n+\n+        :param timeout: Optional value in seconds to wait until a timeout occurs.\n+        :raise TimeoutError: If the VNA fails to complete the sweep before timeout occurs.\n+        :return: An array of s-parameters for the measurement_parameter.\n+        :rtype: numpy.ndarray\n+        \"\"\"\n+\n+        points = 0\n+        counter = 0\n+\n+        start = now()\n+        while points == 0:\n+            try:\n+                # get number of points\n+                points = self.scan_points\n+            except VisaIOError:\n+                sleep(0.1)\n+                counter += 1\n+                pass\n+\n+            if now() > start + timeout:\n+                raise TimeoutError(\n+                    f\"Failed to read data. Data transfer method timed \\\n+                    out after {timeout} seconds\"\n+                )\n+\n+        # read the extra self.scan_points out of the buffer\n+        for i in range(counter):\n+            self.read()\n+            sleep(0.1)\n+\n+        # get time to perform sweep\n+        # sweep_time = self.sweep_time\n+\n+        # Only written for ASCII data transfer\n+        self.write(\"FORM4\")\n+\n+        temp_data = []\n+        start = now()\n+        self.write(\"OUTPDATA\")\n+\n+        while len(temp_data) < (points):\n+            try:\n+                if self.adapter.connection.bytes_in_buffer >= 50:\n+                    temp_data.append(self.read_bytes(50).decode(\"utf-8\").strip(\"\\n\").split(\",\"))\n+                else:\n+                    sleep(0.001)\n+\n+                # break the loop if the sweep gets interrupted or takes too long\n+                if now() > start + timeout:\n+                    raise TimeoutError(\n+                        f\"Failed to read data. Data transfer method timed \\\n+                        out after {timeout} seconds\"\n+                    )\n+            except VisaIOError:\n+                pass\n+\n+        # process string data into complex numbers\n+        preformat_data = [float(point[0]) + float(point[1]) * 1j for point in temp_data]\n+        data = np.array(preformat_data)\n+\n+        return data\n+\n+    def shutdown(self):\n+        \"\"\"Shutdown - Disables RF Output.\"\"\"\n+        self.output_enabled = False\ndiff --git a/tests/instruments/hp/test_hp8753e.py b/tests/instruments/hp/test_hp8753e.py\nnew file mode 100644\nindex 0000000000..de7ad20637\n--- /dev/null\n+++ b/tests/instruments/hp/test_hp8753e.py\n@@ -0,0 +1,141 @@\n+#\n+# This file is part of the PyMeasure package.\n+#\n+# Copyright (c) 2013-2024 PyMeasure Developers\n+#\n+# Permission is hereby granted, free of charge, to any person obtaining a copy\n+# of this software and associated documentation files (the \"Software\"), to deal\n+# in the Software without restriction, including without limitation the rights\n+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n+# copies of the Software, and to permit persons to whom the Software is\n+# furnished to do so, subject to the following conditions:\n+#\n+# The above copyright notice and this permission notice shall be included in\n+# all copies or substantial portions of the Software.\n+#\n+# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n+# THE SOFTWARE.\n+#\n+\n+import logging\n+\n+from pymeasure.instruments.hp import HP8753E\n+from pymeasure.test import expected_protocol\n+\n+log = logging.getLogger(__name__)\n+log.addHandler(logging.NullHandler())\n+\n+\n+def test_hp8753e_id():\n+    \"\"\"Verify *IDN? communication\"\"\"\n+    with expected_protocol(\n+        HP8753E,\n+        [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\")],\n+    ) as inst:\n+        assert inst.id == [\"HEWLETT PACKARD\", \"8753E\", \"0\", \"7.10\"]\n+\n+\n+def test_hp8753e_start_frequency():\n+    with expected_protocol(\n+        HP8753E,\n+        [\n+            (\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"),\n+            (\"STAR?\", \"30E+003\\n\"),\n+            (\"STAR 4.000000e+05 Hz\", None),\n+            (\"STAR?\", \"400E+003\\n\"),\n+        ],\n+    ) as inst:\n+        assert inst.start_frequency == 30_000\n+        inst.start_frequency = 400e3\n+        assert inst.start_frequency == 400_000\n+\n+\n+def test_hp8753e_set_sweep_time_fastest():\n+    with expected_protocol(\n+        HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"SWEA\", None)]\n+    ) as inst:\n+        assert inst.set_sweep_time_fastest() is None\n+\n+\n+def test_hp8753e_manu():\n+    with expected_protocol(HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\")]) as inst:\n+        assert inst.manu == \"HEWLETT PACKARD\"\n+\n+\n+def test_hp8753e_model():\n+    with expected_protocol(HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\")]) as inst:\n+        assert inst.model == \"8753E\"\n+\n+\n+def test_hp8753e_fw():\n+    with expected_protocol(HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\")]) as inst:\n+        assert inst.fw == \"7.10\"\n+\n+\n+def test_hp8753e_set_single_frequency_scan():\n+    with expected_protocol(\n+        HP8753E,\n+        [\n+            (\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"),\n+            (\"STAR 5.000000e+07 Hz\", None),\n+            (\"STOP 5.000000e+07 Hz\", None),\n+            (\"POIN3\", None),\n+        ],\n+    ) as inst:\n+        inst.set_fixed_frequency(50e6)\n+\n+\n+def test_hp8753e_measuring_parameter():\n+    with expected_protocol(\n+        HP8753E,\n+        [\n+            (\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"),\n+            (\"S21\", None),\n+            (\"S11?\", \"0\\n\"),\n+            (\"S12?\", \"0\\n\"),\n+            (\"S21?\", \"1\\n\"),\n+        ],\n+    ) as inst:\n+        assert inst.MEASURING_PARAMETER_MAP == {\n+            \"A/R\": \"AR\",\n+            \"B/R\": \"BR\",\n+            \"A/B\": \"AB\",\n+            \"A\": \"MEASA\",\n+            \"B\": \"MEASB\",\n+            \"R\": \"MEASR\",\n+        }\n+        inst.measuring_parameter = \"S21\"\n+        assert inst.measuring_parameter == \"S21\"\n+\n+\n+def test_hp8753e_reset():\n+    with expected_protocol(\n+        HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"*RST\", None)]\n+    ) as inst:\n+        inst.reset()\n+\n+\n+def test_hp8753e_shutdown():\n+    with expected_protocol(\n+        HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"SOUP0\", None)]\n+    ) as inst:\n+        inst.shutdown()\n+\n+\n+def test_hp8753e_averaging_restart():\n+    with expected_protocol(\n+        HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"AVERREST\", None)]\n+    ) as inst:\n+        inst.averaging_restart()\n+\n+\n+def test_hp8753e_emit_beep():\n+    with expected_protocol(\n+        HP8753E, [(\"*IDN?\", \"HEWLETT PACKARD,8753E,0,7.10\\n\"), (\"EMIB\", None)]\n+    ) as inst:\n+        inst.emit_beep()\ndiff --git a/tests/instruments/hp/test_hp8753e_with_device.py b/tests/instruments/hp/test_hp8753e_with_device.py\nnew file mode 100644\nindex 0000000000..4a68a7c93f\n--- /dev/null\n+++ b/tests/instruments/hp/test_hp8753e_with_device.py\n@@ -0,0 +1,349 @@\n+#\n+# This file is part of the PyMeasure package.\n+#\n+# Copyright (c) 2013-2024 PyMeasure Developers\n+#\n+# Permission is hereby granted, free of charge, to any person obtaining a copy\n+# of this software and associated documentation files (the \"Software\"), to deal\n+# in the Software without restriction, including without limitation the rights\n+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n+# copies of the Software, and to permit persons to whom the Software is\n+# furnished to do so, subject to the following conditions:\n+#\n+# The above copyright notice and this permission notice shall be included in\n+# all copies or substantial portions of the Software.\n+#\n+# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\n+# THE SOFTWARE.\n+#\n+\n+import logging\n+from time import sleep\n+\n+import numpy\n+import pytest\n+\n+from pymeasure.adapters import PrologixAdapter\n+from pymeasure.instruments.hp import HP8753E\n+\n+log = logging.getLogger(__name__)\n+log.addHandler(logging.NullHandler())\n+\n+\n+@pytest.fixture(scope=\"module\")\n+def hp8753e(connected_device_address):\n+    try:\n+        # This allows a PrologixAdapter to be used for running the tests as well\n+        #  `pytest --device-address PrologixAdapter,ASRL4::INSTR,16 -k \"test_hp8753e_with_device\"`\n+\n+        if \"PrologixAdapter\" not in connected_device_address:\n+            vna = HP8753E(connected_device_address)\n+        else:\n+            _, prologix_address, gpib_address, *other_address_info = connected_device_address.split(\n+                \",\"\n+            )\n+\n+            prologix = PrologixAdapter(\n+                resource_name=prologix_address,\n+                visa_library=\"@py\",\n+                auto=1,\n+                address=gpib_address,\n+            )\n+\n+            # need to ensure `eot_enable` is set to zero otherwise you will have to read twice to\n+            # get rid of the extra new line character\n+            prologix.write(\"++eot_enable 0\")\n+            vna = HP8753E(adapter=prologix)\n+\n+    except IOError:\n+        print(\"Not able to connect to vna\")\n+        assert False\n+\n+    yield vna\n+    del vna\n+\n+\n+def test_init_HP8753E(hp8753e):\n+    hp8753e.reset()\n+    hp8753e.emit_beep()\n+\n+\n+def test_hp8753e_with_device_id(hp8753e):\n+    assert hp8753e.id == [\"HEWLETT PACKARD\", \"8753E\", \"0\", \"7.10\"]\n+\n+\n+def test_hp8753e_with_device_name(hp8753e):\n+    assert hp8753e.name == \"HEWLETT PACKARD 8753E Vector Network Analyzer\"\n+\n+\n+def test_hp8753e_with_device_fw(hp8753e):\n+    hp8753e._fw = \"\"\n+    assert hp8753e.fw == \"7.10\"\n+\n+\n+def test_hp8753e_with_device_manu(hp8753e):\n+    hp8753e._manu = \"\"\n+    assert hp8753e.manu == \"HEWLETT PACKARD\"\n+\n+\n+def test_hp8753e_with_device_model(hp8753e):\n+    hp8753e._model = \"\"\n+    assert hp8753e.model == \"8753E\"\n+\n+\n+def test_hp8753e_with_device_sn(hp8753e):\n+    assert hp8753e.sn == \"US37390178\"\n+\n+\n+def test_hp8753e_with_device_options(hp8753e):\n+    assert hp8753e.options == \"1D5 002 006 010\"\n+\n+\n+def test_hp8753e_with_device_sweep_time(hp8753e):\n+    hp8753e.reset()\n+    assert hp8753e.sweep_time == 0.175000059904\n+    hp8753e.sweep_time = 1\n+    assert hp8753e.sweep_time == 1.00000006144\n+    hp8753e.set_sweep_time_fastest()\n+    assert hp8753e.sweep_time == 0\n+\n+\n+def test_hp8753e_with_device_measuring_parameters(hp8753e):\n+    for parameter in hp8753e.MEASURING_PARAMETER_MAP:\n+        hp8753e.measuring_parameter = parameter\n+        assert hp8753e.measuring_parameter == parameter\n+\n+    assert hp8753e.MEASURING_PARAMETER_MAP == {\n+        \"S11\": \"S11\",\n+        \"S12\": \"S12\",\n+        \"S21\": \"S21\",\n+        \"S22\": \"S22\",\n+        \"A/R\": \"AR\",\n+        \"B/R\": \"BR\",\n+        \"A/B\": \"AB\",\n+        \"A\": \"MEASA\",\n+        \"B\": \"MEASB\",\n+        \"R\": \"MEASR\",\n+    }\n+\n+\n+def test_hp8753e_with_device_scan_points(hp8753e):\n+    for points in hp8753e.SCAN_POINT_VALUES:\n+        hp8753e.scan_points = points\n+        assert hp8753e.scan_points == points\n+\n+\n+def test_hp8753e_with_device_ifbw(hp8753e):\n+    for allowed_bandwidth in hp8753e.ALLOWED_BANDWIDTH:\n+        hp8753e.IFBW = allowed_bandwidth\n+        assert hp8753e.IFBW == allowed_bandwidth\n+\n+    hp8753e.IFBW = 1000\n+    assert hp8753e.IFBW == 1000\n+\n+\n+def test_hp8753e_with_device_start_frequency(hp8753e):\n+    hp8753e.start_frequency = 30_000.0\n+    assert hp8753e.start_frequency == 30_000.0\n+    hp8753e.start_frequency = 30_600.0\n+    assert hp8753e.start_frequency == 30_600.0\n+    hp8753e.start_frequency = 4_000_000.0\n+    assert hp8753e.start_frequency == 4_000_000.0\n+\n+\n+def test_hp8753e_with_device_stop_frequency(hp8753e):\n+    hp8753e.stop_frequency = 130_000.0\n+    assert hp8753e.stop_frequency == 130_000.0\n+    hp8753e.stop_frequency = 130_600.0\n+    assert hp8753e.stop_frequency == 130_600.0\n+    hp8753e.stop_frequency = 14_000_000.0\n+    assert hp8753e.stop_frequency == 14_000_000.0\n+\n+\n+def test_hp8753e_with_device_center_and_span_frequency(hp8753e):\n+    hp8753e.reset()\n+    assert hp8753e.start_frequency == 30_000.0\n+    assert hp8753e.stop_frequency == 6_000_000_000.0\n+\n+    cent_freqs = [30_000, 120_306, 35_890_230, 385_239_000, 2_150_932_000, 5_907_600_000, 6e9]\n+    spans = [20000, 523459, 125033000, 250_000_000, 3_000_000_000, 5e9]\n+\n+    for freq in cent_freqs:\n+        for span in spans:\n+            if freq - span / 2 >= 30e3 and freq + span / 2 <= 6e9:\n+                hp8753e.center_frequency = freq\n+                hp8753e.span_frequency = span\n+                assert hp8753e.span_frequency == span\n+                assert hp8753e.center_frequency == freq\n+\n+\n+def test_hp8753e_with_device_set_single_frequency_scan(hp8753e):\n+    for frequency in [30_000, 1_000_000, 500_000_000, 4_000_000_000, 6_000_000_000]:\n+        hp8753e.set_single_frequency_scan(frequency)\n+        assert hp8753e.start_frequency == frequency\n+        assert hp8753e.stop_frequency == frequency\n+        assert hp8753e.scan_points == 3\n+\n+\n+def test_hp8753e_with_device_scan_single(hp8753e):\n+    assert hp8753e.averaging_enabled is False\n+    hp8753e.scan_single()\n+    data = hp8753e.data_complex\n+    assert isinstance(data, numpy.ndarray)\n+    assert isinstance(data[12], numpy.complex128)\n+    hp8753e.averaging_enabled = True\n+    assert hp8753e.averaging_enabled is True\n+    hp8753e.averages = 2\n+    assert hp8753e.averages == 2\n+    hp8753e.scan_single()\n+    data = hp8753e.data_complex\n+    assert isinstance(data, numpy.ndarray)\n+    assert isinstance(data[12], numpy.complex128)\n+\n+\n+def test_hp8753e_with_device_scan(hp8753e):\n+    hp8753e.reset()\n+    hp8753e.averaging_enabled = False\n+    hp8753e.scan(timeout=10)\n+    hp8753e.averaging_enabled = True\n+    assert hp8753e.averaging_enabled is True\n+    hp8753e.averages = 2\n+    assert hp8753e.averages == 2\n+    hp8753e.scan(timeout=10)\n+    data = hp8753e.data_complex\n+    assert isinstance(data, numpy.ndarray)\n+    assert isinstance(data[12], numpy.complex128)\n+\n+\n+def test_hp8753e_with_device_data_complex(hp8753e):\n+    hp8753e.reset()\n+    assert hp8753e.averaging_enabled is False\n+    hp8753e.trigger_continuous = True\n+    assert hp8753e.trigger_continuous is True\n+    hp8753e.scan_single()\n+\n+    data = hp8753e.data_complex\n+    assert len(data) == 201\n+    assert isinstance(data, numpy.ndarray)\n+    assert isinstance(data[12], numpy.complex128)\n+\n+    # repeat with average of 2 enabled\n+    hp8753e.trigger_hold = True\n+    assert hp8753e.trigger_hold is True\n+    hp8753e.averaging_enabled = True\n+    assert hp8753e.averaging_enabled is True\n+    hp8753e.averages = 4\n+    assert hp8753e.averages == 4\n+    hp8753e.averaging_restart()\n+    hp8753e.scan(timeout=20)\n+\n+    data = hp8753e.data_complex\n+    assert len(data) == 201\n+    assert isinstance(data, numpy.ndarray)\n+    assert isinstance(data[12], numpy.complex128)\n+\n+\n+def test_hp8753e_with_device_np_frequencies(hp8753e):\n+    hp8753e.reset()\n+    numpy.testing.assert_equal(\n+        hp8753e.frequencies, numpy.arange(30e3, 6e9 + (6e9 - 30e3) / 200, (6e9 - 30e3) / 200)\n+    )\n+\n+\n+def test_hp8753e_with_device_reset(hp8753e):\n+    frequency = 500_000_000\n+    hp8753e.set_single_frequency_scan(frequency)\n+    assert hp8753e.start_frequency == frequency\n+    assert hp8753e.stop_frequency == frequency\n+    assert hp8753e.scan_points == 3\n+    hp8753e.reset()\n+    assert hp8753e.start_frequency == 30_000\n+    assert hp8753e.stop_frequency == 6_000_000_000\n+    assert hp8753e.scan_points == 201\n+\n+\n+def test_hp8753e_with_device_averaging_enabled(hp8753e):\n+\n+    hp8753e.averaging_enabled = True\n+    assert hp8753e.averaging_enabled is True\n+    hp8753e.averaging_enabled = False\n+    assert hp8753e.averaging_enabled is False\n+\n+\n+def test_hp8753e_with_device_averages(hp8753e):\n+\n+    hp8753e.averaging_enabled = True\n+    hp8753e.averages = 32\n+    assert hp8753e.averages == 32\n+    hp8753e.averages = 18\n+    assert hp8753e.averages == 18\n+    hp8753e.averages = 1\n+    assert hp8753e.averages == 1\n+    hp8753e.averaging_enabled = False\n+\n+\n+@pytest.mark.skip(\n+    reason=\"This test will wear out the mechanical relays and should be run only as necessary\"\n+)\n+def test_hp8753e_with_device_power(hp8753e):\n+\n+    hp8753e.reset()\n+    assert hp8753e.output_enabled is True\n+    powers = [-60.14, -28.76, 5.41, 0.35]\n+    for power in powers:\n+        hp8753e.power = power\n+        assert hp8753e.power == power\n+        sleep(0.3)\n+\n+    hp8753e.power = 0.0\n+    assert hp8753e.power == 0.0\n+\n+    # test power input < -70\n+\n+    # test power input > 10\n+\n+    hp8753e.shutdown()\n+\n+\n+@pytest.mark.skip(\n+    reason=\"This test will wear out the mechanical relays and should be run only as necessary\"\n+)\n+def test_hp8753e_with_device_output_enabled(hp8753e):\n+\n+    hp8753e.reset()\n+    assert hp8753e.power == 0\n+    assert hp8753e.output_enabled is True\n+    hp8753e.output_enabled = False\n+    assert hp8753e.output_enabled is False\n+    hp8753e.output_enabled = True\n+    assert hp8753e.output_enabled is True\n+    hp8753e.shutdown()\n+    assert hp8753e.output_enabled is False\n+\n+\n+def test_hp8753e_with_device_trigger(hp8753e):\n+    hp8753e.reset()\n+    assert hp8753e.trigger_continuous is True\n+\n+    hp8753e.trigger_hold = True\n+    assert hp8753e.trigger_hold is True\n+    assert hp8753e.trigger_continuous is False\n+\n+    hp8753e.trigger_hold = False\n+    assert hp8753e.trigger_hold is False\n+    assert hp8753e.trigger_continuous is True\n+\n+    hp8753e.trigger_continuous = True\n+    assert hp8753e.trigger_continuous is True\n+    assert hp8753e.trigger_hold is False\n+\n+    hp8753e.trigger_continuous = False\n+    assert hp8753e.trigger_continuous is False\n+    assert hp8753e.trigger_hold is True\n+\n+    hp8753e.reset()\n",
+  "pre_commit": "484667208df570849418f8e6bb988ac464ab1cd8",
+  "post_commit": "711a85ca81b746745820e8a426e0f4df39e8dcc9",
+  "merge_type": "squash"
+}

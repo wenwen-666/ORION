@@ -1,0 +1,57 @@
+{
+  "PR_METADATA_DIR_BY_TYPE": {
+    "positive": "<positive_metadata_dir>",
+    "negative": "<negative_metadata_dir>",
+    "new202506": "<new_dataset_metadata_dir>"
+  },
+  "OUTPUT_SUBDIR_BY_PR_TYPE": {
+    "positive": "",
+    "negative": "<negative_output_subdir>",
+    "new202506": "<new_dataset_output_subdir>"
+  },
+  "PR_METADATA_FILENAME_PATTERNS": [
+    "pr_{pr}.json",
+    "{pr}.json"
+  ],
+  "PROJECT_PATH_MAPPING": {
+    "<repo_key>": "<relative/project/path>"
+  },
+  "PYTHON_PACKAGE_SUBDIR": {
+    "<repo_key>": "<python/package/subdir>"
+  },
+  "IMPORT_NAME_MAPPING": {
+    "<repo_or_project_name>": "<import_name>"
+  },
+  "VERIFY_IMPORT_NAME_MAPPING": {
+    "<repo_or_project_name>": "<verification_import_name>"
+  },
+  "PROJECT_EXTRA_DEPENDENCIES": {
+    "<repo_key>": [
+      "<extra_dependency>",
+      "<another_dependency>"
+    ]
+  },
+  "DEFAULT_PYTHON_VERSION_BY_PROJECT": {
+    "<repo_key>": "3.10"
+  },
+  "SKIP_IMPORT_VALIDATION_PROJECTS": [
+    "<repo_key>"
+  ],
+  "BASE_ENV_TEMPLATES": {
+    "<repo_key>": [
+      {
+        "name": "<template_name>",
+        "python": "3.10",
+        "numpy": "1.26.4",
+        "year_range": [2024, 2026],
+        "packages": [
+          "<pip_dependency>"
+        ],
+        "conda_packages": [
+          "<conda_dependency>"
+        ],
+        "needs_compilers": false
+      }
+    ]
+  }
+}

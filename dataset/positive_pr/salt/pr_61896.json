@@ -1,0 +1,36 @@
+{
+  "pr_number": 61896,
+  "title": "Fix archive.extracted top level directory ownership handling",
+  "url": "https://github.com/saltstack/salt/pull/61896",
+  "description": "### What does this PR do?\r\nThis PR fixes a long-standing issue with `archive.extracted` where it would not properly enforce ownership on the extracted directories and files in certain scenarios.\r\n\r\nGiven the following structure where we have nested directories but no files in the top or shallow levels:\r\n\r\n```\r\n$ tree archive_top/\r\narchive_top/\r\n└── second_level\r\n    └── file.txt\r\n\r\n1 directory, 1 file\r\n```\r\n\r\nYou can see that the structure of the `tar` command will produce different tar members in the listing depending on the invocation. The first invocation captures only the second level directory as a member:\r\n\r\n```\r\n$ tar czvf test1.tgz archive_top/second_level/\r\narchive_top/second_level/\r\narchive_top/second_level/file.txt\r\n```\r\n\r\nWhile the second invocation below captures the top level directory as a member as well:\r\n\r\n```\r\n$ tar czvf test2.tgz archive_top/\r\narchive_top/\r\narchive_top/second_level/\r\narchive_top/second_level/file.txt\r\n```\r\n\r\nBOTH invocations will extract the file and directories to achieve the SAME result. However, the `archive.list` call underlying `archive.extracted` would only successfully enforce ownership on a file created in a manner consistent with the second invocation.\r\n\r\n### What issues does this PR fix or reference?\r\nFixes: #38605\r\n\r\n### Previous Behavior\r\n`archive.extracted` would not enforce ownership on archives created with the first invocation above. See issue for more details.\r\n\r\n### New Behavior\r\n`archive.extracted` now checks for a common directory prefix to use as a top level directory on which to enforce ownership.\r\n\r\n### Merge requirements satisfied?\r\n**[NOTICE] Bug fixes or features added to Salt require tests.**\r\n<!-- Please review the [test documentation](https://docs.saltproject.io/en/master/topics/tutorials/writing_tests.html) for details on how to implement tests into Salt's test suite. -->\r\n- [x] Docs\r\n- [x] Changelog - https://docs.saltproject.io/en/master/topics/development/changelog.html\r\n- [x] Tests written/updated\r\n\r\n### Commits signed with GPG?\r\nYes\r\n\r\nPlease review [Salt's Contributing Guide](https://docs.saltproject.io/en/master/topics/development/contributing.html) for best practices.\r\n\r\nSee GitHub's [page on GPG signing](https://help.github.com/articles/signing-commits-using-gpg/) for more information about signing commits with GPG.\r\n",
+  "comments": [
+    {
+      "author": "waynew",
+      "body": "And so they did :upside_down_face: ",
+      "created_at": "2022-03-31T20:56:10Z"
+    },
+    {
+      "author": "myii",
+      "body": "This PR resulted in a regression, which is described in #61967.\r\nA single-line fix (+ test) is proposed in #61968.",
+      "created_at": "2022-04-19T11:55:43Z"
+    }
+  ],
+  "diff": "diff --git a/changelog/38605.fixed b/changelog/38605.fixed\nnew file mode 100644\nindex 000000000000..655860ca1331\n--- /dev/null\n+++ b/changelog/38605.fixed\n@@ -0,0 +1 @@\n+Fix archive.extracted doesn't set user/group ownership correctly\ndiff --git a/salt/modules/archive.py b/salt/modules/archive.py\nindex 7c57e691941e..d62dcea719c7 100644\n--- a/salt/modules/archive.py\n+++ b/salt/modules/archive.py\n@@ -425,7 +425,15 @@ def _unsupported_format(archive_format):\n                 \"files\": sorted(salt.utils.data.decode_list(files)),\n                 \"links\": sorted(salt.utils.data.decode_list(links)),\n             }\n-            ret[\"top_level_dirs\"] = [x for x in ret[\"dirs\"] if x.count(\"/\") == 1]\n+            top_level_dirs = [x for x in ret[\"dirs\"] if x.count(\"/\") == 1]\n+            # the common_prefix logic handles scenarios where the TLD\n+            # isn't listed as an archive member on its own\n+            common_prefix = os.path.commonprefix(ret[\"dirs\"])\n+            if common_prefix:\n+                common_prefix = common_prefix.split(\"/\")[0] + \"/\"\n+                if common_prefix not in top_level_dirs:\n+                    top_level_dirs.append(common_prefix)\n+            ret[\"top_level_dirs\"] = top_level_dirs\n             ret[\"top_level_files\"] = [x for x in ret[\"files\"] if x.count(\"/\") == 0]\n             ret[\"top_level_links\"] = [x for x in ret[\"links\"] if x.count(\"/\") == 0]\n         else:\ndiff --git a/tests/pytests/functional/modules/test_archive.py b/tests/pytests/functional/modules/test_archive.py\nindex 05b87edaf58e..f0b796a2a13a 100644\n--- a/tests/pytests/functional/modules/test_archive.py\n+++ b/tests/pytests/functional/modules/test_archive.py\n@@ -303,3 +303,31 @@ def test_unrar(archive, unicode_filename):\n         ret = archive.unrar(str(arch.archive), str(arch.dst))\n         assert isinstance(ret, list)\n         arch.assert_artifacts_in_ret(ret)\n+\n+\n+@pytest.mark.skip_on_windows\n+@pytest.mark.skip_if_binaries_missing(\"tar\")\n+def test_tar_list_no_explicit_top_level_directory_member(archive, tmp_path):\n+    rel_path = pathlib.Path(\"archive_top/second_level/file.txt\")\n+    srcfile = tmp_path / str(rel_path)\n+    srcfile.parent.mkdir(parents=True, exist_ok=True)\n+    srcfile.write_text(\"hey there\")\n+    archive.tar(\n+        \"-cvzf\",\n+        str(tmp_path / \"tld_test.tar.gz\"),\n+        sources=str(rel_path.parent),\n+        cwd=str(tmp_path),\n+    )\n+\n+    expected = {\n+        \"dirs\": [\"archive_top/second_level/\"],\n+        \"files\": [\"archive_top/second_level/file.txt\"],\n+        \"links\": [],\n+        \"top_level_dirs\": [\"archive_top/\"],\n+        \"top_level_files\": [],\n+        \"top_level_links\": [],\n+    }\n+    ret = archive.list(\n+        str(tmp_path / \"tld_test.tar.gz\"), archive_format=\"tar\", verbose=True\n+    )\n+    assert ret[\"top_level_dirs\"] == expected[\"top_level_dirs\"]\n",
+  "changed_files": [
+    "changelog/38605.fixed",
+    "salt/modules/archive.py",
+    "tests/pytests/functional/modules/test_archive.py"
+  ],
+  "changed_functions": [
+    "test_tar_list_no_explicit_top_level_directory_member"
+  ],
+  "pre_commit": "3bab5bdd3f2cb1767bd8264374d665baed5f5049",
+  "post_commit": "4005843f42d88d4733d5c84fe1185f815cfc1a6e",
+  "merged_at": "2022-04-12T13:12:13Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 38,
+  "deletions": 1,
+  "changed_files_count": 3
+}

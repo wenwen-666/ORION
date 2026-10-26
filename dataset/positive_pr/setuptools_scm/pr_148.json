@@ -1,0 +1,33 @@
+{
+  "pr_number": 148,
+  "title": "fix #138 - add support for the pip-egg-info folder",
+  "url": "https://github.com/pypa/setuptools-scm/pull/148",
+  "description": "",
+  "comments": [],
+  "diff": "diff --git a/setup.py b/setup.py\nindex e37bbc69..b8eb063c 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -79,13 +79,10 @@ def scm_config():\n         .hg = setuptools_scm.hg:parse\n         .git = setuptools_scm.git:parse\n \n-        # those are left here for backward compatibility in the 1.x series\n-        .hg_archival.txt = setuptools_scm.hg:parse_archival\n-        PKG-INFO = setuptools_scm.hacks:parse_pkginfo\n-\n         [setuptools_scm.parse_scm_fallback]\n         .hg_archival.txt = setuptools_scm.hg:parse_archival\n         PKG-INFO = setuptools_scm.hacks:parse_pkginfo\n+        pip-egg-info = setuptools_scm.hacks:parse_pip_egg_info\n \n         [setuptools_scm.files_command]\n         .hg = setuptools_scm.hg:FILES_COMMAND\ndiff --git a/setuptools_scm/__init__.py b/setuptools_scm/__init__.py\nindex 04fd85a0..b243443d 100644\n--- a/setuptools_scm/__init__.py\n+++ b/setuptools_scm/__init__.py\n@@ -79,7 +79,8 @@ def _do_parse(root, parse):\n             root, 'setuptools_scm.parse_scm_fallback')\n     else:\n         # include fallbacks after dropping them from the main entrypoint\n-        version = version_from_scm(root)\n+        version = version_from_scm(root) or _version_from_entrypoint(\n+            root, 'setuptools_scm.parse_scm_fallback')\n \n     if version:\n         return version\ndiff --git a/setuptools_scm/hacks.py b/setuptools_scm/hacks.py\nindex db13e9b4..2d298bec 100644\n--- a/setuptools_scm/hacks.py\n+++ b/setuptools_scm/hacks.py\n@@ -11,3 +11,14 @@ def parse_pkginfo(root):\n     version = data.get('Version')\n     if version != 'UNKNOWN':\n         return meta(version)\n+\n+\n+def parse_pip_egg_info(root):\n+    pipdir = os.path.join(root, 'pip-egg-info')\n+    if not os.path.isdir(pipdir):\n+        return\n+    items = os.listdir(pipdir)\n+    trace('pip-egg-info', pipdir, items)\n+    if not items:\n+        return\n+    return parse_pkginfo(os.path.join(pipdir, items[0]))\ndiff --git a/setuptools_scm/integration.py b/setuptools_scm/integration.py\nindex 5254cb00..fefc3270 100644\n--- a/setuptools_scm/integration.py\n+++ b/setuptools_scm/integration.py\n@@ -14,7 +14,9 @@ def version_keyword(dist, keyword, value):\n         value = {}\n     if getattr(value, '__call__', None):\n         value = value()\n-    if os.path.exists('PKG-INFO'):\n+    # this piece of code is a hack to counter the mistake in root finding\n+    ep = find_matching_entrypoint('.', 'setuptools_scm.parse_scm_fallback')\n+    if ep is not None:\n         value.pop('root', None)\n     dist.metadata.version = get_version(**value)\n \ndiff --git a/setuptools_scm/version.py b/setuptools_scm/version.py\nindex 1b245098..4f94e04f 100644\n--- a/setuptools_scm/version.py\n+++ b/setuptools_scm/version.py\n@@ -23,6 +23,7 @@ def callable_or_entrypoint(group, callable_or_name):\n     trace('ep', (group, callable_or_name))\n     if isinstance(callable_or_name, str):\n         for ep in iter_entry_points(group, callable_or_name):\n+            trace(\"ep found:\", ep.name)\n             return ep.load()\n     else:\n         return callable_or_name\ndiff --git a/testing/conftest.py b/testing/conftest.py\nindex 78a7c1f5..49a9d14b 100644\n--- a/testing/conftest.py\n+++ b/testing/conftest.py\n@@ -61,6 +61,14 @@ def version(self):\n         return version\n \n \n+@pytest.yield_fixture(autouse=True)\n+def debug_mode():\n+    from setuptools_scm import utils\n+    utils.DEBUG = True\n+    yield\n+    utils.DEBUG = False\n+\n+\n @pytest.fixture\n def wd(tmpdir):\n     return Wd(tmpdir.ensure('wd', dir=True))\ndiff --git a/testing/test_regressions.py b/testing/test_regressions.py\nindex ac7ecfc8..4a067b34 100644\n--- a/testing/test_regressions.py\n+++ b/testing/test_regressions.py\n@@ -1,9 +1,11 @@\n import sys\n \n-import pytest\n+from setuptools_scm import get_version\n from setuptools_scm.git import parse\n from setuptools_scm.utils import do_ex, do\n \n+import pytest\n+\n \n def test_pkginfo_noscmroot(tmpdir, monkeypatch):\n     \"\"\"if we are indeed a sdist, the root does not apply\"\"\"\n@@ -29,6 +31,23 @@ def test_pkginfo_noscmroot(tmpdir, monkeypatch):\n     assert res == '1.0'\n \n \n+def test_pip_egg_info(tmpdir, monkeypatch):\n+    \"\"\"if we are indeed a sdist, the root does not apply\"\"\"\n+\n+    # we should get the version from pkg-info if git is broken\n+    p = tmpdir.ensure('sub/package', dir=1)\n+    tmpdir.mkdir('.git')\n+    p.join('setup.py').write(\n+        'from setuptools import setup;'\n+        'setup(use_scm_version={\"root\": \"..\"})')\n+\n+    with pytest.raises(LookupError):\n+        get_version(root=p.strpath)\n+\n+    p.ensure('pip-egg-info/random.egg-info/PKG-INFO').write('Version: 1.0')\n+    assert get_version(root=p.strpath) == '1.0'\n+\n+\n def test_use_scm_version_callable(tmpdir, monkeypatch):\n     \"\"\"use of callable as use_scm_version argument\"\"\"\n     monkeypatch.delenv(\"SETUPTOOLS_SCM_DEBUG\")\n",
+  "changed_files": [
+    "setup.py",
+    "setuptools_scm/__init__.py",
+    "setuptools_scm/hacks.py",
+    "setuptools_scm/integration.py",
+    "setuptools_scm/version.py",
+    "testing/conftest.py",
+    "testing/test_regressions.py"
+  ],
+  "changed_functions": [
+    "parse_pip_egg_info",
+    "debug_mode",
+    "test_pkginfo_noscmroot",
+    "test_pip_egg_info",
+    "test_use_scm_version_callable"
+  ],
+  "pre_commit": "8c06ee97fd11a7ff1899c035668f63a3c0cbbd16",
+  "post_commit": "f51c6e302caeaee52f0d378b370550ba8e160b6c",
+  "merged_at": "2017-02-08T08:26:24Z",
+  "review_comments": [],
+  "state": "closed",
+  "merged": true,
+  "additions": 46,
+  "deletions": 7,
+  "changed_files_count": 7
+}
